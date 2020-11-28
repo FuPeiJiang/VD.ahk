@@ -304,6 +304,7 @@ VD_SwitchDesktop(IVirtualDesktop)
     global
     winactivate, ahk_class Shell_TrayWnd
     DllCall(SwitchDesktop, "ptr", IVirtualDesktopManagerInternal, "UPtr", IVirtualDesktop, "UInt")
+    winactivate, ahk_class Shell_TrayWnd
     VD_AltTab()
 }
 VD_isValidWindow(hWnd)
