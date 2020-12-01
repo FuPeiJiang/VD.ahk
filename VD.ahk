@@ -310,32 +310,11 @@ VD_sendToCurrentDesktop(wintitle,activate:=true)
 VD_SwitchDesktop(IVirtualDesktop)
 {
     global
-
-    if (VD_isWindowFullScreen("A")) {
-        DllCall(SwitchDesktop, "ptr", IVirtualDesktopManagerInternal, "UPtr", IVirtualDesktop, "UInt")
-        DllCall(SwitchDesktop, "ptr", IVirtualDesktopManagerInternal, "UPtr", IVirtualDesktop, "UInt")
-    } else {
-        winactivate, ahk_class Shell_TrayWnd
-        WinWaitActive, ahk_class Shell_TrayWnd
-        DllCall(SwitchDesktop, "ptr", IVirtualDesktopManagerInternal, "UPtr", IVirtualDesktop, "UInt")
-        WinMinimize, ahk_class Shell_TrayWnd
-    }
-}
-;https://autohotkey.com/board/topic/38882-detect-fullscreen-application/#post_id_275899
-VD_isWindowFullScreen( winTitle ) {
-    ;checks if the specified window is full screen
-
-    winID := WinExist( winTitle )
-
-    If ( !winID )
-        Return false
-
-    WinGet style, Style, ahk_id %WinID%
-    WinGetPos ,,,winW,winH, %winTitle%
-    ; 0x800000 is WS_BORDER.
-    ; 0x20000000 is WS_MINIMIZE.
-    ; no border and not minimized
-    Return ((style & 0x20800000) or winH < A_ScreenHeight or winW < A_ScreenWidth) ? false : true
+    winactivate, ahk_class Shell_TrayWnd
+    WinWaitActive, ahk_class Shell_TrayWnd
+    DllCall(SwitchDesktop, "ptr", IVirtualDesktopManagerInternal, "UPtr", IVirtualDesktop, "UInt")
+    DllCall(SwitchDesktop, "ptr", IVirtualDesktopManagerInternal, "UPtr", IVirtualDesktop, "UInt")
+    WinMinimize, ahk_class Shell_TrayWnd
 }
 
 VD_isValidWindow(hWnd)
