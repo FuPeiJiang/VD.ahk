@@ -216,7 +216,7 @@ VD_goToDesktopOfWindow(wintitle, activate:=true)
         DllCall(VD_vtable(IVirtualDesktop,4), "UPtr", IVirtualDesktop, "UPtr", &vd_GUID, "UInt")
         DllCall("Ole32.dll\StringFromGUID2", "UPtr", &vd_GUID, "UPtr", &vd_strGUID, "Int", 38 + 1)
         if (StrGet(&vd_strGUID, "UTF-16") = desktopOfWindow) {
-            DllCall(SwitchDesktop, "ptr", IVirtualDesktopManagerInternal, "UPtr", IVirtualDesktop, "UInt") ;this one doesn't need it
+            VD_SwitchDesktop(IVirtualDesktop)
             if (activate)
                 WinActivate, ahk_id %theHwnd%
         }
