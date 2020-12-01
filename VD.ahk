@@ -1,5 +1,5 @@
 ; must call VD_init() before any of these functions
-; VD_getCurrentVirtualDesktop() ;this will return whichDesktop
+; VD_getCurrentDesktop() ;this will return whichDesktop
 ; VD_getDesktopOfWindow(wintitle) ;this will return whichDesktop ;please use VD_goToDesktopOfWindow instead if you just want to go there.
 ; VD_getCount() ;this will return the number of virtual desktops you currently have
 ; VD_goToDesktop(whichDesktop)
@@ -8,6 +8,7 @@
 ; VD_sendToCurrentDesktop(wintitle,activate:=true)
 
 ; internal functions
+; VD_getCurrentIVirtualDesktop()
 ; VD_SwitchDesktop(IVirtualDesktop)
 ; VD_isValidWindow(hWnd)
 ; VD_getWintitle(hWnd)
@@ -37,7 +38,14 @@ VD_init()
     GetViewForHwnd := VD_vtable(IApplicationViewCollection, 6) ; (IntPtr hwnd, out IApplicationView view);
 }
 
-VD_getCurrentVirtualDesktop() ;this will return whichDesktop
+VD_getCurrentIVirtualDesktop()
+{
+    CurrentIVirtualDesktop := 0
+    DllCall(GetCurrentDesktop, "UPtr", IVirtualDesktopManagerInternal, "UPtrP", CurrentIVirtualDesktop, "UInt")
+    return CurrentIVirtualDesktop
+}
+
+VD_getCurrentDesktop() ;this will return whichDesktop
 {
     global
     CurrentIVirtualDesktop := 0
@@ -59,7 +67,7 @@ VD_getCurrentVirtualDesktop() ;this will return whichDesktop
     vd_Count := 0
     DllCall(VD_vtable(IObjectArray,3), "UPtr", IObjectArray, "UIntP", vd_Count, "UInt")
 
-    IVirtualDesktop := 0    
+    IVirtualDesktop := 0 
     Loop % (vd_Count)
     {
         ; https://github.com/nullpo-head/Windows-10-Virtual-Desktop-Switching-Shortcut/blob/master/VirtualDesktopSwitcher/VirtualDesktopSwitcher/VirtualDesktops.h
@@ -302,11 +310,34 @@ VD_sendToCurrentDesktop(wintitle,activate:=true)
 VD_SwitchDesktop(IVirtualDesktop)
 {
     global
-    winactivate, ahk_class Shell_TrayWnd
-    DllCall(SwitchDesktop, "ptr", IVirtualDesktopManagerInternal, "UPtr", IVirtualDesktop, "UInt")
-    winactivate, ahk_class Shell_TrayWnd
-    VD_AltTab()
+
+    if (VD_isWindowFullScreen("A")) {
+        DllCall(SwitchDesktop, "ptr", IVirtualDesktopManagerInternal, "UPtr", IVirtualDesktop, "UInt")
+        DllCall(SwitchDesktop, "ptr", IVirtualDesktopManagerInternal, "UPtr", IVirtualDesktop, "UInt")
+    } else {
+        winactivate, ahk_class Shell_TrayWnd
+        WinWaitActive, ahk_class Shell_TrayWnd
+        DllCall(SwitchDesktop, "ptr", IVirtualDesktopManagerInternal, "UPtr", IVirtualDesktop, "UInt")
+        WinMinimize, ahk_class Shell_TrayWnd
+    }
 }
+;https://autohotkey.com/board/topic/38882-detect-fullscreen-application/#post_id_275899
+VD_isWindowFullScreen( winTitle ) {
+    ;checks if the specified window is full screen
+
+    winID := WinExist( winTitle )
+
+    If ( !winID )
+        Return false
+
+    WinGet style, Style, ahk_id %WinID%
+    WinGetPos ,,,winW,winH, %winTitle%
+    ; 0x800000 is WS_BORDER.
+    ; 0x20000000 is WS_MINIMIZE.
+    ; no border and not minimized
+    Return ((style & 0x20800000) or winH < A_ScreenHeight or winW < A_ScreenWidth) ? false : true
+}
+
 VD_isValidWindow(hWnd)
 {
     DetectHiddenWindows, on
@@ -316,24 +347,6 @@ VD_isValidWindow(hWnd)
 VD_getWintitle(hWnd) {
     WinGetTitle, title, ahk_id %hWnd%
     return title
-}
-; https://stackoverflow.com/questions/35971452/what-is-the-right-way-to-send-alt-tab-in-ahk#answer-36008086
-VD_AltTab(){
-    list := ""
-    WinGet, id, list
-    Loop, %id%
-    {
-        this_ID := id%A_Index%
-        IfWinActive, ahk_id %this_ID%
-            continue 
-        WinGetTitle, title, ahk_id %this_ID%
-        If (title = "")
-            continue
-        If (!VD_IsWindow(WinExist("ahk_id" . this_ID))) 
-            continue
-        WinActivate, ahk_id %this_ID%, ,2
-        break
-    }
 }
 VD_IsWindow(hWnd){
     ; DetectHiddenWindows, on
