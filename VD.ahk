@@ -16,6 +16,14 @@
 ; VD_IsWindow(hWnd){
 ; VD_vtable(ppv, idx)
 
+; Thanks to:
+; Blackholyman:
+; https://www.autohotkey.com/boards/viewtopic.php?t=67642#p291160
+; and
+; Flipeador:
+; https://www.autohotkey.com/boards/viewtopic.php?t=54202#p234192
+; https://www.autohotkey.com/boards/viewtopic.php?t=54202#p234309
+
 VD_init()
 {
     global
@@ -40,6 +48,7 @@ VD_init()
 
 VD_getCurrentIVirtualDesktop()
 {
+    global GetCurrentDesktop, IVirtualDesktopManagerInternal
     CurrentIVirtualDesktop := 0
     DllCall(GetCurrentDesktop, "UPtr", IVirtualDesktopManagerInternal, "UPtrP", CurrentIVirtualDesktop, "UInt")
     return CurrentIVirtualDesktop
@@ -165,7 +174,31 @@ VD_goToDesktop(whichDesktop)
     ; https://docs.microsoft.com/en-us/windows/desktop/api/objectarray/nf-objectarray-iobjectarray-getat
     DllCall(VD_vtable(IObjectArray,4), "UPtr", IObjectArray, "UInt", whichDesktop -1, "UPtr", &vd_GUID, "UPtrP", IVirtualDesktop, "UInt")
 
-    VD_SwitchDesktop(IVirtualDesktop)
+    VD_SwitchDesktop(IVirtualDesktop,whichDesktop)
+}
+
+VD_goToDesktop_direct(whichDesktop)
+{
+    global
+    IObjectArray := 0
+    DllCall(GetDesktops, "UPtr", IVirtualDesktopManagerInternal, "UPtrP", IObjectArray, "UInt")
+
+    VarSetCapacity(vd_strGUID, (38 + 1) * 2)
+    VarSetCapacity(vd_GUID, 16)
+
+    IVirtualDesktop := 0
+
+    ; https://github.com/nullpo-head/Windows-10-Virtual-Desktop-Switching-Shortcut/blob/master/VirtualDesktopSwitcher/VirtualDesktopSwitcher/VirtualDesktops.h
+    DllCall("Ole32.dll\CLSIDFromString", "Str", "{FF72FFDD-BE7E-43FC-9C03-AD81681E88E4}", "UPtr", &vd_GUID)
+
+    ; IObjectArray::GetAt method
+    ; https://docs.microsoft.com/en-us/windows/desktop/api/objectarray/nf-objectarray-iobjectarray-getat
+    DllCall(VD_vtable(IObjectArray,4), "UPtr", IObjectArray, "UInt", whichDesktop -1, "UPtr", &vd_GUID, "UPtrP", IVirtualDesktop, "UInt")
+
+    DllCall(SwitchDesktop, "ptr", IVirtualDesktopManagerInternal, "UPtr", IVirtualDesktop, "UInt")
+    DllCall(SwitchDesktop, "ptr", IVirtualDesktopManagerInternal, "UPtr", IVirtualDesktop, "UInt")
+    DllCall(SwitchDesktop, "ptr", IVirtualDesktopManagerInternal, "UPtr", IVirtualDesktop, "UInt")
+    DllCall(SwitchDesktop, "ptr", IVirtualDesktopManagerInternal, "UPtr", IVirtualDesktop, "UInt")
 }
 
 VD_goToDesktopOfWindow(wintitle, activate:=true)
@@ -216,7 +249,7 @@ VD_goToDesktopOfWindow(wintitle, activate:=true)
         DllCall(VD_vtable(IVirtualDesktop,4), "UPtr", IVirtualDesktop, "UPtr", &vd_GUID, "UInt")
         DllCall("Ole32.dll\StringFromGUID2", "UPtr", &vd_GUID, "UPtr", &vd_strGUID, "Int", 38 + 1)
         if (StrGet(&vd_strGUID, "UTF-16") = desktopOfWindow) {
-            VD_SwitchDesktop(IVirtualDesktop)
+            VD_SwitchDesktop(IVirtualDesktop, A_Index)
             if (activate)
                 WinActivate, ahk_id %theHwnd%
         }
@@ -265,7 +298,7 @@ VD_sendToDesktop(wintitle,whichDesktop,followYourWindow:=false,activate:=true)
         DllCall(MoveViewToDesktop, "ptr", IVirtualDesktopManagerInternal, "Ptr", thePView, "UPtr", IVirtualDesktop, "UInt")
 
         if (followYourWindow) {
-            VD_SwitchDesktop(IVirtualDesktop)
+            VD_SwitchDesktop(IVirtualDesktop,whichDesktop)
             WinActivate, ahk_id %theHwnd%
         }
     }
@@ -307,14 +340,79 @@ VD_sendToCurrentDesktop(wintitle,activate:=true)
 
 }
 ;start of internal functions
-VD_SwitchDesktop(IVirtualDesktop)
+VD_getWhichDesktop(IVirtualDesktop)
 {
-    global
+
+}
+
+VD_SwitchDesktop(IVirtualDesktop, whichDesktop:=0)
+{
+    global SwitchDesktop, IVirtualDesktopManagerInternal
+
     winactivate, ahk_class Shell_TrayWnd
     WinWaitActive, ahk_class Shell_TrayWnd
     DllCall(SwitchDesktop, "ptr", IVirtualDesktopManagerInternal, "UPtr", IVirtualDesktop, "UInt")
     DllCall(SwitchDesktop, "ptr", IVirtualDesktopManagerInternal, "UPtr", IVirtualDesktop, "UInt")
     WinMinimize, ahk_class Shell_TrayWnd
+; 
+    ; if !whichDesktop
+        ; msgbox, no whichDesktop given to SwitchDesktop
+    ; if (isWindowFullScreen("A")) {
+; 
+        ; loop {
+            ; winactivate, ahk_class Shell_TrayWnd
+            ; WinWaitActive, ahk_class Shell_TrayWnd
+            ; VD_goToDesktop_direct(whichDesktop)
+            ; VD_goToDesktop_direct(whichDesktop)
+            ; sleep, 350
+            ; currentDesktop:=VD_getCurrentDesktop()
+            ; if (currentDesktop = whichDesktop) {
+                ; break
+            ; } else {
+                ; p(currentDesktop, whichDesktop)
+            ; }
+        ; }
+        ; WinMinimize, ahk_class Shell_TrayWnd
+; 
+    ; } else {
+        ; winactivate, ahk_class Shell_TrayWnd
+        ; WinWaitActive, ahk_class Shell_TrayWnd
+        ; DllCall(SwitchDesktop, "ptr", IVirtualDesktopManagerInternal, "UPtr", IVirtualDesktop, "UInt")
+        ; WinMinimize, ahk_class Shell_TrayWnd
+    ; }
+
+}
+VD_isWindowFullScreen( winTitle ) {
+    ;checks if the specified window is full screen
+
+    winID := WinExist( winTitle )
+
+    If ( !winID )
+        Return false
+
+    WinGet style, Style, ahk_id %WinID%
+    WinGetPos ,,,winW,winH, %winTitle%
+    ; 0x800000 is WS_BORDER.
+    ; 0x20000000 is WS_MINIMIZE.
+    ; no border and not minimized
+    Return ((style & 0x20800000) or winH < A_ScreenHeight or winW < A_ScreenWidth) ? false : true
+}
+AltTab(){
+    list := ""
+    WinGet, id, list
+    Loop, %id%
+    {
+        this_ID := id%A_Index%
+        IfWinActive, ahk_id %this_ID%
+            continue 
+        WinGetTitle, title, ahk_id %this_ID%
+        If (title = "")
+            continue
+        If (!VD_IsWindow(WinExist("ahk_id" . this_ID))) 
+            continue
+        WinActivate, ahk_id %this_ID%, ,2
+        break
+    }
 }
 
 VD_isValidWindow(hWnd)
