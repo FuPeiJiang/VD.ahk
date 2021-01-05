@@ -48,6 +48,7 @@ VD_init()
 
 VD_getCurrentIVirtualDesktop()
 {
+    global GetCurrentDesktop, IVirtualDesktopManagerInternal
     CurrentIVirtualDesktop := 0
     DllCall(GetCurrentDesktop, "UPtr", IVirtualDesktopManagerInternal, "UPtrP", CurrentIVirtualDesktop, "UInt")
     return CurrentIVirtualDesktop
@@ -317,7 +318,7 @@ VD_sendToCurrentDesktop(wintitle,activate:=true)
 ;start of internal functions
 VD_SwitchDesktop(IVirtualDesktop)
 {
-    global
+    global SwitchDesktop, IVirtualDesktopManagerInternal
     winactivate, ahk_class Shell_TrayWnd
     WinWaitActive, ahk_class Shell_TrayWnd
     DllCall(SwitchDesktop, "ptr", IVirtualDesktopManagerInternal, "UPtr", IVirtualDesktop, "UInt")
