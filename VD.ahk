@@ -16,6 +16,14 @@
 ; VD_IsWindow(hWnd){
 ; VD_vtable(ppv, idx)
 
+; Thanks to:
+; Blackholyman:
+; https://www.autohotkey.com/boards/viewtopic.php?t=67642#p291160
+; and
+; Flipeador:
+; https://www.autohotkey.com/boards/viewtopic.php?t=54202#p234192
+; https://www.autohotkey.com/boards/viewtopic.php?t=54202#p234309
+
 VD_init()
 {
     global
