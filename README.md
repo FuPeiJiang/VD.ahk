@@ -3,9 +3,17 @@
 https://www.autohotkey.com/boards/viewtopic.php?f=6&t=83381
 
 # Just run the examples, everything explained inside
+the most useful ones:<br>
+* Numpad1 to go to Desktop 1<br>
+* Numpad2 to go to Desktop 2<br>
+* Numpad3 to go to Desktop 3<br>
+- Numpad4 to move the active window to Desktop 1<br>
+- Numpad5 to move the active window to Desktop 2<br>
+- Numpad6 to move the active window to Desktop 3<br>
+you can remap everything
+<!-- Desktop2`nPress Numpad6 to move the active window to Desktop3 and go to Desktop 3 (follow the window) -->
 
-
-cool fixes:<br>
+## cool fixes:<br>
 * Switching VD does not make icons (on the taskbar) flash<br>
 https://github.com/mzomparelli/zVirtualDesktop/issues/59#issue-227209226
 > Sometimes when I switch desktop, the application that's focused on that desktop becomes highlighted in the task bar.
