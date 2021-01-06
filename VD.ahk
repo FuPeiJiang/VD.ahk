@@ -12,7 +12,6 @@
 ; VD_SwitchDesktop(IVirtualDesktop)
 ; VD_isValidWindow(hWnd)
 ; VD_getWintitle(hWnd)
-; VD_AltTab(){
 ; VD_IsWindow(hWnd){
 ; VD_vtable(ppv, idx)
 

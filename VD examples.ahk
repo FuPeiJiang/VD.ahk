@@ -10,7 +10,7 @@ DetectHiddenWindows, off
 SetWinDelay, -1
 
 Gui,Font, s12, Segoe UI
-gui, add, text,, Press ^d to come back to this window`nPress ^f to see which desktop this window is in`nPress f1 to see your current virtual desktop`nPress Numpad8 to move this to Desktop2`nPress Numpad2 to go to Desktop2`nPress Numpad6 to move this to Desktop3 and go to Desktop 3 (follow the window)
+gui, add, text,, ^ is Ctrl`nPress ^d to come back to this window`nPress ^f to see which desktop this window is in`nPress f1 to see your current virtual desktop`nPress f2 to see the total number of virtual desktops`nPress Numpad8 to move the active window to Desktop2`nPress Numpad2 to go to Desktop2`nPress Numpad6 to move the active window to Desktop3 and go to Desktop 3 (follow the window)
 gui, show,, VD_examplesWinTile
 
 ;include the library
