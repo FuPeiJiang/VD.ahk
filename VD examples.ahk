@@ -7,7 +7,9 @@ Gui,Font, s12, Segoe UI
 gui, add, text,, Press ^d to come back to this window`nPress ^f to see which desktop this window is in`nPress f1 to see your current virtual desktop`nPress Numpad8 to move this to Desktop2`nPress Numpad2 to go to Desktop2`nPress Numpad6 to move this to Desktop3 and go to Desktop 3 (follow the window)
 gui, show,, VD_examplesWinTile
 
-vd_init()
+;include the library
+#Include VD.ahk
+vd_init() ;call this when you want to init global vars, takes 0.04 seconds for me.
 return
 
 ^d::
