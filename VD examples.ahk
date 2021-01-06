@@ -16,6 +16,9 @@ gui, show,, VD_examplesWinTile
 ;include the library
 #Include VD.ahk
 vd_init() ;call this when you want to init global vars, takes 0.04 seconds for me.
+
+;you should WinHide invisible programs that have a window.
+WinHide, % "Malwarebytes Tray Application"
 return
 
 ;getters and stuff
