@@ -2,6 +2,12 @@
 #SingleInstance, force
 SendMode Input ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir% ; Ensures a consistent starting directory.
+SetBatchLines, -1
+#KeyHistory 0
+ListLines Off
+
+DetectHiddenWindows, off
+SetWinDelay, -1
 
 Gui,Font, s12, Segoe UI
 gui, add, text,, Press ^d to come back to this window`nPress ^f to see which desktop this window is in`nPress f1 to see your current virtual desktop`nPress Numpad8 to move this to Desktop2`nPress Numpad2 to go to Desktop2`nPress Numpad6 to move this to Desktop3 and go to Desktop 3 (follow the window)
