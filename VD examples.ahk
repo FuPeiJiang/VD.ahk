@@ -12,25 +12,36 @@ gui, show,, VD_examplesWinTile
 vd_init() ;call this when you want to init global vars, takes 0.04 seconds for me.
 return
 
+;getters and stuff
 ^d::
     VD_goToDesktopOfWindow("VD_examplesWinTile")
     ; VD_goToDesktopOfWindow("ahk_exe code.exe")
 return
 ^f::
     msgbox % VD_getDesktopOfWindow("VD_examplesWinTile")
-    ; p(VD_getDesktopOfWindow("ahk_exe GitHubDesktop.exe"))
+    ; msgbox % VD_getDesktopOfWindow("ahk_exe GitHubDesktop.exe")
 return
 f1::
-    msgbox % VD_getCurrentVirtualDesktop()
+    msgbox % VD_getCurrentDesktop()
 return
 f2::
     msgbox % VD_getCount()
 return
+
+;useful stuff
+pleaseSwitchDesktop:
+    VD_goToDesktop(theDesktopToSwitchTo) ;get last character from numpad{N}
+return
 numpad1::
 numpad2::
 numpad3::
-    VD_goToDesktop(SubStr(A_ThisHotkey, 0)) ;get last character from numpad{N}
+    WindowisFullScreen:=VD_isWindowFullScreen("A")  ;"A" specially means active window
+    theDesktopToSwitchTo:=SubStr(A_ThisHotkey, 0)
+    VD_goToDesktop(theDesktopToSwitchTo) ;get last character from numpad{N}
+    if (WindowisFullScreen)
+        SetTimer, pleaseSwitchDesktop, -50
 return
+
 numpad4::
 numpad5::
 numpad6::
