@@ -58,7 +58,7 @@ return
 
 streamArray(Byref arr,Byref width,Byref height)
 {
-    global ArrayStreamArray, inputStreamIndex, inputStreamTextId, ArrayStreamLength
+    global ArrayStreamArray, ArrayStreamIndex, ArrayStreamTextId, ArrayStreamLength
 
     ArrayStreamLength:=arr.Length()
     if (ArrayStreamLength)
@@ -68,23 +68,23 @@ streamArray(Byref arr,Byref width,Byref height)
 
         Gui, main:New, +hwndShowTextHwnd
         Gui,Font, s12, Segoe UI
-        gui, add, text, w%width% h%height% hwndarrayStreamTextBox, % ArrayStreamArray[1]
+        gui, add, text, w%width% h%height% hwndarrayStreamTextBox, % ArrayStreamArrayStreamArray[1]
         gui, add, button,Default gcontinueArrayStream, continue
         heightPlus:=height+60
         gui, show, w%width% h%heightPlus%
-        inputStreamTextId:=ahk_id %inputStreamTextHwnd%
-        ControlSetText,, %NewText%, %inputStreamTextId%
-        inputStreamIndex:=2
+        ArrayStreamTextId:=ahk_id %ArrayStreamTextHwnd%
+        ControlSetText,, %NewText%, %ArrayStreamTextId%
+        ArrayStreamIndex:=2
     }
 
 }
 continueArrayStream:
-    ControlSetText,,% ArrayStreamArray[inputStreamIndex], %inputStreamTextId%
-    if (inputStreamIndex=ArrayStreamLength) {
-        WinClose, %inputStreamTextId%
+    ControlSetText,,% ArrayStreamArray[ArrayStreamIndex], %ArrayStreamTextId%
+    if (ArrayStreamIndex=ArrayStreamLength) {
+        WinClose, %ArrayStreamTextId%
         return
     }
-    inputStreamIndex++
+    ArrayStreamIndex++
 return
 
 
