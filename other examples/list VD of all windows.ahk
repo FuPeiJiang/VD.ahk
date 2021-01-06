@@ -52,40 +52,64 @@ for k, v in arrayOfWindowsInfo {
     ArrayStreamArray.push(v["str"])
 }
 
-streamArray(ArrayStreamArray,1000,800)
+streamArray(ArrayStreamArray,1100,200)
 return
 
 
 streamArray(Byref arr,Byref width,Byref height)
 {
-    global ArrayStreamArray, ArrayStreamIndex, ArrayStreamTextId, ArrayStreamLength
+    global ArrayStreamArray, ArrayStreamIndex, ArrayStreamGuiId, ArrayStreamTextId, ArrayStreamIndexTextId, ArrayStreamLength
 
     ArrayStreamLength:=arr.Length()
     if (ArrayStreamLength)
     {
         ArrayStreamArray:=arr
 
+        Gui, main:New, +hwndArrayStreamHwnd
+        ArrayStreamGuiId:="ahk_id " ArrayStreamHwnd
+        Gui,Font, s12 Normal, Segoe UI
 
-        Gui, main:New, +hwndShowTextHwnd
-        Gui,Font, s12, Segoe UI
-        gui, add, text, w%width% h%height% hwndarrayStreamTextBox, % ArrayStreamArrayStreamArray[1]
-        gui, add, button,Default gcontinueArrayStream, continue
-        heightPlus:=height+60
+        gui, add, Text,, Index:
+        gui, add, Text, hwndArrayStreamIndexText x+10 w300, 1
+        ArrayStreamIndexTextId:="ahk_id " ArrayStreamIndexText
+        Gui, Font, s12 Bold
+
+        gui, add, Text, x20 w%width% h%height% hwndArrayStreamTextBox, % ArrayStreamArray[1]
+
+        Gui, Font, s18 Bold
+        gui, add, button,w70 h35 gArrayStreamGoLeft, 🠔
+        gui, add, button,w70 h35 Default gArrayStreamGoRight x+10, 🠖
+        Gui,Font, s12 Normal
+
+        heightPlus:=height+90
         gui, show, w%width% h%heightPlus%
-        ArrayStreamTextId:=ahk_id %ArrayStreamTextHwnd%
-        ControlSetText,, %NewText%, %ArrayStreamTextId%
-        ArrayStreamIndex:=2
+        ArrayStreamTextId:="ahk_id " ArrayStreamTextBox
+        ArrayStreamIndex:=1
     }
-
 }
-continueArrayStream:
+#if winactive(ArrayStreamGuiId)
+left::
+ArrayStreamGoLeft:
+    if (ArrayStreamIndex < 2) {
+        SoundPlay, *-1
+        return
+    }
+    ArrayStreamIndex--
     ControlSetText,,% ArrayStreamArray[ArrayStreamIndex], %ArrayStreamTextId%
-    if (ArrayStreamIndex=ArrayStreamLength) {
-        WinClose, %ArrayStreamTextId%
+    ControlSetText,,% ArrayStreamIndex, %ArrayStreamIndexTextId%
+return
+
+right::
+ArrayStreamGoRight:
+    if (ArrayStreamIndex = ArrayStreamLength) {
+        SoundPlay, *-1
         return
     }
     ArrayStreamIndex++
+    ControlSetText,,% ArrayStreamArray[ArrayStreamIndex], %ArrayStreamTextId%
+    ControlSetText,,% ArrayStreamIndex, %ArrayStreamIndexTextId%
 return
+#if
 
 
 sortArrByKey(ar,byref key) {
