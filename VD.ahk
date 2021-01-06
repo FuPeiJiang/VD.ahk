@@ -310,7 +310,7 @@ VD_sendToCurrentDesktop(wintitle,activate:=true)
 
         DllCall(MoveViewToDesktop, "ptr", IVirtualDesktopManagerInternal, "Ptr", thePView, "UPtr", CurrentIVirtualDesktop, "UInt")
         if (activate)
-            winactivate, ahk_id %theHwnd%
+            WinActivate, ahk_id %theHwnd%
     }
 
 }
@@ -318,7 +318,8 @@ VD_sendToCurrentDesktop(wintitle,activate:=true)
 VD_SwitchDesktop(IVirtualDesktop)
 {
     global SwitchDesktop, IVirtualDesktopManagerInternal
-    winactivate, ahk_class Shell_TrayWnd
+    ;activate taskbar before
+    WinActivate, ahk_class Shell_TrayWnd
     WinWaitActive, ahk_class Shell_TrayWnd
     DllCall(SwitchDesktop, "ptr", IVirtualDesktopManagerInternal, "UPtr", IVirtualDesktop, "UInt")
     DllCall(SwitchDesktop, "ptr", IVirtualDesktopManagerInternal, "UPtr", IVirtualDesktop, "UInt")
