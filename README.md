@@ -2,7 +2,17 @@
 
 https://www.autohotkey.com/boards/viewtopic.php?f=6&t=83381
 
-# Just run the examples, everything explained inside
+### list of functions:
+```
+; VD_getCurrentDesktop() ;this will return whichDesktop
+; VD_getDesktopOfWindow(wintitle) ;this will return whichDesktop ;please use VD_goToDesktopOfWindow instead if you just want to go there.
+; VD_getCount() ;this will return the number of virtual desktops you currently have
+; VD_goToDesktop(whichDesktop)
+; VD_goToDesktopOfWindow(wintitle, activate:=true)
+; VD_sendToDesktop(wintitle,whichDesktop,followYourWindow:=false,activate:=true)
+; VD_sendToCurrentDesktop(wintitle,activate:=true)
+```
+### Just run the examples, everything explained inside
 the most useful ones:<br>
 * Numpad1 to go to Desktop 1<br>
 * Numpad2 to go to Desktop 2<br>
@@ -39,6 +49,3 @@ https://github.com/mzomparelli/zVirtualDesktop/issues/59#issue-227209226
 
 how ? `WinActivate` taskbar before switching and `WinMinimize` taskbar after arriving
 * Switch VD reliably works in FULLSCREEN thanks to `SetTimer, pleaseSwitchDesktop, -50`
-
-
-
