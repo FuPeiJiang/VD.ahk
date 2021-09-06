@@ -12,7 +12,15 @@ SetControlDelay, -1
 #Include ..\VD.ahk
 VD_init()
 
+lastWindowTitle:=""
+activeWindowTitle:=""
+ArrayStreamArray:=[]
+
+F1::
+global activeWindowTitle,lastWindowTitle,ArrayStreamArray
 arrayOfWindowsInfo:=[] ;to store {desktopNum:number, str:INFO}
+currentDesktop:=VD_getCurrentDesktop()
+WinGetTitle, activeWindowTitle, A
 
 DetectHiddenWindows, on
 WinGet windows, List
@@ -39,22 +47,84 @@ Loop %windows%
         notThatUseFulStr:="`n`nFULLPATH: " OutputFULLPATH "`nPID: " OutputPID "`nID: " id
         WinGet, OutputVar, ProcessPath, A
 
-        arrayOfWindowsInfo.Push({desktopNum:desktopOfWindow, str:whichDesktop useFulStr notThatUseFulStr})
+        arrayOfWindowsInfo.Push({desktopNum:desktopOfWindow, title:OutputTitle, cls:OutputClass, str:whichDesktop useFulStr notThatUseFulStr})
     }
 }
-DetectHiddenWindows, off
 
 ;below is just to print it
 arrayOfWindowsInfo:=sortArrByKey(arrayOfWindowsInfo,"desktopNum")
 
 ArrayStreamArray:=[]
 for k, v in arrayOfWindowsInfo {
-    ArrayStreamArray.push(v["str"])
+    if (lastWindowTitle != "") and (lastWindowTitle = v["title"]) and WinExist(lastWindowTitle)
+    {
+;MsgBox,% v["title"] . "aa"
+        ArrayStreamArray.push(v)
+    }
+}
+for k, v in arrayOfWindowsInfo {
+    if (activeWindowTitle = v["title"])
+    {
+;MsgBox,% v["title"] . "bb"
+        ArrayStreamArray.push(v)
+    }
+}
+for k, v in arrayOfWindowsInfo {
+    if (currentDesktop = v["desktopNum"]) and (v["title"] != activeWindowTitle) and (v["title"] != lastWindowTitle)
+    {
+        ArrayStreamArray.push(v)
+    }
+}
+for k, v in arrayOfWindowsInfo {
+    if (currentDesktop != v["desktopNum"]) and (v["title"] != activeWindowTitle) and (v["title"] != lastWindowTitle)
+    {
+        ArrayStreamArray.push(v)
+    }
 }
 
-streamArray(ArrayStreamArray,1100,200)
+if (lastWindowTitle != "")
+{
+    Menu, windows, DeleteAll
+}
+for k, v in ArrayStreamArray{
+    title:=v["title"]
+;MsgBox,%title%
+    Menu, windows, Add, %title%, ActivateTitle  
+    Menu, windows, Add
+;    Menu, windows, Color, Yellow		; 
+    WinGet, Path, ProcessPath, %title%
+    Try 
+        Menu, windows, Icon, %title%, %Path%,, 0
+    Catch 
+        Menu, windows, Icon, %title%, %A_WinDir%\System32\SHELL32.dll, 3, 0 
+}
+DetectHiddenWindows, off
+
+Menu, windows, Color, Silver		; 
+Menu, windows, Default, %activeWindowTitle%
+;CoordMode, Mouse, Screen
+;MouseMove, (0.4*A_ScreenWidth), (0.35*A_ScreenHeight)
+CoordMode, Menu, Screen
+Xm := (0.25*A_ScreenWidth)
+Ym := (0.25*A_ScreenHeight)
+Menu, windows, Show, %Xm%, %Ym%
+
+;streamArray(Test,1100,200)
 return
 
+ActivateTitle:
+    global activeWindowTitle, lastWindowTitle,ArrayStreamArray
+    DetectHiddenWindows, on
+    SetTitleMatchMode 1
+    WinActivate, %A_ThisMenuItem%
+    DetectHiddenWindows, off
+    for k, v in ArrayStreamArray{
+        if (activeWindowTitle = v["title"])
+        {
+            lastWindowTitle:=v["title"]
+        }
+    }
+return
 
 streamArray(Byref arr,Byref width,Byref height)
 {
