@@ -1,13 +1,16 @@
 #NoEnv ; Recommended for performance and compatibility with future AutoHotkey releases.
-#SingleInstance, force
+#SingleInstance force
 SendMode Input ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir% ; Ensures a consistent starting directory.
-SetBatchLines, -1
+SetBatchLines -1
 #KeyHistory 0
 ListLines Off
+#WinActivateForce
 
-DetectHiddenWindows, off
-SetWinDelay, -1
+Process, Priority,, H
+
+SetWinDelay -1
+SetControlDelay -1
 
 Gui,Font, s12, Segoe UI
 gui, add, text,, ^ is Ctrl`nPress ^d to come back to this window`nPress ^f to see which desktop this window is in`nPress f1 to see your current virtual desktop`nPress f2 to see the total number of virtual desktops`nPress Numpad8 to move the active window to Desktop2`nPress Numpad2 to go to Desktop2`nPress Numpad6 to move the active window to Desktop3 and go to Desktop 3 (follow the window)

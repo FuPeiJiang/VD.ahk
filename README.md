@@ -49,3 +49,20 @@ https://github.com/mzomparelli/zVirtualDesktop/issues/59#issue-227209226
 
 how ? `WinActivate` taskbar before switching and `WinMinimize` taskbar after arriving
 * Switch VD reliably works in FULLSCREEN thanks to `SetTimer, pleaseSwitchDesktop, -50`
+___
+### if you don't use these headers, it will be slow:<br>
+```autohotkey
+#NoEnv ; Recommended for performance and compatibility with future AutoHotkey releases.
+#SingleInstance force
+SendMode Input ; Recommended for new scripts due to its superior speed and reliability.
+SetWorkingDir %A_ScriptDir% ; Ensures a consistent starting directory.
+SetBatchLines -1
+#KeyHistory 0
+ListLines Off
+#WinActivateForce
+
+Process, Priority,, H
+
+SetWinDelay -1
+SetControlDelay -1
+```
