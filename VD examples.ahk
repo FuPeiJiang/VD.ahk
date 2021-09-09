@@ -1,10 +1,10 @@
 #NoEnv ; Recommended for performance and compatibility with future AutoHotkey releases.
 #SingleInstance force
+ListLines Off
+SetBatchLines -1
 SendMode Input ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir% ; Ensures a consistent starting directory.
-SetBatchLines -1
 #KeyHistory 0
-ListLines Off
 #WinActivateForce
 
 Process, Priority,, H
