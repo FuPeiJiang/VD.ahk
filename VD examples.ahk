@@ -13,7 +13,7 @@ SetWinDelay -1
 SetControlDelay -1
 
 Gui,Font, s12, Segoe UI
-gui, add, text,, ^ is Ctrl`nPress ^d to come back to this window`nPress ^f to see which desktop this window is in`nPress f1 to see your current virtual desktop`nPress f2 to see the total number of virtual desktops`nPress Numpad8 to move the active window to Desktop2`nPress Numpad2 to go to Desktop2`nPress Numpad6 to move the active window to Desktop3 and go to Desktop 3 (follow the window)
+gui, add, text,, ^ is Ctrl`nf4 to come back to this window`nf5 to see which desktop this window is in`nf1 to see your current virtual desktop`nf2 to see the total number of virtual desktops`nNumpad8 to move the active window to Desktop2`nNumpad2 to go to Desktop2`nNumpad6 to move the active window to Desktop3 and go to Desktop 3 (follow the window)`nNumpad0 to Toggle "Show this window on all windows"(Pin/UnPin)
 gui, show,, VD_examplesWinTile
 
 ;include the library
@@ -25,11 +25,11 @@ WinHide, % "Malwarebytes Tray Application"
 return
 
 ;getters and stuff
-^d::
+f4::
     VD_goToDesktopOfWindow("VD_examplesWinTile")
     ; VD_goToDesktopOfWindow("ahk_exe code.exe")
 return
-^f::
+f5::
     msgbox % VD_getDesktopOfWindow("VD_examplesWinTile")
     ; msgbox % VD_getDesktopOfWindow("ahk_exe GitHubDesktop.exe")
 return
@@ -67,6 +67,19 @@ numpad9::
     wintitleOfActiveWindow:="ahk_id " WinActive("A")
     whichDesktop:=SubStr(A_ThisHotkey, 0) - 6 ;get last character from numpad{N} and minus 3
     VD_sendToDesktop(wintitleOfActiveWindow,whichDesktop) 
+return
+
+numpad0::
+    VD_TogglePinWindow("A")
+return
+^numpad0::
+    VD_PinWindow("A")
+return
+!numpad0::
+    VD_UnPinWindow("A")
+return
+#numpad0::
+    MsgBox % VD_IsWindowPinned("A")
 return
 
 f3::Exitapp

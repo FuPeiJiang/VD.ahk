@@ -7,6 +7,12 @@
 ; VD_sendToDesktop(wintitle,whichDesktop,followYourWindow:=false,activate:=true)
 ; VD_sendToCurrentDesktop(wintitle,activate:=true)
 
+; "Show this window on all windows"
+; VD_IsWindowPinned(wintitle)
+; VD_TogglePinWindow(wintitle)
+; VD_PinWindow(wintitle)
+; VD_UnPinWindow(wintitle)
+
 ; internal functions
 ; VD_getCurrentIVirtualDesktop()
 ; VD_SwitchDesktop(IVirtualDesktop)
@@ -30,12 +36,22 @@ VD_init()
     GetWindowDesktopId := VD_vtable(IVirtualDesktopManager, 4)
 
     IServiceProvider := ComObjCreate("{C2F03A33-21F5-47FA-B4BB-156362A2F239}", "{6D5140C1-7436-11CE-8034-00AA006009FA}")
+
     IVirtualDesktopManagerInternal := ComObjQuery(IServiceProvider, "{C5E0CDCA-7B6E-41B2-9FC4-D93975CC467B}", "{F31574D6-B682-4CDC-BD56-1827860ABEC6}")
     MoveViewToDesktop := VD_vtable(IVirtualDesktopManagerInternal, 4) ; void MoveViewToDesktop(object pView, IVirtualDesktop desktop);
     GetCurrentDesktop := VD_vtable(IVirtualDesktopManagerInternal, 6) ; IVirtualDesktop GetCurrentDesktop();
     CanViewMoveDesktops := VD_vtable(IVirtualDesktopManagerInternal, 5) ; bool CanViewMoveDesktops(object pView);
     GetDesktops := VD_vtable(IVirtualDesktopManagerInternal, 7) ; IObjectArray GetDesktops();
     SwitchDesktop := VD_vtable(IVirtualDesktopManagerInternal, 9) ; void SwitchDesktop(IVirtualDesktop desktop);
+
+    ;// https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop1803.cs#L180-L188
+    IVirtualDesktopPinnedApps := ComObjQuery(IServiceProvider, "{B5A399E7-1C87-46B8-88E9-FC5747B171BD}", "{4CE81583-1E4C-4632-A621-07A53543148F}")
+    ; IsAppIdPinned := VD_vtable(IVirtualDesktopPinnedApps, 3) ; bool IsAppIdPinned(string appId);
+    ; PinAppID := VD_vtable(IVirtualDesktopPinnedApps, 4) ; void PinAppID(string appId);
+    ; UnpinAppID := VD_vtable(IVirtualDesktopPinnedApps, 5) ; void UnpinAppID(string appId);
+    IsViewPinned := VD_vtable(IVirtualDesktopPinnedApps, 6) ; bool IsViewPinned(IApplicationView applicationView);
+    PinView := VD_vtable(IVirtualDesktopPinnedApps, 7) ; void PinView(IApplicationView applicationView);
+    UnpinView := VD_vtable(IVirtualDesktopPinnedApps, 8) ; void UnpinView(IApplicationView applicationView);
 
     ImmersiveShell := ComObjCreate("{C2F03A33-21F5-47FA-B4BB-156362A2F239}", "{00000000-0000-0000-C000-000000000046}") 
     if !(IApplicationViewCollection := ComObjQuery(ImmersiveShell,"{1841C6D7-4F9D-42C0-AF41-8747538F10E5}","{1841C6D7-4F9D-42C0-AF41-8747538F10E5}" ) ) ; 1607-1809
@@ -233,7 +249,7 @@ VD_goToDesktopOfWindow(wintitle, activate:=true)
 VD_sendToDesktop(wintitle,whichDesktop,followYourWindow:=false,activate:=true)
 {
     global
-    
+
     if (VD_ByrefpViewAndHwnd(thePView, theHwnd)) { ;Byref
         return
     }
@@ -281,6 +297,67 @@ VD_sendToCurrentDesktop(wintitle,activate:=true)
     }
 
 }
+
+; VD_toggleShowOnAllDesktops(wintitle) {
+; VD_toggleShowOnAllDesktops(wintitle) {
+; WinGet, WinExStyle, ExStyle, % wintitle
+; If (WinExStyle & 0x00000080)
+; WinSet, ExStyle, -0x00000080, % wintitle
+; else
+; WinSet, ExStyle, +0x00000080, % wintitle
+; }
+
+; VD_showOnAllDesktops(wintitle, enableOrDisable:=true) {
+; WinSet, ExStyle, % (enableOrDisable ? "+" : "-") "0x00000080", % wintitle
+; }
+
+VD_IsWindowPinned(wintitle) {
+    global IsViewPinned, IVirtualDesktopPinnedApps
+
+    if (VD_ByrefpViewAndHwnd(thePView, theHwnd)) { ;Byref
+        return
+    }
+    ; https://github.com/Ciantic/VirtualDesktopAccessor/blob/5bc1bbaab247b5d72e70abc9432a15275fd2d229/VirtualDesktopAccessor/dllmain.h#L377
+    ; pinnedApps->IsViewPinned(pView, &isPinned);
+    viewIsPinned:=0
+    DllCall(IsViewPinned, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView, "Int*",viewIsPinned)
+    return viewIsPinned
+}
+VD_TogglePinWindow(wintitle) {
+    global IsViewPinned, PinView, UnPinView, IVirtualDesktopPinnedApps
+
+    if (VD_ByrefpViewAndHwnd(thePView, theHwnd)) { ;Byref
+        return
+    }
+
+    viewIsPinned:=0
+    DllCall(IsViewPinned, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView, "Int*",viewIsPinned)
+    if (viewIsPinned) {
+        DllCall(UnPinView, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView)
+    } else {
+        DllCall(PinView, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView)
+    }
+
+}
+VD_PinWindow(wintitle) {
+    global PinView, IVirtualDesktopPinnedApps
+
+    if (VD_ByrefpViewAndHwnd(thePView, theHwnd)) { ;Byref
+        return
+    }
+
+    DllCall(PinView, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView)
+}
+VD_UnPinWindow(wintitle) {
+    global UnPinView, IVirtualDesktopPinnedApps
+
+    if (VD_ByrefpViewAndHwnd(thePView, theHwnd)) { ;Byref
+        return
+    }
+
+    DllCall(UnPinView, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView)
+}
+
 ;start of internal functions
 VD_SwitchDesktop(IVirtualDesktop)
 {

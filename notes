@@ -1,0 +1,61 @@
+/*
+This virtual desktop internal interface header is based on the investigation by NickoTin.
+Visit http://www.cyberforum.ru/blogs/105416/blog3671.html for more detail.
+Thanks for the great information, NicoTin!!
+*/
+
+then how was Windows11 found out ?
+NicoTin again ?
+
+http://stackoverflow.com/a/32417530
+based on https://github.com/Grabacr07/VirtualDesktop
+
+public static readonly Guid CLSID_VirtualDesktopManagerInternal = new Guid("
+C5E0CDCA-7B6E-41B2-9FC4-D93975CC467B
+B2F925B9-5A0F-4D2E-9F4D-2B1507593C10
+internal interface IVirtualDesktopManagerInternal
+	{
+		int GetCount();
+		void MoveViewToDesktop(IApplicationView view, IVirtualDesktop desktop);
+		bool CanViewMoveDesktops(IApplicationView view);
+		IVirtualDesktop GetCurrentDesktop();
+		void GetDesktops(out IObjectArray desktops);
+		[PreserveSig]
+		int GetAdjacentDesktop(IVirtualDesktop from, int direction, out IVirtualDesktop desktop);
+		void SwitchDesktop(IVirtualDesktop desktop);
+		IVirtualDesktop CreateDesktop();
+		void RemoveDesktop(IVirtualDesktop desktop, IVirtualDesktop fallback);
+		IVirtualDesktop FindDesktop(ref Guid desktopid);
+	}
+
+  VS
+
+  {
+  int GetCount(IntPtr hWndOrMon);
+  void MoveViewToDesktop(IApplicationView view, IVirtualDesktop desktop);
+  bool CanViewMoveDesktops(IApplicationView view);
+  IVirtualDesktop GetCurrentDesktop(IntPtr hWndOrMon);
+  void GetDesktops(IntPtr hWndOrMon, out IObjectArray desktops);
+  [PreserveSig]
+  int GetAdjacentDesktop(IVirtualDesktop from, int direction, out IVirtualDesktop desktop);
+  void SwitchDesktop(IntPtr hWndOrMon, IVirtualDesktop desktop);
+  IVirtualDesktop CreateDesktop(IntPtr hWndOrMon);
+  void MoveDesktop(IVirtualDesktop desktop, IntPtr hWndOrMon, int nIndex);
+  void RemoveDesktop(IVirtualDesktop desktop, IVirtualDesktop fallback);
+  IVirtualDesktop FindDesktop(ref Guid desktopid);
+  void GetDesktopSwitchIncludeExcludeViews(IVirtualDesktop desktop, out IObjectArray unknown1, out IObjectArray unknown2);
+  void SetDesktopName(IVirtualDesktop desktop, [MarshalAs(UnmanagedType.HString)] string name);
+  void SetDesktopWallpaper(IVirtualDesktop desktop, [MarshalAs(UnmanagedType.HString)] string path);
+  void UpdateWallpaperPathForAllDesktops([MarshalAs(UnmanagedType.HString)] string path);
+  void CopyDesktopState(IApplicationView pView0, IApplicationView pView1);
+  int GetDesktopIsPerMonitor();
+  void SetDesktopIsPerMonitor(bool state);
+}
+
+searched: B2F925B9-5A0F-4D2E-9F4D-2B1507593C10
+
+https://github.com/Grabacr07/VirtualDesktop/issues/55
+https://github.com/McYoloSwagHam/win3wm/blob/e50cf7f38da0221ede99e1148ebd8d19397b1ed3/guitest/Types.h#L215-L235
+
+WinWM is a tiling window manager inspired by i3wm, it was initially private and commerical, but I decided to opensource it.
+
