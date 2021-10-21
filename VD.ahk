@@ -233,25 +233,9 @@ VD_goToDesktopOfWindow(wintitle, activate:=true)
 VD_sendToDesktop(wintitle,whichDesktop,followYourWindow:=false,activate:=true)
 {
     global
-    thePView:=0
-
-    DetectHiddenWindows, on
-    WinGet, outHwndList, List, %wintitle%
-    DetectHiddenWindows, off
-    loop % outHwndList {
-        IfEqual, False, % VD_isValidWindow(outHwndList%A_Index%), continue
-
-        pView := 0
-        DllCall(GetViewForHwnd, "UPtr", IApplicationViewCollection, "Ptr", outHwndList%A_Index%, "Ptr*", pView, "UInt")
-
-        pfCanViewMoveDesktops := 0
-        DllCall(CanViewMoveDesktops, "ptr", IVirtualDesktopManagerInternal, "Ptr", pView, "int*", pfCanViewMoveDesktops, "UInt") ; return value BOOL
-        if (pfCanViewMoveDesktops)
-        {
-            theHwnd:=outHwndList%A_Index%
-            thePView:=pView
-            break
-        }
+    
+    if (VD_ByrefpViewAndHwnd(thePView, theHwnd)) { ;Byref
+        return
     }
 
     if (thePView) {
@@ -283,27 +267,10 @@ VD_sendToCurrentDesktop(wintitle,activate:=true)
 {
     global
 
-    DetectHiddenWindows, on
-    WinGet, outHwndList, List, %wintitle%
-    DetectHiddenWindows, off
-
-    pfCanViewMoveDesktops:=false
-    thePView:=0
-    loop % outHwndList {
-        IfEqual, False, % VD_isValidWindow(outHwndList%A_Index%), continue
-
-        pView := 0
-        DllCall(GetViewForHwnd, "UPtr", IApplicationViewCollection, "Ptr", outHwndList%A_Index%, "Ptr*", pView, "UInt")
-
-        pfCanViewMoveDesktops := 0
-        DllCall(CanViewMoveDesktops, "ptr", IVirtualDesktopManagerInternal, "Ptr", pView, "int*", pfCanViewMoveDesktops, "UInt") ; return value BOOL
-        if (pfCanViewMoveDesktops)
-        {
-            theHwnd:=outHwndList%A_Index%
-            thePView:=pView
-            break
-        }
+    if (VD_ByrefpViewAndHwnd(thePView, theHwnd)) { ;Byref
+        return
     }
+
     if (pfCanViewMoveDesktops) {
         CurrentIVirtualDesktop := 0
         DllCall(GetCurrentDesktop, "UPtr", IVirtualDesktopManagerInternal, "UPtrP", CurrentIVirtualDesktop, "UInt")
@@ -372,4 +339,32 @@ VD_IsWindow(hWnd){
 VD_vtable(ppv, idx)
 {
     Return NumGet(NumGet(1*ppv)+A_PtrSize*idx)
+}
+
+VD_ByrefpViewAndHwnd(Byref pView,Byref theHwnd) {
+    ;false if found, true if notFound
+    global GetViewForHwnd, IApplicationViewCollection
+    global CanViewMoveDesktops, IVirtualDesktopManagerInternal
+
+    DetectHiddenWindows, on
+    WinGet, outHwndList, List, %wintitle%
+    DetectHiddenWindows, off
+    loop % outHwndList {
+        if (!VD_isValidWindow(outHwndList%A_Index%)) {
+            continue
+        }
+
+        pView := 0
+        DllCall(GetViewForHwnd, "UPtr", IApplicationViewCollection, "Ptr", outHwndList%A_Index%, "Ptr*", pView, "UInt")
+
+        pfCanViewMoveDesktops := 0
+        DllCall(CanViewMoveDesktops, "ptr", IVirtualDesktopManagerInternal, "Ptr", pView, "int*", pfCanViewMoveDesktops, "UInt") ; return value BOOL
+        if (pfCanViewMoveDesktops)
+        {
+            theHwnd:=outHwndList%A_Index%
+            thePView:=pView
+            return false
+        }
+    }
+    return True
 }
