@@ -13,7 +13,7 @@ SetWinDelay -1
 SetControlDelay -1
 
 Gui,Font, s12, Segoe UI
-gui, add, text,, ^ is Ctrl`nf4 to come back to this window`nf5 to see which desktop this window is in`nf1 to see your current virtual desktop`nf2 to see the total number of virtual desktops`nNumpad8 to move the active window to Desktop2`nNumpad2 to go to Desktop2`nNumpad6 to move the active window to Desktop3 and go to Desktop 3 (follow the window)`nNumpad0 to Toggle "Show this window on all windows"(Pin/UnPin)
+gui, add, text,, ^ is Ctrl`nf4 to come back to this window`nf5 to see which desktop this window is in`nf1 to see your current virtual desktop`nf2 to see the total number of virtual desktops`nNumpad8 to move the active window to Desktop2`nNumpad2 to go to Desktop2`nNumpad6 to move the active window to Desktop3 and go to Desktop 3 (follow the window)`nNumpad0 to Toggle "Show this window on all desktops"(Pin/UnPin)
 gui, show,, VD_examplesWinTile
 
 ;include the library

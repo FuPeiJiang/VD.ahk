@@ -12,7 +12,7 @@ https://www.autohotkey.com/boards/viewtopic.php?f=6&t=83381
 ; VD_sendToDesktop(wintitle,whichDesktop,followYourWindow:=false,activate:=true)
 ; VD_sendToCurrentDesktop(wintitle,activate:=true)
 
-; "Show this window on all windows"
+; "Show this window on all desktops"
 ; VD_IsWindowPinned(wintitle)
 ; VD_TogglePinWindow(wintitle)
 ; VD_PinWindow(wintitle)
