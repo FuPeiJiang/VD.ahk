@@ -57,52 +57,52 @@ VD_init()
     ; EXTERN_C const IID IID_IInspectable; : 6 methods
     ; https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop1803.cs#L73
     ; internal interface IApplicationView
-	; {
-		;6  int SetFocus();
-		;7  int SwitchTo();
-		;8  int TryInvokeBack(IntPtr /* IAsyncCallback* */ callback);
-		;9  int GetThumbnailWindow(out IntPtr hwnd);
-		;10 int GetMonitor(out IntPtr /* IImmersiveMonitor */ immersiveMonitor);
-		;11 int GetVisibility(out int visibility);
-		;12 int SetCloak(APPLICATION_VIEW_CLOAK_TYPE cloakType, int unknown);
-		;13 int GetPosition(ref Guid guid /* GUID for IApplicationViewPosition */, out IntPtr /* IApplicationViewPosition** */ position);
-		;14 int SetPosition(ref IntPtr /* IApplicationViewPosition* */ position);
-		;15 int InsertAfterWindow(IntPtr hwnd);
-		;16 int GetExtendedFramePosition(out Rect rect);
-		;17 int GetAppUserModelId([MarshalAs(UnmanagedType.LPWStr)] out string id);
-		;18 int SetAppUserModelId(string id);
-		;19 int IsEqualByAppUserModelId(string id, out int result);
-		;20 int GetViewState(out uint state);
-		;21 int SetViewState(uint state);
-		;22 int GetNeediness(out int neediness);
-		;23 int GetLastActivationTimestamp(out ulong timestamp);
-		;24 int SetLastActivationTimestamp(ulong timestamp);
-		;25 int GetVirtualDesktopId(out Guid guid);
-		;26 int SetVirtualDesktopId(ref Guid guid);
-		;27 int GetShowInSwitchers(out int flag);
-		;28 int SetShowInSwitchers(int flag);
-		;29 int GetScaleFactor(out int factor);
-		;30 int CanReceiveInput(out bool canReceiveInput);
-		;31 int GetCompatibilityPolicyType(out APPLICATION_VIEW_COMPATIBILITY_POLICY flags);
-		;32 int SetCompatibilityPolicyType(APPLICATION_VIEW_COMPATIBILITY_POLICY flags);
-		;33 int GetSizeConstraints(IntPtr /* IImmersiveMonitor* */ monitor, out Size size1, out Size size2);
-		;34 int GetSizeConstraintsForDpi(uint uint1, out Size size1, out Size size2);
-		;35 int SetSizeConstraintsForDpi(ref uint uint1, ref Size size1, ref Size size2);
-		;36 int OnMinSizePreferencesUpdated(IntPtr hwnd);
-		;37 int ApplyOperation(IntPtr /* IApplicationViewOperation* */ operation);
-		;38 int IsTray(out bool isTray);
-		;39 int IsInHighZOrderBand(out bool isInHighZOrderBand);
-		;40 int IsSplashScreenPresented(out bool isSplashScreenPresented);
-		;41 int Flash();
-		;42 int GetRootSwitchableOwner(out IApplicationView rootSwitchableOwner);
-		;43 int EnumerateOwnershipTree(out IObjectArray ownershipTree);
-		;44 int GetEnterpriseId([MarshalAs(UnmanagedType.LPWStr)] out string enterpriseId);
-		;45 int IsMirrored(out bool isMirrored);
-		;46 int Unknown1(out int unknown);
-		;47 int Unknown2(out int unknown);
-		;48 int Unknown3(out int unknown);
-		;49 int Unknown4(out int unknown);
-	; }
+    ; {
+    ;6  int SetFocus();
+    ;7  int SwitchTo();
+    ;8  int TryInvokeBack(IntPtr /* IAsyncCallback* */ callback);
+    ;9  int GetThumbnailWindow(out IntPtr hwnd);
+    ;10 int GetMonitor(out IntPtr /* IImmersiveMonitor */ immersiveMonitor);
+    ;11 int GetVisibility(out int visibility);
+    ;12 int SetCloak(APPLICATION_VIEW_CLOAK_TYPE cloakType, int unknown);
+    ;13 int GetPosition(ref Guid guid /* GUID for IApplicationViewPosition */, out IntPtr /* IApplicationViewPosition** */ position);
+    ;14 int SetPosition(ref IntPtr /* IApplicationViewPosition* */ position);
+    ;15 int InsertAfterWindow(IntPtr hwnd);
+    ;16 int GetExtendedFramePosition(out Rect rect);
+    ;17 int GetAppUserModelId([MarshalAs(UnmanagedType.LPWStr)] out string id);
+    ;18 int SetAppUserModelId(string id);
+    ;19 int IsEqualByAppUserModelId(string id, out int result);
+    ;20 int GetViewState(out uint state);
+    ;21 int SetViewState(uint state);
+    ;22 int GetNeediness(out int neediness);
+    ;23 int GetLastActivationTimestamp(out ulong timestamp);
+    ;24 int SetLastActivationTimestamp(ulong timestamp);
+    ;25 int GetVirtualDesktopId(out Guid guid);
+    ;26 int SetVirtualDesktopId(ref Guid guid);
+    ;27 int GetShowInSwitchers(out int flag);
+    ;28 int SetShowInSwitchers(int flag);
+    ;29 int GetScaleFactor(out int factor);
+    ;30 int CanReceiveInput(out bool canReceiveInput);
+    ;31 int GetCompatibilityPolicyType(out APPLICATION_VIEW_COMPATIBILITY_POLICY flags);
+    ;32 int SetCompatibilityPolicyType(APPLICATION_VIEW_COMPATIBILITY_POLICY flags);
+    ;33 int GetSizeConstraints(IntPtr /* IImmersiveMonitor* */ monitor, out Size size1, out Size size2);
+    ;34 int GetSizeConstraintsForDpi(uint uint1, out Size size1, out Size size2);
+    ;35 int SetSizeConstraintsForDpi(ref uint uint1, ref Size size1, ref Size size2);
+    ;36 int OnMinSizePreferencesUpdated(IntPtr hwnd);
+    ;37 int ApplyOperation(IntPtr /* IApplicationViewOperation* */ operation);
+    ;38 int IsTray(out bool isTray);
+    ;39 int IsInHighZOrderBand(out bool isInHighZOrderBand);
+    ;40 int IsSplashScreenPresented(out bool isSplashScreenPresented);
+    ;41 int Flash();
+    ;42 int GetRootSwitchableOwner(out IApplicationView rootSwitchableOwner);
+    ;43 int EnumerateOwnershipTree(out IObjectArray ownershipTree);
+    ;44 int GetEnterpriseId([MarshalAs(UnmanagedType.LPWStr)] out string enterpriseId);
+    ;45 int IsMirrored(out bool isMirrored);
+    ;46 int Unknown1(out int unknown);
+    ;47 int Unknown2(out int unknown);
+    ;48 int Unknown3(out int unknown);
+    ;49 int Unknown4(out int unknown);
+    ; }
 
     ImmersiveShell := ComObjCreate("{C2F03A33-21F5-47FA-B4BB-156362A2F239}", "{00000000-0000-0000-C000-000000000046}") 
     if !(IApplicationViewCollection := ComObjQuery(ImmersiveShell,"{1841C6D7-4F9D-42C0-AF41-8747538F10E5}","{1841C6D7-4F9D-42C0-AF41-8747538F10E5}" ) ) ; 1607-1809
