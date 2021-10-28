@@ -415,50 +415,53 @@ VD_UnPinWindow(wintitle) {
 }
 
 VD_IsAppPinned(wintitle) {
-    global IsViewPinned, IVirtualDesktopPinnedApps
+    global IsAppIdPinned, IVirtualDesktopPinnedApps
 
     if (VD_ByrefpViewAndHwnd(wintitle, thePView, theHwnd)) { ;Byref
         return
     }
-    ; https://github.com/Ciantic/VirtualDesktopAccessor/blob/5bc1bbaab247b5d72e70abc9432a15275fd2d229/VirtualDesktopAccessor/dllmain.h#L377
-    ; pinnedApps->IsViewPinned(pView, &isPinned);
-    viewIsPinned:=0
-    DllCall(IsViewPinned, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView, "Int*",viewIsPinned)
-    return viewIsPinned
+
+    appId:=VD_AppIdFromView(thePView)
+    p(appId)
+
+    appIsPinned:=0
+    DllCall(IsAppIdPinned, "UPtr", IVirtualDesktopPinnedApps, "Ptr", appId, "Int*",appIsPinned)
+    p(appIsPinned)
+    return appIsPinned
 }
 VD_TogglePinApp(wintitle) {
-    global IsViewPinned, PinView, UnPinView, IVirtualDesktopPinnedApps
+    global IsAppIdPinned, PinAppID, UnpinAppID, IVirtualDesktopPinnedApps
 
     if (VD_ByrefpViewAndHwnd(wintitle, thePView, theHwnd)) { ;Byref
         return
     }
 
     viewIsPinned:=0
-    DllCall(IsViewPinned, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView, "Int*",viewIsPinned)
+    DllCall(IsAppIdPinned, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView, "Int*",viewIsPinned)
     if (viewIsPinned) {
-        DllCall(UnPinView, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView)
+        DllCall(UnpinAppID, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView)
     } else {
-        DllCall(PinView, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView)
+        DllCall(PinAppID, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView)
     }
 
 }
 VD_PinApp(wintitle) {
-    global PinView, IVirtualDesktopPinnedApps
+    global PinAppID, IVirtualDesktopPinnedApps
 
     if (VD_ByrefpViewAndHwnd(wintitle, thePView, theHwnd)) { ;Byref
         return
     }
 
-    DllCall(PinView, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView)
+    DllCall(PinAppID, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView)
 }
 VD_UnPinApp(wintitle) {
-    global UnPinView, IVirtualDesktopPinnedApps
+    global UnpinAppID, IVirtualDesktopPinnedApps
 
     if (VD_ByrefpViewAndHwnd(wintitle, thePView, theHwnd)) { ;Byref
         return
     }
 
-    DllCall(UnPinView, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView)
+    DllCall(UnpinAppID, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView)
 }
 
 ;start of internal functions
@@ -521,13 +524,12 @@ VD_vtable(ppv, idx)
     Return NumGet(NumGet(0+ppv)+A_PtrSize*idx)
 }
 
-VD_AppIdFromHwndtheHwnd(theHwnd) {
-    view:=VD_ViewFromHwnd(theHwnd)
+VD_AppIdFromView(view) {
     ; revelation, view IS the object, I was looking everywhere for CLSID of IApplicationView
 
     GetAppUserModelId:=VD_vtable(view, 17)
 
-    p(GetAppUserModelId)
+    ; p(GetAppUserModelId)
 
     ; appId:=""
     ; VarSetCapacity(appId, 3000)
@@ -553,12 +555,13 @@ VD_AppIdFromHwndtheHwnd(theHwnd) {
     ; https://docs.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-getcurrentprocessexplicitappusermodelid?redirectedfrom=MSDN
     ;   [out] PWSTR *AppID
     ; A pointer that receives the address of the AppUserModelID assigned to the process. The caller is responsible for freeing this string with CoTaskMemFree when it is no longer needed. (lol)
-    p(appId)
-    p(StrGet(appId, "UTF-16"))
 
-    File := FileOpen(A_LineFile "\..\notes\dump", "w")
-    File.RawWrite(0+appId, 3000)
-    File.Close()
+    ; p(appId)
+    ; p(StrGet(appId, "UTF-16"))
+
+    ; File := FileOpen(A_LineFile "\..\notes\dump", "w")
+    ; File.RawWrite(0+appId, 3000)
+    ; File.Close()
 
     return appId
 }
