@@ -46,15 +46,67 @@ VD_init()
 
     ;// https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop1803.cs#L180-L188
     IVirtualDesktopPinnedApps := ComObjQuery(IServiceProvider, "{B5A399E7-1C87-46B8-88E9-FC5747B171BD}", "{4CE81583-1E4C-4632-A621-07A53543148F}")
-    ; IsAppIdPinned := VD_vtable(IVirtualDesktopPinnedApps, 3) ; bool IsAppIdPinned(string appId);
-    ; PinAppID := VD_vtable(IVirtualDesktopPinnedApps, 4) ; void PinAppID(string appId);
-    ; UnpinAppID := VD_vtable(IVirtualDesktopPinnedApps, 5) ; void UnpinAppID(string appId);
+    IsAppIdPinned := VD_vtable(IVirtualDesktopPinnedApps, 3) ; bool IsAppIdPinned(string appId);
+    PinAppID := VD_vtable(IVirtualDesktopPinnedApps, 4) ; void PinAppID(string appId);
+    UnpinAppID := VD_vtable(IVirtualDesktopPinnedApps, 5) ; void UnpinAppID(string appId);
     IsViewPinned := VD_vtable(IVirtualDesktopPinnedApps, 6) ; bool IsViewPinned(IApplicationView applicationView);
     PinView := VD_vtable(IVirtualDesktopPinnedApps, 7) ; void PinView(IApplicationView applicationView);
     UnpinView := VD_vtable(IVirtualDesktopPinnedApps, 8) ; void UnpinView(IApplicationView applicationView);
 
+    IApplicationView := ComObjQuery(IServiceProvider, "{B5A399E7-1C87-46B8-88E9-FC5747B171BD}", "{F31574D6-B682-4CDC-BD56-1827860ABEC6}")
+    ; EXTERN_C const IID IID_IInspectable; : 6 methods
+    ; https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop1803.cs#L73
+    ; internal interface IApplicationView
+	; {
+		;6  int SetFocus();
+		;7  int SwitchTo();
+		;8  int TryInvokeBack(IntPtr /* IAsyncCallback* */ callback);
+		;9  int GetThumbnailWindow(out IntPtr hwnd);
+		;10 int GetMonitor(out IntPtr /* IImmersiveMonitor */ immersiveMonitor);
+		;11 int GetVisibility(out int visibility);
+		;12 int SetCloak(APPLICATION_VIEW_CLOAK_TYPE cloakType, int unknown);
+		;13 int GetPosition(ref Guid guid /* GUID for IApplicationViewPosition */, out IntPtr /* IApplicationViewPosition** */ position);
+		;14 int SetPosition(ref IntPtr /* IApplicationViewPosition* */ position);
+		;15 int InsertAfterWindow(IntPtr hwnd);
+		;16 int GetExtendedFramePosition(out Rect rect);
+		;17 int GetAppUserModelId([MarshalAs(UnmanagedType.LPWStr)] out string id);
+		;18 int SetAppUserModelId(string id);
+		;19 int IsEqualByAppUserModelId(string id, out int result);
+		;20 int GetViewState(out uint state);
+		;21 int SetViewState(uint state);
+		;22 int GetNeediness(out int neediness);
+		;23 int GetLastActivationTimestamp(out ulong timestamp);
+		;24 int SetLastActivationTimestamp(ulong timestamp);
+		;25 int GetVirtualDesktopId(out Guid guid);
+		;26 int SetVirtualDesktopId(ref Guid guid);
+		;27 int GetShowInSwitchers(out int flag);
+		;28 int SetShowInSwitchers(int flag);
+		;29 int GetScaleFactor(out int factor);
+		;30 int CanReceiveInput(out bool canReceiveInput);
+		;31 int GetCompatibilityPolicyType(out APPLICATION_VIEW_COMPATIBILITY_POLICY flags);
+		;32 int SetCompatibilityPolicyType(APPLICATION_VIEW_COMPATIBILITY_POLICY flags);
+		;33 int GetSizeConstraints(IntPtr /* IImmersiveMonitor* */ monitor, out Size size1, out Size size2);
+		;34 int GetSizeConstraintsForDpi(uint uint1, out Size size1, out Size size2);
+		;35 int SetSizeConstraintsForDpi(ref uint uint1, ref Size size1, ref Size size2);
+		;36 int OnMinSizePreferencesUpdated(IntPtr hwnd);
+		;37 int ApplyOperation(IntPtr /* IApplicationViewOperation* */ operation);
+		;38 int IsTray(out bool isTray);
+		;39 int IsInHighZOrderBand(out bool isInHighZOrderBand);
+		;40 int IsSplashScreenPresented(out bool isSplashScreenPresented);
+		;41 int Flash();
+		;42 int GetRootSwitchableOwner(out IApplicationView rootSwitchableOwner);
+		;43 int EnumerateOwnershipTree(out IObjectArray ownershipTree);
+		;44 int GetEnterpriseId([MarshalAs(UnmanagedType.LPWStr)] out string enterpriseId);
+		;45 int IsMirrored(out bool isMirrored);
+		;46 int Unknown1(out int unknown);
+		;47 int Unknown2(out int unknown);
+		;48 int Unknown3(out int unknown);
+		;49 int Unknown4(out int unknown);
+	; }
+
     ImmersiveShell := ComObjCreate("{C2F03A33-21F5-47FA-B4BB-156362A2F239}", "{00000000-0000-0000-C000-000000000046}") 
     if !(IApplicationViewCollection := ComObjQuery(ImmersiveShell,"{1841C6D7-4F9D-42C0-AF41-8747538F10E5}","{1841C6D7-4F9D-42C0-AF41-8747538F10E5}" ) ) ; 1607-1809
+    ; if !(IApplicationViewCollection := ComObjQuery(ImmersiveShell,"{1841C6D7-4F9D-42C0-AF41-8747538F10E5}" ) ) ; 1607-1809
     {
         MsgBox IApplicationViewCollection interface not supported.
     }
@@ -250,7 +302,7 @@ VD_sendToDesktop(wintitle,whichDesktop,followYourWindow:=false,activate:=true)
 {
     global
 
-    if (VD_ByrefpViewAndHwnd(thePView, theHwnd)) { ;Byref
+    if (VD_ByrefpViewAndHwnd(wintitle, thePView, theHwnd)) { ;Byref
         return
     }
 
@@ -283,7 +335,7 @@ VD_sendToCurrentDesktop(wintitle,activate:=true)
 {
     global
 
-    if (VD_ByrefpViewAndHwnd(thePView, theHwnd)) { ;Byref
+    if (VD_ByrefpViewAndHwnd(wintitle, thePView, theHwnd)) { ;Byref
         return
     }
 
@@ -314,7 +366,7 @@ VD_sendToCurrentDesktop(wintitle,activate:=true)
 VD_IsWindowPinned(wintitle) {
     global IsViewPinned, IVirtualDesktopPinnedApps
 
-    if (VD_ByrefpViewAndHwnd(thePView, theHwnd)) { ;Byref
+    if (VD_ByrefpViewAndHwnd(wintitle, thePView, theHwnd)) { ;Byref
         return
     }
     ; https://github.com/Ciantic/VirtualDesktopAccessor/blob/5bc1bbaab247b5d72e70abc9432a15275fd2d229/VirtualDesktopAccessor/dllmain.h#L377
@@ -326,7 +378,7 @@ VD_IsWindowPinned(wintitle) {
 VD_TogglePinWindow(wintitle) {
     global IsViewPinned, PinView, UnPinView, IVirtualDesktopPinnedApps
 
-    if (VD_ByrefpViewAndHwnd(thePView, theHwnd)) { ;Byref
+    if (VD_ByrefpViewAndHwnd(wintitle, thePView, theHwnd)) { ;Byref
         return
     }
 
@@ -342,7 +394,7 @@ VD_TogglePinWindow(wintitle) {
 VD_PinWindow(wintitle) {
     global PinView, IVirtualDesktopPinnedApps
 
-    if (VD_ByrefpViewAndHwnd(thePView, theHwnd)) { ;Byref
+    if (VD_ByrefpViewAndHwnd(wintitle, thePView, theHwnd)) { ;Byref
         return
     }
 
@@ -351,7 +403,55 @@ VD_PinWindow(wintitle) {
 VD_UnPinWindow(wintitle) {
     global UnPinView, IVirtualDesktopPinnedApps
 
-    if (VD_ByrefpViewAndHwnd(thePView, theHwnd)) { ;Byref
+    if (VD_ByrefpViewAndHwnd(wintitle, thePView, theHwnd)) { ;Byref
+        return
+    }
+
+    DllCall(UnPinView, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView)
+}
+
+
+VD_IsAppPinned(wintitle) {
+    global IsViewPinned, IVirtualDesktopPinnedApps
+
+    if (VD_ByrefpViewAndHwnd(wintitle, thePView, theHwnd)) { ;Byref
+        return
+    }
+    ; https://github.com/Ciantic/VirtualDesktopAccessor/blob/5bc1bbaab247b5d72e70abc9432a15275fd2d229/VirtualDesktopAccessor/dllmain.h#L377
+    ; pinnedApps->IsViewPinned(pView, &isPinned);
+    viewIsPinned:=0
+    DllCall(IsViewPinned, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView, "Int*",viewIsPinned)
+    return viewIsPinned
+}
+VD_TogglePinApp(wintitle) {
+    global IsViewPinned, PinView, UnPinView, IVirtualDesktopPinnedApps
+
+    if (VD_ByrefpViewAndHwnd(wintitle, thePView, theHwnd)) { ;Byref
+        return
+    }
+
+    viewIsPinned:=0
+    DllCall(IsViewPinned, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView, "Int*",viewIsPinned)
+    if (viewIsPinned) {
+        DllCall(UnPinView, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView)
+    } else {
+        DllCall(PinView, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView)
+    }
+
+}
+VD_PinApp(wintitle) {
+    global PinView, IVirtualDesktopPinnedApps
+
+    if (VD_ByrefpViewAndHwnd(wintitle, thePView, theHwnd)) { ;Byref
+        return
+    }
+
+    DllCall(PinView, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView)
+}
+VD_UnPinApp(wintitle) {
+    global UnPinView, IVirtualDesktopPinnedApps
+
+    if (VD_ByrefpViewAndHwnd(wintitle, thePView, theHwnd)) { ;Byref
         return
     }
 
@@ -415,24 +515,34 @@ VD_IsWindow(hWnd){
 
 VD_vtable(ppv, idx)
 {
-    Return NumGet(NumGet(1*ppv)+A_PtrSize*idx)
+    Return NumGet(NumGet(0+ppv)+A_PtrSize*idx)
 }
 
-VD_ByrefpViewAndHwnd(Byref pView,Byref theHwnd) {
-    ;false if found, true if notFound
+VD_AppIdFromHwndtheHwnd() {
+    view:=VD_ViewFromHwnd(theHwnd)
+
+}
+
+VD_ViewFromHwnd(theHwnd) {
     global GetViewForHwnd, IApplicationViewCollection
+    pView := 0
+    DllCall(GetViewForHwnd, "UPtr", IApplicationViewCollection, "Ptr", theHwnd, "Ptr*", pView, "UInt")
+    return pView
+}
+
+VD_ByrefpViewAndHwnd(wintitle, Byref pView,Byref theHwnd) {
+    ;false if found, true if notFound
     global CanViewMoveDesktops, IVirtualDesktopManagerInternal
 
     DetectHiddenWindows, on
-    WinGet, outHwndList, List, %wintitle%
+    WinGet, outHwndList, List, % wintitle
     DetectHiddenWindows, off
     loop % outHwndList {
         if (!VD_isValidWindow(outHwndList%A_Index%)) {
             continue
         }
 
-        pView := 0
-        DllCall(GetViewForHwnd, "UPtr", IApplicationViewCollection, "Ptr", outHwndList%A_Index%, "Ptr*", pView, "UInt")
+        pView:=VD_ViewFromHwnd(outHwndList%A_Index%)
 
         pfCanViewMoveDesktops := 0
         DllCall(CanViewMoveDesktops, "ptr", IVirtualDesktopManagerInternal, "Ptr", pView, "int*", pfCanViewMoveDesktops, "UInt") ; return value BOOL
