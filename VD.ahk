@@ -105,8 +105,12 @@ VD_init()
     ; }
 
     ImmersiveShell := ComObjCreate("{C2F03A33-21F5-47FA-B4BB-156362A2F239}", "{00000000-0000-0000-C000-000000000046}") 
+    ; if !(IApplicationViewCollection := ComObjQuery(ImmersiveShell,"{1841C6D7-4F9D-42C0-AF41-8747538F10E5}" ) ) ; doesn't work
+    ; SAME CLSID and IID ?
+    ; wait it's not CLSID:
+    ; SID
+    ; A service identifier in the same form as IID. When omitting this parameter, also omit the comma.
     if !(IApplicationViewCollection := ComObjQuery(ImmersiveShell,"{1841C6D7-4F9D-42C0-AF41-8747538F10E5}","{1841C6D7-4F9D-42C0-AF41-8747538F10E5}" ) ) ; 1607-1809
-    ; if !(IApplicationViewCollection := ComObjQuery(ImmersiveShell,"{1841C6D7-4F9D-42C0-AF41-8747538F10E5}" ) ) ; 1607-1809
     {
         MsgBox IApplicationViewCollection interface not supported.
     }
@@ -410,7 +414,6 @@ VD_UnPinWindow(wintitle) {
     DllCall(UnPinView, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView)
 }
 
-
 VD_IsAppPinned(wintitle) {
     global IsViewPinned, IVirtualDesktopPinnedApps
 
@@ -518,9 +521,46 @@ VD_vtable(ppv, idx)
     Return NumGet(NumGet(0+ppv)+A_PtrSize*idx)
 }
 
-VD_AppIdFromHwndtheHwnd() {
+VD_AppIdFromHwndtheHwnd(theHwnd) {
     view:=VD_ViewFromHwnd(theHwnd)
+    ; revelation, view IS the object, I was looking everywhere for CLSID of IApplicationView
 
+    GetAppUserModelId:=VD_vtable(view, 17)
+
+    p(GetAppUserModelId)
+
+    ; appId:=""
+    ; VarSetCapacity(appId, 3000)
+    ; DllCall(GetAppUserModelId, "UPtr", view, "Ptr", &appId)
+    DllCall(GetAppUserModelId, "UPtr", view, "Ptr*", appId)
+
+    ; Ptr* passes the address to Receive the string
+    ; &RECT passes the address to, well input the RECT, not for output
+    ; VarSetCapacity(Rect, 16)  ; A RECT is a struct consisting of four 32-bit integers (i.e. 4*4=16).
+    ; DllCall("GetWindowRect", "Ptr", WinExist(), "Ptr", &Rect)  ; WinExist() returns an HWND.
+    ; MsgBox % "Left " . NumGet(Rect, 0, "Int") . " Top " . NumGet(Rect, 4, "Int")
+    ; . " Right " . NumGet(Rect, 8, "Int") . " Bottom " . NumGet(Rect, 12, "Int")
+    ; wait what?, now I'm confused
+    ; it is because the function says [out]. not in. [in] write to YOUR struct
+    ; , [out] CREATES the struct and returns the pointer to you
+
+    ; DllCall(GetAppUserModelId, "UPtr", view, "Str", appId)
+    ; p(appId)
+    ; DllCall(GetAppUserModelId, "UPtr", view, "Ptr", &appId)
+    ; p(StrGet(appId, 3000, "UTF-16"))
+
+    ; https://stackoverflow.com/questions/27977474/how-to-get-appusermodelid-for-any-app-in-windows-7-8-using-vc#27977668
+    ; https://docs.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-getcurrentprocessexplicitappusermodelid?redirectedfrom=MSDN
+    ;   [out] PWSTR *AppID
+    ; A pointer that receives the address of the AppUserModelID assigned to the process. The caller is responsible for freeing this string with CoTaskMemFree when it is no longer needed. (lol)
+    p(appId)
+    p(StrGet(appId, "UTF-16"))
+
+    File := FileOpen(A_LineFile "\..\notes\dump", "w")
+    File.RawWrite(0+appId, 3000)
+    File.Close()
+
+    return appId
 }
 
 VD_ViewFromHwnd(theHwnd) {
