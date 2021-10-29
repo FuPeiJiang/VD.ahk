@@ -13,6 +13,12 @@
 ; VD_PinWindow(wintitle)
 ; VD_UnPinWindow(wintitle)
 
+; "Show windows from this app on all desktops"
+; VD_IsAppPinned(wintitle)
+; VD_TogglePinApp(wintitle)
+; VD_PinApp(wintitle)
+; VD_UnPinApp(wintitle)
+
 ; internal functions
 ; VD_getCurrentIVirtualDesktop()
 ; VD_SwitchDesktop(IVirtualDesktop)
@@ -422,11 +428,9 @@ VD_IsAppPinned(wintitle) {
     }
 
     appId:=VD_AppIdFromView(thePView)
-    p(appId)
 
     appIsPinned:=0
     DllCall(IsAppIdPinned, "UPtr", IVirtualDesktopPinnedApps, "Ptr", appId, "Int*",appIsPinned)
-    p(appIsPinned)
     return appIsPinned
 }
 VD_TogglePinApp(wintitle) {
@@ -436,12 +440,13 @@ VD_TogglePinApp(wintitle) {
         return
     }
 
-    viewIsPinned:=0
-    DllCall(IsAppIdPinned, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView, "Int*",viewIsPinned)
-    if (viewIsPinned) {
-        DllCall(UnpinAppID, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView)
+    appId:=VD_AppIdFromView(thePView)
+
+    DllCall(IsAppIdPinned, "UPtr", IVirtualDesktopPinnedApps, "Ptr", appId, "Int*",appIsPinned)
+    if (appIsPinned) {
+        DllCall(UnpinAppID, "UPtr", IVirtualDesktopPinnedApps, "Ptr", appId)
     } else {
-        DllCall(PinAppID, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView)
+        DllCall(PinAppID, "UPtr", IVirtualDesktopPinnedApps, "Ptr", appId)
     }
 
 }
@@ -452,7 +457,9 @@ VD_PinApp(wintitle) {
         return
     }
 
-    DllCall(PinAppID, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView)
+    appId:=VD_AppIdFromView(thePView)
+
+    DllCall(PinAppID, "UPtr", IVirtualDesktopPinnedApps, "Ptr", appId)
 }
 VD_UnPinApp(wintitle) {
     global UnpinAppID, IVirtualDesktopPinnedApps
@@ -461,7 +468,9 @@ VD_UnPinApp(wintitle) {
         return
     }
 
-    DllCall(UnpinAppID, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView)
+    appId:=VD_AppIdFromView(thePView)
+
+    DllCall(UnpinAppID, "UPtr", IVirtualDesktopPinnedApps, "Ptr", appId)
 }
 
 ;start of internal functions
