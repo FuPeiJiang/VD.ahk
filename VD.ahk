@@ -51,6 +51,9 @@ VD_init()
     GetDesktops := VD_vtable(IVirtualDesktopManagerInternal, 7) ; IObjectArray GetDesktops();
     GetAdjacentDesktop := VD_vtable(IVirtualDesktopManagerInternal, 8) ; int GetAdjacentDesktop(IVirtualDesktop from, int direction, out IVirtualDesktop desktop);
     SwitchDesktop := VD_vtable(IVirtualDesktopManagerInternal, 9) ; void SwitchDesktop(IVirtualDesktop desktop);
+    ; CreateDesktop := VD_vtable(IVirtualDesktopManagerInternal, 9) ; IVirtualDesktop CreateDesktop();
+    ; RemoveDesktop := VD_vtable(IVirtualDesktopManagerInternal, 9) ; void RemoveDesktop(IVirtualDesktop desktop, IVirtualDesktop fallback);
+    FindDesktop := VD_vtable(IVirtualDesktopManagerInternal, 9) ; IVirtualDesktop FindDesktop(ref Guid desktopid);
 
     ;// https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop1803.cs#L180-L188
     IVirtualDesktopPinnedApps := ComObjQuery(IServiceProvider, "{B5A399E7-1C87-46B8-88E9-FC5747B171BD}", "{4CE81583-1E4C-4632-A621-07A53543148F}")
@@ -183,17 +186,21 @@ VD_getDesktopOfWindow(wintitle)
         IfEqual, False, % VD_isValidWindow(hwndsOfWinTitle%A_Index%), continue
 
         VarSetCapacity(vd_GUID, 16)
-        vd_HRESULT := DllCall(GetWindowDesktopId, "UPtr", IVirtualDesktopManager, "Ptr", hwndsOfWinTitle%A_Index%, "UPtr", &vd_GUID, "UInt")
+        ; Guid GetWindowDesktopId(IntPtr topLevelWindow);
+        vd_HRESULT := DllCall(GetWindowDesktopId, "UPtr", IVirtualDesktopManager, "Ptr", hwndsOfWinTitle%A_Index%, "Ptr", &vd_GUID, "UInt")
         if ( !vd_HRESULT ) ; OK
         {
             VarSetCapacity(vd_strGUID, (38 + 1) * 2)
             DllCall("Ole32.dll\StringFromGUID2", "UPtr", &vd_GUID, "UPtr", &vd_strGUID, "Int", 38 + 1)
             desktopOfWindow:=StrGet(&vd_strGUID, "UTF-16")
-            d(desktopOfWindow)
-            
+            ; d(desktopOfWindow)
+
             DllCall(GetAdjacentDesktop, "UPtr", IVirtualDesktopManagerInternal, "Ptr", CurrentIVirtualDesktop, "UInt", 4, "Ptr*", rightDesktop)
 
             if (desktopOfWindow and desktopOfWindow!="{00000000-0000-0000-0000-000000000000}") {
+
+                d("VD_IDesktopFromGUID(vd_GUID)", VD_IDesktopFromGUID(vd_GUID))
+
                 break
             }
         }
@@ -586,6 +593,19 @@ VD_ViewFromHwnd(theHwnd) {
     pView := 0
     DllCall(GetViewForHwnd, "UPtr", IApplicationViewCollection, "Ptr", theHwnd, "Ptr*", pView, "UInt")
     return pView
+}
+
+VD_IDesktopFromGUID(guid) {
+    global FindDesktop, IVirtualDesktopManagerInternal
+    bruh:=&guid
+    IDesktop:=""
+    e()
+    ok:=DllCall(FindDesktop, "UPtr", IVirtualDesktopManagerInternal, "Ptr", &guid, "Ptr*", IDesktop, "Ptr*")
+    ; 14007 0xc0000005
+
+    ; it's SUPPOSED TO RETURN 0, because it's NOT a IDesktop, it's on ALL VD
+    ; but doesn't work EVEN for stuff not on all desktops
+    return IDesktop
 }
 
 VD_ByrefpViewAndHwnd(wintitle, Byref pView,Byref theHwnd) {

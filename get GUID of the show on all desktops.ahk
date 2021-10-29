@@ -47,7 +47,6 @@ WinSet, Redraw
 Postmessage,0xB1,9,9,, % "ahk_id " HWndExplanation_Edit ;move caret to: ^ is Ctrl|
 
 
-
 ;include the library
 #Include VD.ahk
 vd_init() ;call this when you want to init global vars, takes 0.04 seconds for me.
@@ -57,7 +56,9 @@ WinHide, % "Malwarebytes Tray Application"
 
 ;autoexecute section start
 
-VD_PinApp("VD_examplesWinTile")
+VD_UnPinWindow("VD_examplesWinTile")
+VD_UnPinApp("VD_examplesWinTile")
+; VD_PinApp("VD_examplesWinTile")
 msgbox % VD_getDesktopOfWindow("VD_examplesWinTile")
 ; ALL {BB64D5B7-4DE3-4AB2-A87C-DB7601AEA7DC}
 
