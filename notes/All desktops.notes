@@ -1,0 +1,15 @@
+int GetAdjacentDesktop(IVirtualDesktop from, int direction, out IVirtualDesktop desktop);
+
+enum AdjacentDesktop
+{
+    // Соседний рабочий стол слева
+    LeftDirection = 3,
+    // Соседний рабочий стол справа
+    RightDirection = 4
+};
+https://social.msdn.microsoft.com/Forums/windowsdesktop/en-US/fd52fc39-d1f3-4da8-8b68-debceab75ffd/requesting-api-calls-for-windows-10s-virtual-desktops?forum=windowsgeneraldevelopmentissues
+
+I can destroy the virtual desktop, I can Move windows to there, but what's the point..
+I can get adjacent lol
+
+void GetAt(int index, ref Guid iid, [MarshalAs(UnmanagedType.Interface)]out object obj);
