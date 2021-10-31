@@ -13,3 +13,5 @@ I can destroy the virtual desktop, I can Move windows to there, but what's the p
 I can get adjacent lol
 
 void GetAt(int index, ref Guid iid, [MarshalAs(UnmanagedType.Interface)]out object obj);
+
+HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VirtualDesktops
