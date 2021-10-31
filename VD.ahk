@@ -362,14 +362,12 @@ VD_sendToCurrentDesktop(wintitle,activate:=true)
         return
     }
 
-    if (pfCanViewMoveDesktops) {
-        CurrentIVirtualDesktop := 0
-        DllCall(GetCurrentDesktop, "UPtr", IVirtualDesktopManagerInternal, "UPtrP", CurrentIVirtualDesktop, "UInt")
+    CurrentIVirtualDesktop := 0
+    DllCall(GetCurrentDesktop, "UPtr", IVirtualDesktopManagerInternal, "UPtrP", CurrentIVirtualDesktop, "UInt")
 
-        DllCall(MoveViewToDesktop, "ptr", IVirtualDesktopManagerInternal, "Ptr", thePView, "UPtr", CurrentIVirtualDesktop, "UInt")
-        if (activate)
-            WinActivate, ahk_id %theHwnd%
-    }
+    DllCall(MoveViewToDesktop, "ptr", IVirtualDesktopManagerInternal, "Ptr", thePView, "UPtr", CurrentIVirtualDesktop, "UInt")
+    if (activate)
+        WinActivate, ahk_id %theHwnd%
 
 }
 
