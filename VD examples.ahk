@@ -80,17 +80,11 @@ f2::
 return
 
 ;useful stuff
-pleaseSwitchDesktop:
-    VD_goToDesktop(theDesktopToSwitchTo) ;get last character from numpad{N}
-return
 numpad1::
 numpad2::
 numpad3::
-    WindowisFullScreen:=VD_isWindowFullScreen("A") ;"A" specially means active window
     theDesktopToSwitchTo:=SubStr(A_ThisHotkey, 0)
     VD_goToDesktop(theDesktopToSwitchTo) ;get last character from numpad{N}
-    if (WindowisFullScreen)
-        SetTimer, pleaseSwitchDesktop, -50
 return
 
 numpad4::

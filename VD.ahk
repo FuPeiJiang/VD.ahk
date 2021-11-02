@@ -257,23 +257,17 @@ VD_getCount()
 }
 VD_goToDesktop(whichDesktop)
 {
-    global
-    IObjectArray := 0
-    DllCall(GetDesktops, "UPtr", IVirtualDesktopManagerInternal, "UPtrP", IObjectArray, "UInt")
+    WindowisFullScreen:=VD_isWindowFullScreen("A") ;"A" specially means active window
+    VD_SwitchDesktop(VD_IVirtualDesktop_from_whichDesktop(whichDesktop))
+    func_pleaseSwitchDesktop := Func("VD_pleaseSwitchDesktop").Bind(whichDesktop)
+    if (WindowisFullScreen)
+        SetTimer % func_pleaseSwitchDesktop, -50
+}
 
-    VarSetCapacity(vd_strGUID, (38 + 1) * 2)
-    VarSetCapacity(vd_GUID, 16)
-
-    IVirtualDesktop := 0
-
-    ; https://github.com/nullpo-head/Windows-10-Virtual-Desktop-Switching-Shortcut/blob/master/VirtualDesktopSwitcher/VirtualDesktopSwitcher/VirtualDesktops.h
-    DllCall("Ole32.dll\CLSIDFromString", "Str", "{FF72FFDD-BE7E-43FC-9C03-AD81681E88E4}", "UPtr", &vd_GUID)
-
-    ; IObjectArray::GetAt method
-    ; https://docs.microsoft.com/en-us/windows/desktop/api/objectarray/nf-objectarray-iobjectarray-getat
-    DllCall(VD_vtable(IObjectArray,4), "UPtr", IObjectArray, "UInt", whichDesktop -1, "UPtr", &vd_GUID, "UPtrP", IVirtualDesktop, "UInt")
-
-    VD_SwitchDesktop(IVirtualDesktop)
+VD_pleaseSwitchDesktop(whichDesktop) {
+    ;VD_IVirtualDesktop should be calculated again because VD_IVirtualDesktop could have changed
+    ;what we want is the same whichDesktop
+    VD_SwitchDesktop(VD_IVirtualDesktop_from_whichDesktop(whichDesktop))
 }
 
 VD_goToDesktopOfWindow(wintitle, activate:=true)
