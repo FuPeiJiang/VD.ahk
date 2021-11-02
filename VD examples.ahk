@@ -25,8 +25,15 @@ Numpad8 to move the active window to Desktop2
 Numpad2 to go to Desktop2
 Numpad6 to move the active window to Desktop3 and go to Desktop 3 (follow the window)
 
+!NumpadAdd to createDesktop and go to it
+^+NumpadAdd to create until you have 3 desktops
+!NumpadSub to remove the current desktop
+^+NumpadSub to delete the 3rd desktop
+
 Numpad0 to Toggle "Show this window on all desktops"(Pin/UnPin)
 NumpadDot to Toggle "Show windows from this app on all desktops"(Pin/UnPin)
+
+more below, look at the hotkeys in code.
 )
 
 defaultBackgroundColor:=get_DefaultBackgroundColor()
@@ -52,6 +59,8 @@ vd_init() ;call this when you want to init global vars, takes 0.04 seconds for m
 
 ;you should WinHide invisible programs that have a window.
 WinHide, % "Malwarebytes Tray Application"
+
+
 return
 
 ;getters and stuff
@@ -97,6 +106,24 @@ numpad9::
     wintitleOfActiveWindow:="ahk_id " WinActive("A")
     whichDesktop:=SubStr(A_ThisHotkey, 0) - 6 ;get last character from numpad{N} and minus 3
     VD_sendToDesktop(wintitleOfActiveWindow,whichDesktop) 
+return
+
+;Create/Remove Desktop
+!NumpadAdd::VD_createDesktop()
+#NumpadAdd::VD_createDesktop(false) ;don't go to newly created
+
+!NumpadSub::VD_removeDesktop(VD_getCurrentDesktop())
+#!NumpadSub::VD_removeDesktop(VD_getCount()) ;removes 3rd desktop if there are 3 desktops
+
+^+NumpadAdd::
+VD_createUntil(3) ;create until we have at least 3 VD
+return
+
+^+NumpadSub::
+VD_createUntil(3) ;create until we have at least 3 VD
+sleep 1000
+;FALLBACK IS ONLY USED IF YOU ARE CURRENTLY ON THAT VD
+VD_removeDesktop(3, 1)
 return
 
 ;Pin Window

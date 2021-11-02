@@ -7,6 +7,9 @@
 ; VD_sendToDesktop(wintitle,whichDesktop,followYourWindow:=false,activate:=true)
 ; VD_sendToCurrentDesktop(wintitle,activate:=true)
 
+; VD_createDesktop(goThere:=true) ; VD_createUntil(howMany, goThere:=true)
+; VD_removeDesktop(whichDesktop, fallback_which:=false)
+
 ; "Show this window on all desktops"
 ; VD_IsWindowPinned(wintitle)
 ; VD_TogglePinWindow(wintitle)
@@ -38,6 +41,21 @@
 VD_init()
 {
     global
+    ; https://github.com/nullpo-head/Windows-10-Virtual-Desktop-Switching-Shortcut/blob/615cc69365fd3042a3257f015d117aad4b53a686/VirtualDesktopSwitcher/VirtualDesktopSwitcher/VirtualDesktops.h#L29-L39
+    ; MIDL_INTERFACE("FF72FFDD-BE7E-43FC-9C03-AD81681E88E4")
+    ; IVirtualDesktop : public IUnknown
+    ; {
+    ; public:
+    ; virtual HRESULT STDMETHODCALLTYPE IsViewVisible(
+    ; IApplicationView *pView,
+    ; int *pfVisible) = 0;
+    ; 
+    ; virtual HRESULT STDMETHODCALLTYPE GetID(
+    ; GUID *pGuid) = 0;
+    ; };
+    VarSetCapacity(GUID_IID_IVirtualDesktop, 16)
+    DllCall("Ole32.dll\CLSIDFromString", "Str", "{FF72FFDD-BE7E-43FC-9C03-AD81681E88E4}", "UPtr", &GUID_IID_IVirtualDesktop)
+
     IVirtualDesktopManager := ComObjCreate("{AA509086-5CA9-4C25-8F95-589D3C07B48A}", "{A5CD92FF-29BE-454C-8D04-D82879FB3F1B}")
     GetWindowDesktopId := VD_vtable(IVirtualDesktopManager, 4)
 
@@ -48,7 +66,11 @@ VD_init()
     GetCurrentDesktop := VD_vtable(IVirtualDesktopManagerInternal, 6) ; IVirtualDesktop GetCurrentDesktop();
     CanViewMoveDesktops := VD_vtable(IVirtualDesktopManagerInternal, 5) ; bool CanViewMoveDesktops(object pView);
     GetDesktops := VD_vtable(IVirtualDesktopManagerInternal, 7) ; IObjectArray GetDesktops();
+    GetAdjacentDesktop := VD_vtable(IVirtualDesktopManagerInternal, 8) ; int GetAdjacentDesktop(IVirtualDesktop from, int direction, out IVirtualDesktop desktop);
     SwitchDesktop := VD_vtable(IVirtualDesktopManagerInternal, 9) ; void SwitchDesktop(IVirtualDesktop desktop);
+    CreateDesktop := VD_vtable(IVirtualDesktopManagerInternal, 10) ; IVirtualDesktop CreateDesktop();
+    RemoveDesktop := VD_vtable(IVirtualDesktopManagerInternal, 11) ; void RemoveDesktop(IVirtualDesktop desktop, IVirtualDesktop fallback);
+    ; FindDesktop := VD_vtable(IVirtualDesktopManagerInternal, 12) ; IVirtualDesktop FindDesktop(ref Guid desktopid);
 
     ;// https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop1803.cs#L180-L188
     IVirtualDesktopPinnedApps := ComObjQuery(IServiceProvider, "{B5A399E7-1C87-46B8-88E9-FC5747B171BD}", "{4CE81583-1E4C-4632-A621-07A53543148F}")
@@ -330,7 +352,7 @@ VD_sendToDesktop(wintitle,whichDesktop,followYourWindow:=false,activate:=true)
 
         ; IObjectArray::GetAt method
         ; https://docs.microsoft.com/en-us/windows/desktop/api/objectarray/nf-objectarray-iobjectarray-getat
-        DllCall(VD_vtable(IObjectArray,4), "UPtr", IObjectArray, "UInt", whichDesktop -1, "UPtr", &vd_GUID, "UPtrP", IVirtualDesktop, "UInt")
+        DllCall(VD_vtable(IObjectArray,4), "UPtr", IObjectArray, "UInt", whichDesktop - 1, "UPtr", &vd_GUID, "UPtrP", IVirtualDesktop, "UInt")
 
         DllCall(MoveViewToDesktop, "ptr", IVirtualDesktopManagerInternal, "Ptr", thePView, "UPtr", IVirtualDesktop, "UInt")
 
@@ -370,6 +392,67 @@ VD_sendToCurrentDesktop(wintitle,activate:=true)
 ; VD_showOnAllDesktops(wintitle, enableOrDisable:=true) {
 ; WinSet, ExStyle, % (enableOrDisable ? "+" : "-") "0x00000080", % wintitle
 ; }
+
+VD_createDesktop(goThere:=true) {
+    global CreateDesktop, IVirtualDesktopManagerInternal
+
+    DllCall(CreateDesktop, "UPtr", IVirtualDesktopManagerInternal, "Ptr*", newlyCreatedDesktop)
+
+    if (goThere) {
+        VD_goToDesktop(VD_getCount())
+    }
+}
+
+VD_createUntil(howMany) {
+
+    loop % howMany - VD_getCount() {
+        VD_createDesktop(false)
+    }
+
+    if (goThere) {
+        VD_goToDesktop(VD_getCount())
+    }
+}
+
+VD_removeDesktop(whichDesktop, fallback_which:=false) {
+    ;FALLBACK IS ONLY USED IF YOU ARE CURRENTLY ON THAT VD
+    VD_internal_removeDesktop(VD_IVirtualDesktop_from_whichDesktop(whichDesktop), VD_IVirtualDesktop_from_whichDesktop(fallback_which))
+}
+
+VD_IVirtualDesktop_from_whichDesktop(whichDesktop) {
+    global GetDesktops, IVirtualDesktopManagerInternal
+    global GUID_IID_IVirtualDesktop
+
+    if (whichDesktop < 1) {
+        return false
+    }
+
+    DllCall(GetDesktops, "UPtr", IVirtualDesktopManagerInternal, "UPtr*", IObjectArray)
+
+    GetAt:=VD_vtable(IObjectArray,4)
+    DllCall(GetAt, "UPtr", IObjectArray, "UInt", whichDesktop - 1, "UPtr", &GUID_IID_IVirtualDesktop, "UPtr*", IVirtualDesktop)
+    return IVirtualDesktop
+}
+
+VD_internal_removeDesktop(IVirtualDesktop, fallback:=false) {
+    global RemoveDesktop, GetAdjacentDesktop, IVirtualDesktopManagerInternal
+
+    if (fallback==false) {
+        ;look left
+        DllCall(GetAdjacentDesktop, "UPtr", IVirtualDesktopManagerInternal, "Ptr", IVirtualDesktop, "Uint", 3, "Ptr*", fallback) ; 3 = LeftDirection
+        if (fallback==0) {
+            ;look right
+            DllCall(GetAdjacentDesktop, "UPtr", IVirtualDesktopManagerInternal, "Ptr", IVirtualDesktop, "Uint", 4, "Ptr*", fallback) ; 4 = RightDirection
+            if (fallback==0) {
+                return false
+            }
+        }
+    }
+
+    ;FALLBACK IS ONLY USED IF YOU ARE CURRENTLY ON THAT VD
+    DllCall(RemoveDesktop, "UPtr", IVirtualDesktopManagerInternal, "Ptr", IVirtualDesktop, "Ptr", fallback)
+
+}
 
 VD_IsWindowPinned(wintitle) {
     global IsViewPinned, IVirtualDesktopPinnedApps

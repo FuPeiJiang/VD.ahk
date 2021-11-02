@@ -12,6 +12,10 @@ https://www.autohotkey.com/boards/viewtopic.php?f=6&t=83381
 ; VD_sendToDesktop(wintitle,whichDesktop,followYourWindow:=false,activate:=true)
 ; VD_sendToCurrentDesktop(wintitle,activate:=true)
 
+; "New desktop"
+; VD_createDesktop(goThere:=true) ; VD_createUntil(howMany, goThere:=true)
+; VD_removeDesktop(whichDesktop, fallback_which:=false)
+
 ; "Show this window on all desktops"
 ; VD_IsWindowPinned(wintitle)
 ; VD_TogglePinWindow(wintitle)
