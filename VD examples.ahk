@@ -1,3 +1,7 @@
+;you should first Run this, then Read this
+;Ctrl + F: jump to #useful stuff
+
+;#SETUP START
 #NoEnv ; Recommended for performance and compatibility with future AutoHotkey releases.
 #SingleInstance force
 ListLines Off
@@ -16,22 +20,36 @@ Gui,Font, s12, Segoe UI
 
 explanation=
 (
-^ is Ctrl
-f4 to come back to this window
+Numpad0 to pin this Window on all desktops
+you can spam (Numpad2,Numpad1,Numpad2,Numpad1) for fun
+
+here's a challenge (you might lose this window):
+Unpin this using Numpad0
+go to Desktop 3 (Numpad3)
+this time, use Win + * on Numpad to come back to this window wherever you are
+(and wherever this window is)
+so you can move this window to desktop 2 (Numpad5), you go to desktop 1, and use Win + * on Numpad 
+(if you want to search in this script, the hotkey is #NumpadMult)
+
+Numpad9 to throw a window to Desktop 3 (and not follow it)
+
+getters:
+f1 to see which desktop you currently are in
 f6 to see which desktop this window is in
-f1 to see your current virtual desktop
 f2 to see the total number of virtual desktops
-Numpad8 to move the active window to Desktop2
-Numpad2 to go to Desktop2
-Numpad6 to move the active window to Desktop3 and go to Desktop 3 (follow the window)
 
-!NumpadAdd to createDesktop and go to it
-^+NumpadAdd to create until you have 3 desktops
-!NumpadSub to remove the current desktop
-^+NumpadSub to delete the 3rd desktop
+(You might want to pin this window for this part):
+!NumpadAdd (Alt + Numpad+) to createDesktop and go to it
+f1 to see which desktop you currently are in
 
-Numpad0 to Toggle "Show this window on all desktops"(Pin/UnPin)
-NumpadDot to Toggle "Show windows from this app on all desktops"(Pin/UnPin)
+but at this point, just use Win + Tab..
+these functions are mostly for script only, 
+for example: I used VD_createUntil(3)
+at the start of this tutorial, to make sure we have at least 3 VD
+
+^+NumpadAdd (Ctrl Alt + Numpad+) to create until you have 3 desktops
+!NumpadSub (Alt + Numpad-) to remove the current desktop
+^+NumpadSub (Ctrl ALt + Numpad-) to delete the 3rd desktop
 
 more below, look at the hotkeys in code.
 )
@@ -50,24 +68,45 @@ CtlColors.Attach(HWndExplanation_Edit, hex_RGBtoBGR(decimalToHex(0+defaultBackgr
 Gui, Color, 
 gui, show,, VD_examplesWinTile
 WinSet, Redraw
+Postmessage,0xB1,0,StrLen("Numpad0"),, % "ahk_id " HWndExplanation_Edit ;move caret to end
 ; Postmessage,0xB1,-1,-1,, % "ahk_id " HWndExplanation_Edit ;move caret to end
-Postmessage,0xB1,9,9,, % "ahk_id " HWndExplanation_Edit ;move caret to: ^ is Ctrl|
+; Postmessage,0xB1,9,9,, % "ahk_id " HWndExplanation_Edit ;move caret to: ^ is Ctrl|
 
 ;include the library
 #Include VD.ahk
-vd_init() ;call this when you want to init global vars, takes 0.04 seconds for me.
+vd_init() ;you HAVE to call this, call this when you want to init global vars, takes 0.04 seconds for me.
 
 ;you should WinHide invisible programs that have a window.
 WinHide, % "Malwarebytes Tray Application"
+;#SETUP END
+
+VD_createUntil(3) ;create until we have at least 3 VD
 
 
 return
 
-;getters and stuff
-f4::
+;#useful stuff
+numpad1::VD_goToDesktop(1)
+numpad2::VD_goToDesktop(2)
+numpad3::VD_goToDesktop(3)
+
+;followYourWindow:=true
+numpad4::VD_sendToDesktop("A",1,true)
+numpad5::VD_sendToDesktop("A",1,true)
+numpad6::VD_sendToDesktop("A",1,true)
+
+;followYourWindow:=false
+numpad7::VD_sendToDesktop("A",1,false)
+numpad8::VD_sendToDesktop("A",2,false)
+numpad9::VD_sendToDesktop("A",3,false)
+
+;to come back to this window
+#NumpadMult:: ;#*
     VD_goToDesktopOfWindow("VD_examplesWinTile")
     ; VD_goToDesktopOfWindow("ahk_exe code.exe")
 return
+
+;getters and stuff
 f6::
     msgbox % VD_getDesktopOfWindow("VD_examplesWinTile")
     ; msgbox % VD_getDesktopOfWindow("ahk_exe GitHubDesktop.exe")
@@ -77,29 +116,6 @@ f1::
 return
 f2::
     msgbox % VD_getCount()
-return
-
-;useful stuff
-numpad1::
-numpad2::
-numpad3::
-    theDesktopToSwitchTo:=SubStr(A_ThisHotkey, 0)
-    VD_goToDesktop(theDesktopToSwitchTo) ;get last character from numpad{N}
-return
-
-numpad4::
-numpad5::
-numpad6::
-    wintitleOfActiveWindow:="ahk_id " WinActive("A")
-    whichDesktop:=SubStr(A_ThisHotkey, 0) - 3
-    VD_sendToDesktop(wintitleOfActiveWindow,whichDesktop,true) ;get last character from numpad{N} and minus 6
-return
-numpad7::
-numpad8::
-numpad9::
-    wintitleOfActiveWindow:="ahk_id " WinActive("A")
-    whichDesktop:=SubStr(A_ThisHotkey, 0) - 6 ;get last character from numpad{N} and minus 3
-    VD_sendToDesktop(wintitleOfActiveWindow,whichDesktop) 
 return
 
 ;Create/Remove Desktop
