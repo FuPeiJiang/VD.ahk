@@ -92,8 +92,8 @@ numpad3::VD_goToDesktop(3)
 
 ;followYourWindow:=true
 numpad4::VD_sendToDesktop("A",1,true)
-numpad5::VD_sendToDesktop("A",1,true)
-numpad6::VD_sendToDesktop("A",1,true)
+numpad5::VD_sendToDesktop("A",2,true)
+numpad6::VD_sendToDesktop("A",3,true)
 
 ;followYourWindow:=false
 numpad7::VD_sendToDesktop("A",1,false)
