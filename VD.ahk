@@ -4,7 +4,7 @@
 ; VD_getCount() ;this will return the number of virtual desktops you currently have
 ; VD_goToDesktop(whichDesktop)
 ; VD_goToDesktopOfWindow(wintitle, activate:=true)
-; VD_sendToDesktop(wintitle,whichDesktop,followYourWindow:=false,activate:=true)
+; VD_sendToDesktop(wintitle,whichDesktop,followYourWindow:=true,activate:=true)
 ; VD_sendToCurrentDesktop(wintitle,activate:=true)
 
 ; VD_createDesktop(goThere:=true) ; VD_createUntil(howMany, goThere:=true)
@@ -324,7 +324,7 @@ VD_goToDesktopOfWindow(wintitle, activate:=true)
         }
     }
 }
-VD_sendToDesktop(wintitle,whichDesktop,followYourWindow:=false,activate:=true)
+VD_sendToDesktop(wintitle,whichDesktop,followYourWindow:=true,activate:=true)
 {
     global
 
