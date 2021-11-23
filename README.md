@@ -1,27 +1,5 @@
 ## VD.ahk : Virtual Desktop (move window, go to VD of your choice instantly, get Which VD you are in, etc.)
 
-https://www.autohotkey.com/boards/viewtopic.php?f=6&t=83381
-
-### list of functions:
-```
-; VD_getCurrentDesktop() ;this will return whichDesktop
-; VD_getDesktopOfWindow(wintitle) ;this will return whichDesktop ;please use VD_goToDesktopOfWindow instead if you just want to go there.
-; VD_getCount() ;this will return the number of virtual desktops you currently have
-; VD_goToDesktop(whichDesktop)
-; VD_goToDesktopOfWindow(wintitle, activate:=true)
-; VD_sendToDesktop(wintitle,whichDesktop,followYourWindow:=false,activate:=true)
-; VD_sendToCurrentDesktop(wintitle,activate:=true)
-
-; "New desktop"
-; VD_createDesktop(goThere:=true) ; VD_createUntil(howMany, goThere:=true)
-; VD_removeDesktop(whichDesktop, fallback_which:=false)
-
-; "Show this window on all desktops"
-; VD_IsWindowPinned(wintitle)
-; VD_TogglePinWindow(wintitle)
-; VD_PinWindow(wintitle)
-; VD_UnPinWindow(wintitle)
-```
 ### Just run the examples, everything explained inside
 the most useful ones:<br>
 * Numpad1 to go to Desktop 1<br>
@@ -30,6 +8,7 @@ the most useful ones:<br>
 - Numpad4 to move the active window to Desktop 1<br>
 - Numpad5 to move the active window to Desktop 2<br>
 - Numpad6 to move the active window to Desktop 3<br>
+
 you can remap everything
 <!-- Desktop2`nPress Numpad6 to move the active window to Desktop3 and go to Desktop 3 (follow the window) -->
 
