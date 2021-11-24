@@ -1,0 +1,2 @@
+# https://stackoverflow.com/questions/19052834/is-it-possible-to-exclude-files-from-git-language-statistics#26948938
+notes/* linguist-vendored
