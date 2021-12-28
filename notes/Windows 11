@@ -1,0 +1,14 @@
+Windows 11
+10.0.22000
+
+buildNumber is 22000
+
+if (buildNumber>=22000) ; Windows 11
+
+https://en.wikipedia.org/wiki/Windows_11_version_history#:~:text=the%20build%20number-,10.0.22000,-.%20The%20first%20public
+https://en.wikipedia.org/wiki/List_of_Microsoft_Windows_versions#:~:text=Windows%2011%20Education-,22000,-2023%2D10%2D10
+
+
+
+int count = VirtualDesktopManagerInternal.GetCount();
+int count = VirtualDesktopManagerInternal.GetCount(IntPtr.Zero);

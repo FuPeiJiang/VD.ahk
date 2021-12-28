@@ -38,112 +38,97 @@
 ; https://www.autohotkey.com/boards/viewtopic.php?t=54202#p234192
 ; https://www.autohotkey.com/boards/viewtopic.php?t=54202#p234309
 
-VD_init()
-{
-    global
-    ; https://github.com/nullpo-head/Windows-10-Virtual-Desktop-Switching-Shortcut/blob/615cc69365fd3042a3257f015d117aad4b53a686/VirtualDesktopSwitcher/VirtualDesktopSwitcher/VirtualDesktops.h#L29-L39
-    ; MIDL_INTERFACE("FF72FFDD-BE7E-43FC-9C03-AD81681E88E4")
-    ; IVirtualDesktop : public IUnknown
-    ; {
-    ; public:
-    ; virtual HRESULT STDMETHODCALLTYPE IsViewVisible(
-    ; IApplicationView *pView,
-    ; int *pfVisible) = 0;
-    ; 
-    ; virtual HRESULT STDMETHODCALLTYPE GetID(
-    ; GUID *pGuid) = 0;
-    ; };
-    VarSetCapacity(GUID_IID_IVirtualDesktop, 16)
-    DllCall("Ole32.dll\CLSIDFromString", "Str", "{FF72FFDD-BE7E-43FC-9C03-AD81681E88E4}", "UPtr", &GUID_IID_IVirtualDesktop)
+class VD {
 
-    IVirtualDesktopManager := ComObjCreate("{AA509086-5CA9-4C25-8F95-589D3C07B48A}", "{A5CD92FF-29BE-454C-8D04-D82879FB3F1B}")
-    GetWindowDesktopId := VD_vtable(IVirtualDesktopManager, 4)
+    static dummyStatic1 := VD.init()
 
-    IServiceProvider := ComObjCreate("{C2F03A33-21F5-47FA-B4BB-156362A2F239}", "{6D5140C1-7436-11CE-8034-00AA006009FA}")
-
-    IVirtualDesktopManagerInternal := ComObjQuery(IServiceProvider, "{C5E0CDCA-7B6E-41B2-9FC4-D93975CC467B}", "{F31574D6-B682-4CDC-BD56-1827860ABEC6}")
-    MoveViewToDesktop := VD_vtable(IVirtualDesktopManagerInternal, 4) ; void MoveViewToDesktop(object pView, IVirtualDesktop desktop);
-    GetCurrentDesktop := VD_vtable(IVirtualDesktopManagerInternal, 6) ; IVirtualDesktop GetCurrentDesktop();
-    CanViewMoveDesktops := VD_vtable(IVirtualDesktopManagerInternal, 5) ; bool CanViewMoveDesktops(object pView);
-    GetDesktops := VD_vtable(IVirtualDesktopManagerInternal, 7) ; IObjectArray GetDesktops();
-    GetAdjacentDesktop := VD_vtable(IVirtualDesktopManagerInternal, 8) ; int GetAdjacentDesktop(IVirtualDesktop from, int direction, out IVirtualDesktop desktop);
-    SwitchDesktop := VD_vtable(IVirtualDesktopManagerInternal, 9) ; void SwitchDesktop(IVirtualDesktop desktop);
-    CreateDesktop := VD_vtable(IVirtualDesktopManagerInternal, 10) ; IVirtualDesktop CreateDesktop();
-    RemoveDesktop := VD_vtable(IVirtualDesktopManagerInternal, 11) ; void RemoveDesktop(IVirtualDesktop desktop, IVirtualDesktop fallback);
-    ; FindDesktop := VD_vtable(IVirtualDesktopManagerInternal, 12) ; IVirtualDesktop FindDesktop(ref Guid desktopid);
-
-    ;// https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop1803.cs#L180-L188
-    IVirtualDesktopPinnedApps := ComObjQuery(IServiceProvider, "{B5A399E7-1C87-46B8-88E9-FC5747B171BD}", "{4CE81583-1E4C-4632-A621-07A53543148F}")
-    IsAppIdPinned := VD_vtable(IVirtualDesktopPinnedApps, 3) ; bool IsAppIdPinned(string appId);
-    PinAppID := VD_vtable(IVirtualDesktopPinnedApps, 4) ; void PinAppID(string appId);
-    UnpinAppID := VD_vtable(IVirtualDesktopPinnedApps, 5) ; void UnpinAppID(string appId);
-    IsViewPinned := VD_vtable(IVirtualDesktopPinnedApps, 6) ; bool IsViewPinned(IApplicationView applicationView);
-    PinView := VD_vtable(IVirtualDesktopPinnedApps, 7) ; void PinView(IApplicationView applicationView);
-    UnpinView := VD_vtable(IVirtualDesktopPinnedApps, 8) ; void UnpinView(IApplicationView applicationView);
-
-    IApplicationView := ComObjQuery(IServiceProvider, "{B5A399E7-1C87-46B8-88E9-FC5747B171BD}", "{F31574D6-B682-4CDC-BD56-1827860ABEC6}")
-    ; EXTERN_C const IID IID_IInspectable; : 6 methods
-    ; https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop1803.cs#L73
-    ; internal interface IApplicationView
-    ; {
-    ;6  int SetFocus();
-    ;7  int SwitchTo();
-    ;8  int TryInvokeBack(IntPtr /* IAsyncCallback* */ callback);
-    ;9  int GetThumbnailWindow(out IntPtr hwnd);
-    ;10 int GetMonitor(out IntPtr /* IImmersiveMonitor */ immersiveMonitor);
-    ;11 int GetVisibility(out int visibility);
-    ;12 int SetCloak(APPLICATION_VIEW_CLOAK_TYPE cloakType, int unknown);
-    ;13 int GetPosition(ref Guid guid /* GUID for IApplicationViewPosition */, out IntPtr /* IApplicationViewPosition** */ position);
-    ;14 int SetPosition(ref IntPtr /* IApplicationViewPosition* */ position);
-    ;15 int InsertAfterWindow(IntPtr hwnd);
-    ;16 int GetExtendedFramePosition(out Rect rect);
-    ;17 int GetAppUserModelId([MarshalAs(UnmanagedType.LPWStr)] out string id);
-    ;18 int SetAppUserModelId(string id);
-    ;19 int IsEqualByAppUserModelId(string id, out int result);
-    ;20 int GetViewState(out uint state);
-    ;21 int SetViewState(uint state);
-    ;22 int GetNeediness(out int neediness);
-    ;23 int GetLastActivationTimestamp(out ulong timestamp);
-    ;24 int SetLastActivationTimestamp(ulong timestamp);
-    ;25 int GetVirtualDesktopId(out Guid guid);
-    ;26 int SetVirtualDesktopId(ref Guid guid);
-    ;27 int GetShowInSwitchers(out int flag);
-    ;28 int SetShowInSwitchers(int flag);
-    ;29 int GetScaleFactor(out int factor);
-    ;30 int CanReceiveInput(out bool canReceiveInput);
-    ;31 int GetCompatibilityPolicyType(out APPLICATION_VIEW_COMPATIBILITY_POLICY flags);
-    ;32 int SetCompatibilityPolicyType(APPLICATION_VIEW_COMPATIBILITY_POLICY flags);
-    ;33 int GetSizeConstraints(IntPtr /* IImmersiveMonitor* */ monitor, out Size size1, out Size size2);
-    ;34 int GetSizeConstraintsForDpi(uint uint1, out Size size1, out Size size2);
-    ;35 int SetSizeConstraintsForDpi(ref uint uint1, ref Size size1, ref Size size2);
-    ;36 int OnMinSizePreferencesUpdated(IntPtr hwnd);
-    ;37 int ApplyOperation(IntPtr /* IApplicationViewOperation* */ operation);
-    ;38 int IsTray(out bool isTray);
-    ;39 int IsInHighZOrderBand(out bool isInHighZOrderBand);
-    ;40 int IsSplashScreenPresented(out bool isSplashScreenPresented);
-    ;41 int Flash();
-    ;42 int GetRootSwitchableOwner(out IApplicationView rootSwitchableOwner);
-    ;43 int EnumerateOwnershipTree(out IObjectArray ownershipTree);
-    ;44 int GetEnterpriseId([MarshalAs(UnmanagedType.LPWStr)] out string enterpriseId);
-    ;45 int IsMirrored(out bool isMirrored);
-    ;46 int Unknown1(out int unknown);
-    ;47 int Unknown2(out int unknown);
-    ;48 int Unknown3(out int unknown);
-    ;49 int Unknown4(out int unknown);
-    ; }
-
-    ImmersiveShell := ComObjCreate("{C2F03A33-21F5-47FA-B4BB-156362A2F239}", "{00000000-0000-0000-C000-000000000046}") 
-    ; if !(IApplicationViewCollection := ComObjQuery(ImmersiveShell,"{1841C6D7-4F9D-42C0-AF41-8747538F10E5}" ) ) ; doesn't work
-    ; SAME CLSID and IID ?
-    ; wait it's not CLSID:
-    ; SID
-    ; A service identifier in the same form as IID. When omitting this parameter, also omit the comma.
-    if !(IApplicationViewCollection := ComObjQuery(ImmersiveShell,"{1841C6D7-4F9D-42C0-AF41-8747538F10E5}","{1841C6D7-4F9D-42C0-AF41-8747538F10E5}" ) ) ; 1607-1809
+    init()
     {
-        MsgBox IApplicationViewCollection interface not supported.
+        splitByDot:=StrSplit(A_OSVersion, ".")
+        buildNumber:=splitByDot[3]
+        if (buildNumber>=22000) ;Windows 11
+        {
+            IID_IVirtualDesktopManagerInternal:="{B2F925B9-5A0F-4D2E-9F4D-2B1507593C10}" ;https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop11.cs#L163-L185
+            this.getCount:=this._getCount11 ;conditionally assign method to method
+        }
+        else
+        {
+            IID_IVirtualDesktopManagerInternal:="{F31574D6-B682-4CDC-BD56-1827860ABEC6}" ;https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop.cs#L178-L191
+            this.getCount:=this._getCount10 ;conditionally assign method to method
+        }
+
+        VarSetCapacity(GUID_IID_IVirtualDesktop, 16)
+        DllCall("Ole32.dll\CLSIDFromString", "Str", "{FF72FFDD-BE7E-43FC-9C03-AD81681E88E4}", "UPtr", &GUID_IID_IVirtualDesktop)
+
+        this.IVirtualDesktopManager := ComObjCreate("{AA509086-5CA9-4C25-8F95-589D3C07B48A}", "{A5CD92FF-29BE-454C-8D04-D82879FB3F1B}")
+        this.GetWindowDesktopId := VD_vtable(this.IVirtualDesktopManager, 4)
+
+        IServiceProvider := ComObjCreate("{C2F03A33-21F5-47FA-B4BB-156362A2F239}", "{6D5140C1-7436-11CE-8034-00AA006009FA}")
+
+        ;https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop.cs#L178-L191
+        this.IVirtualDesktopManagerInternal := ComObjQuery(IServiceProvider, "{C5E0CDCA-7B6E-41B2-9FC4-D93975CC467B}", IID_IVirtualDesktopManagerInternal)
+        ; this.GetCount := VD_vtable(this.IVirtualDesktopManagerInternal, 3 ; int GetCount();
+        this.MoveViewToDesktop := VD_vtable(this.IVirtualDesktopManagerInternal, 4) ; void MoveViewToDesktop(object pView, IVirtualDesktop desktop);
+        this.GetCurrentDesktop := VD_vtable(this.IVirtualDesktopManagerInternal, 6) ; IVirtualDesktop GetCurrentDesktop();
+        this.CanViewMoveDesktops := VD_vtable(this.IVirtualDesktopManagerInternal, 5) ; bool CanViewMoveDesktops(object pView);
+        this.GetDesktops := VD_vtable(this.IVirtualDesktopManagerInternal, 7) ; IObjectArray GetDesktops();
+        this.GetAdjacentDesktop := VD_vtable(this.IVirtualDesktopManagerInternal, 8) ; int GetAdjacentDesktop(IVirtualDesktop from, int direction, out IVirtualDesktop desktop);
+        this.SwitchDesktop := VD_vtable(this.IVirtualDesktopManagerInternal, 9) ; void SwitchDesktop(IVirtualDesktop desktop);
+        this.CreateDesktop := VD_vtable(this.IVirtualDesktopManagerInternal, 10) ; IVirtualDesktop CreateDesktop();
+        this.RemoveDesktop := VD_vtable(this.IVirtualDesktopManagerInternal, 11) ; void RemoveDesktop(IVirtualDesktop desktop, IVirtualDesktop fallback);
+        ; this.FindDesktop := VD_vtable(this.IVirtualDesktopManagerInternal, 12) ; IVirtualDesktop FindDesktop(ref Guid desktopid);
+
+        ;https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop.cs#L225-L234
+        this.IVirtualDesktopPinnedApps := ComObjQuery(IServiceProvider, "{B5A399E7-1C87-46B8-88E9-FC5747B171BD}", "{4CE81583-1E4C-4632-A621-07A53543148F}")
+        this.IsAppIdPinned := VD_vtable(this.IVirtualDesktopPinnedApps, 3) ; bool IsAppIdPinned(string appId);
+        this.PinAppID := VD_vtable(this.IVirtualDesktopPinnedApps, 4) ; void PinAppID(string appId);
+        this.UnpinAppID := VD_vtable(this.IVirtualDesktopPinnedApps, 5) ; void UnpinAppID(string appId);
+        this.IsViewPinned := VD_vtable(this.IVirtualDesktopPinnedApps, 6) ; bool IsViewPinned(IApplicationView applicationView);
+        this.PinView := VD_vtable(this.IVirtualDesktopPinnedApps, 7) ; void PinView(IApplicationView applicationView);
+        this.UnpinView := VD_vtable(this.IVirtualDesktopPinnedApps, 8) ; void UnpinView(IApplicationView applicationView);
+
+
+        ImmersiveShell := ComObjCreate("{C2F03A33-21F5-47FA-B4BB-156362A2F239}", "{00000000-0000-0000-C000-000000000046}")
+        ; if !(IApplicationViewCollection := ComObjQuery(ImmersiveShell,"{1841C6D7-4F9D-42C0-AF41-8747538F10E5}" ) ) ; doesn't work
+        ; SAME CLSID and IID ?
+        ; wait it's not CLSID:
+        ; SID
+        ; A service identifier in the same form as IID. When omitting this parameter, also omit the comma.
+        this.IApplicationViewCollection := ComObjQuery(ImmersiveShell,"{1841C6D7-4F9D-42C0-AF41-8747538F10E5}","{1841C6D7-4F9D-42C0-AF41-8747538F10E5}" )
+        if (!this.IApplicationViewCollection) ; 1607-1809
+        {
+            MsgBox IApplicationViewCollection interface not supported.
+        }
+        this.GetViewForHwnd := VD_vtable(IApplicationViewCollection, 6) ; (IntPtr hwnd, out IApplicationView view);
     }
-    GetViewForHwnd := VD_vtable(IApplicationViewCollection, 6) ; (IntPtr hwnd, out IApplicationView view);
+
+    _getCount10()
+    {
+        IObjectArray := 0
+        DllCall(this.GetDesktops, "UPtr", this.IVirtualDesktopManagerInternal, "UPtr*", IObjectArray)
+
+        ; IObjectArray::GetCount ;https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop.cs#L239-L243
+        GetCount:=VD_vtable(IObjectArray,3)
+
+        vd_Count := 0
+        DllCall(GetCount, "UPtr", IObjectArray, "UInt*", vd_Count)
+        return vd_Count
+    }
+    _getCount11()
+    {
+        IObjectArray := 0
+        DllCall(this.GetDesktops, "UPtr", this.IVirtualDesktopManagerInternal, "Ptr", 0, "UPtr*", IObjectArray)
+
+        ; IObjectArray::GetCount ;https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop.cs#L239-L243
+        GetCount:=VD_vtable(IObjectArray,3)
+
+        vd_Count := 0
+        DllCall(GetCount, "UPtr", IObjectArray, "UInt*", vd_Count)
+        return vd_Count
+    }
+
 }
+
 
 VD_getCurrentIVirtualDesktop()
 {
@@ -175,7 +160,7 @@ VD_getCurrentDesktop() ;this will return whichDesktop
     vd_Count := 0
     DllCall(VD_vtable(IObjectArray,3), "UPtr", IObjectArray, "UIntP", vd_Count, "UInt")
 
-    IVirtualDesktop := 0 
+    IVirtualDesktop := 0
     Loop % (vd_Count)
     {
         ; https://github.com/nullpo-head/Windows-10-Virtual-Desktop-Switching-Shortcut/blob/master/VirtualDesktopSwitcher/VirtualDesktopSwitcher/VirtualDesktops.h
@@ -247,12 +232,13 @@ VD_getCount()
 {
     global
     IObjectArray := 0
-    DllCall(GetDesktops, "UPtr", IVirtualDesktopManagerInternal, "UPtrP", IObjectArray, "UInt")
+    ; DllCall(GetDesktops, "UPtr", IVirtualDesktopManagerInternal, "UPtrP", IObjectArray, "UInt")
+    DllCall(GetDesktops, "UPtr", IVirtualDesktopManagerInternal, "Ptr", 0, "UPtrP", IObjectArray, "UInt")
 
     ; IObjectArray::GetCount method
     ; https://docs.microsoft.com/en-us/windows/desktop/api/objectarray/nf-objectarray-iobjectarray-getcount
     vd_Count := 0
-    DllCall(VD_vtable(IObjectArray,3), "UPtr", IObjectArray, "UIntP", vd_Count, "UInt")
+    DllCall(VD_vtable(IObjectArray,3), "UPtr", IObjectArray, "UInt*", vd_Count, "UInt")
     return vd_Count
 }
 VD_goToDesktop(whichDesktop)

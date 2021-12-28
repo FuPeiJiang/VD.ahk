@@ -28,7 +28,7 @@ Unpin this using Numpad0
 go to Desktop 3 (Numpad3)
 this time, use Win + * on Numpad to come back to this window wherever you are
 (and wherever this window is)
-so you can move this window to desktop 2 (Numpad5), you go to desktop 1, and use Win + * on Numpad 
+so you can move this window to desktop 2 (Numpad5), you go to desktop 1, and use Win + * on Numpad
 (if you want to search in this script, the hotkey is #NumpadMult)
 
 Numpad9 to throw a window to Desktop 3 (and not follow it)
@@ -43,7 +43,7 @@ f2 to see the total number of virtual desktops
 f1 to see which desktop you currently are in
 
 but at this point, just use Win + Tab..
-these functions are mostly for script only, 
+these functions are mostly for script only,
 for example: I used VD_createUntil(3)
 at the start of this tutorial, to make sure we have at least 3 VD
 
@@ -65,7 +65,7 @@ gui, add, Edit, -vscroll -E0x200 +hwndHWndExplanation_Edit, % explanation
 ; CtlColors.Attach(HWndExplanation_Edit, hex_RGBtoBGR(decimalToHex(16776960)))
 CtlColors.Attach(HWndExplanation_Edit, hex_RGBtoBGR(decimalToHex(0+defaultBackgroundColor)))
 
-Gui, Color, 
+Gui, Color,
 gui, show,, VD_examplesWinTile
 WinSet, Redraw
 Postmessage,0xB1,0,StrLen("Numpad0"),, % "ahk_id " HWndExplanation_Edit ;move caret to end
