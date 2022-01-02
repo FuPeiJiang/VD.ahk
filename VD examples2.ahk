@@ -22,8 +22,14 @@ SetControlDelay -1
 
 VD.init()
 
-MsgBox % VD.getCount()
+; MsgBox % VD._strGUID_from_Hwnd(WinExist("A"))
+
+; MsgBox % VD.getCount()
 
 return
+
+numpad1::VD.goToDesktop(1)
+numpad2::VD.goToDesktop(2)
+numpad3::VD.goToDesktop(3)
 
 f3::Exitapp
