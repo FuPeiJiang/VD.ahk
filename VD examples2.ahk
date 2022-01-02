@@ -20,6 +20,8 @@ SetControlDelay -1
 ;include the library
 #Include VD.ahk
 
+VD.init()
+
 MsgBox % VD.getCount()
 
 return

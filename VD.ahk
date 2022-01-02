@@ -40,25 +40,34 @@
 
 class VD {
 
-    static dummyStatic1 := VD.init()
+    static dummyStatic1 := VD._init()
 
-    init()
+    init() { ;if you want to init early
+        ; dummyStatic1 will be initiated and call _init()
+    }
+
+    _init()
     {
         splitByDot:=StrSplit(A_OSVersion, ".")
         buildNumber:=splitByDot[3]
-        if (buildNumber>=22000) ;Windows 11
+        if (buildNumber < 22000)
         {
-            IID_IVirtualDesktopManagerInternal:="{B2F925B9-5A0F-4D2E-9F4D-2B1507593C10}" ;https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop11.cs#L163-L185
-            this.getCount:=this._getCount11 ;conditionally assign method to method
+            ; Windows 10
+            IID_IVirtualDesktopManagerInternal:="{F31574D6-B682-4CDC-BD56-1827860ABEC6}" ;https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop.cs#L178-L191
+            this._dll_GetDesktops:=this._dll_GetDesktops_Win10 ;conditionally assign method to method
+            this._dll_SwitchDesktop:=this._dll_SwitchDesktop_Win10 ;conditionally assign method to method
         }
         else
         {
-            IID_IVirtualDesktopManagerInternal:="{F31574D6-B682-4CDC-BD56-1827860ABEC6}" ;https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop.cs#L178-L191
-            this.getCount:=this._getCount10 ;conditionally assign method to method
+            ; Windows 11
+            IID_IVirtualDesktopManagerInternal:="{B2F925B9-5A0F-4D2E-9F4D-2B1507593C10}" ;https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop11.cs#L163-L185
+            this._dll_GetDesktops:=this._dll_GetDesktops_Win11 ;conditionally assign method to method
+            this._dll_SwitchDesktop:=this._dll_SwitchDesktop_Win11 ;conditionally assign method to method
         }
 
         VarSetCapacity(GUID_IID_IVirtualDesktop, 16)
         DllCall("Ole32.dll\CLSIDFromString", "Str", "{FF72FFDD-BE7E-43FC-9C03-AD81681E88E4}", "UPtr", &GUID_IID_IVirtualDesktop)
+        this.Ptr_GUID_IID_IVirtualDesktop:=&GUID_IID_IVirtualDesktop
 
         this.IVirtualDesktopManager := ComObjCreate("{AA509086-5CA9-4C25-8F95-589D3C07B48A}", "{A5CD92FF-29BE-454C-8D04-D82879FB3F1B}")
         this.GetWindowDesktopId := VD_vtable(this.IVirtualDesktopManager, 4)
@@ -101,23 +110,29 @@ class VD {
         }
         this.GetViewForHwnd := VD_vtable(IApplicationViewCollection, 6) ; (IntPtr hwnd, out IApplicationView view);
     }
-
-    _getCount10()
-    {
+    ;dll methods start
+    _dll_GetDesktops_Win10() {
         IObjectArray := 0
         DllCall(this.GetDesktops, "UPtr", this.IVirtualDesktopManagerInternal, "UPtr*", IObjectArray)
-
-        ; IObjectArray::GetCount ;https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop.cs#L239-L243
-        GetCount:=VD_vtable(IObjectArray,3)
-
-        vd_Count := 0
-        DllCall(GetCount, "UPtr", IObjectArray, "UInt*", vd_Count)
-        return vd_Count
+        return IObjectArray
     }
-    _getCount11()
-    {
+    _dll_GetDesktops_Win11() {
         IObjectArray := 0
         DllCall(this.GetDesktops, "UPtr", this.IVirtualDesktopManagerInternal, "Ptr", 0, "UPtr*", IObjectArray)
+        return IObjectArray
+    }
+    _dll_SwitchDesktop_Win10(IVirtualDesktop) {
+        DllCall(this.SwitchDesktop, "ptr", this.IVirtualDesktopManagerInternal, "UPtr", IVirtualDesktop)
+    }
+    _dll_SwitchDesktop_Win11(IVirtualDesktop) {
+        DllCall(this.SwitchDesktop, "ptr", this.IVirtualDesktopManagerInternal, "Ptr", 0, "UPtr", IVirtualDesktop)
+    }
+    ;dll methods end
+
+    ;actual methods start
+    getCount()
+    {
+        IObjectArray:=this._dll_GetDesktops()
 
         ; IObjectArray::GetCount ;https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop.cs#L239-L243
         GetCount:=VD_vtable(IObjectArray,3)
@@ -126,6 +141,64 @@ class VD {
         DllCall(GetCount, "UPtr", IObjectArray, "UInt*", vd_Count)
         return vd_Count
     }
+
+    goToDesktop(desktopNum) {
+        IVirtualDesktop:=this._IVirtualDesktop_from_desktopNum(desktopNum)
+        this._SwitchDesktop(IVirtualDesktop)
+
+        if (this._isWindowFullScreen("A"))
+            timerFunc := ObjBindMethod(this, "_pleaseSwitchDesktop", desktopNum) ;https://www.autohotkey.com/docs/commands/SetTimer.htm#ExampleClass
+            SetTimer % timerFunc, -50
+
+    }
+    ;actual methods end
+
+    ;internal methods start
+    _IVirtualDesktop_from_desktopNum(desktopNum) {
+        IObjectArray:=this._dll_GetDesktops()
+
+        GetAt:=VD_vtable(IObjectArray,4)
+        DllCall(GetAt, "UPtr", IObjectArray, "UInt", desktopNum - 1, "UPtr", this.Ptr_GUID_IID_IVirtualDesktop, "UPtr*", IVirtualDesktop)
+        return IVirtualDesktop
+    }
+
+    _SwitchDesktop(IVirtualDesktop) {
+        ;activate taskbar before
+        WinActivate, ahk_class Shell_TrayWnd
+        WinWaitActive, ahk_class Shell_TrayWnd
+        this._dll_SwitchDesktop(IVirtualDesktop)
+        this._dll_SwitchDesktop(IVirtualDesktop)
+        WinMinimize, ahk_class Shell_TrayWnd
+    }
+
+    _pleaseSwitchDesktop(desktopNum) {
+        ;IVirtualDesktop should be calculated again because IVirtualDesktop could have changed
+        ;what we want is the same desktopNum
+        IVirtualDesktop:=this.IVirtualDesktop_from_desktopNum(desktopNum)
+        this._SwitchDesktop(desktopNum)
+        ;this method is goToDesktop(), but without the recursion, to prevent recursion
+    }
+    ;internal methods end
+
+    ;utility methods start
+    _isWindowFullScreen( winTitle ) {
+        ;checks if the specified window is full screen
+
+        winID := WinExist( winTitle )
+
+        If ( !winID )
+            Return false
+
+        WinGet style, Style, ahk_id %WinID%
+        WinGetPos ,,,winW,winH, %winTitle%
+        ; 0x800000 is WS_BORDER.
+        ; 0x20000000 is WS_MINIMIZE.
+        ; no border and not minimized
+        Return ((style & 0x20800000) or winH < A_ScreenHeight or winW < A_ScreenWidth) ? false : true
+    }
+    ;utility methods end
+
+
 
 }
 
@@ -228,33 +301,6 @@ VD_getDesktopOfWindow(wintitle)
         }
     }
 }
-VD_getCount()
-{
-    global
-    IObjectArray := 0
-    ; DllCall(GetDesktops, "UPtr", IVirtualDesktopManagerInternal, "UPtrP", IObjectArray, "UInt")
-    DllCall(GetDesktops, "UPtr", IVirtualDesktopManagerInternal, "Ptr", 0, "UPtrP", IObjectArray, "UInt")
-
-    ; IObjectArray::GetCount method
-    ; https://docs.microsoft.com/en-us/windows/desktop/api/objectarray/nf-objectarray-iobjectarray-getcount
-    vd_Count := 0
-    DllCall(VD_vtable(IObjectArray,3), "UPtr", IObjectArray, "UInt*", vd_Count, "UInt")
-    return vd_Count
-}
-VD_goToDesktop(whichDesktop)
-{
-    WindowisFullScreen:=VD_isWindowFullScreen("A") ;"A" specially means active window
-    VD_SwitchDesktop(VD_IVirtualDesktop_from_whichDesktop(whichDesktop))
-    func_pleaseSwitchDesktop := Func("VD_pleaseSwitchDesktop").Bind(whichDesktop)
-    if (WindowisFullScreen)
-        SetTimer % func_pleaseSwitchDesktop, -50
-}
-
-VD_pleaseSwitchDesktop(whichDesktop) {
-    ;VD_IVirtualDesktop should be calculated again because VD_IVirtualDesktop could have changed
-    ;what we want is the same whichDesktop
-    VD_SwitchDesktop(VD_IVirtualDesktop_from_whichDesktop(whichDesktop))
-}
 
 VD_goToDesktopOfWindow(wintitle, activate:=true)
 {
@@ -310,6 +356,7 @@ VD_goToDesktopOfWindow(wintitle, activate:=true)
         }
     }
 }
+
 VD_sendToDesktop(wintitle,whichDesktop,followYourWindow:=true,activate:=true)
 {
     global
@@ -397,21 +444,6 @@ VD_createUntil(howMany) {
 VD_removeDesktop(whichDesktop, fallback_which:=false) {
     ;FALLBACK IS ONLY USED IF YOU ARE CURRENTLY ON THAT VD
     VD_internal_removeDesktop(VD_IVirtualDesktop_from_whichDesktop(whichDesktop), VD_IVirtualDesktop_from_whichDesktop(fallback_which))
-}
-
-VD_IVirtualDesktop_from_whichDesktop(whichDesktop) {
-    global GetDesktops, IVirtualDesktopManagerInternal
-    global GUID_IID_IVirtualDesktop
-
-    if (whichDesktop < 1) {
-        return false
-    }
-
-    DllCall(GetDesktops, "UPtr", IVirtualDesktopManagerInternal, "UPtr*", IObjectArray)
-
-    GetAt:=VD_vtable(IObjectArray,4)
-    DllCall(GetAt, "UPtr", IObjectArray, "UInt", whichDesktop - 1, "UPtr", &GUID_IID_IVirtualDesktop, "UPtr*", IVirtualDesktop)
-    return IVirtualDesktop
 }
 
 VD_internal_removeDesktop(IVirtualDesktop, fallback:=false) {
@@ -535,31 +567,6 @@ VD_UnPinApp(wintitle) {
 }
 
 ;start of internal functions
-VD_SwitchDesktop(IVirtualDesktop)
-{
-    global SwitchDesktop, IVirtualDesktopManagerInternal
-    ;activate taskbar before
-    WinActivate, ahk_class Shell_TrayWnd
-    WinWaitActive, ahk_class Shell_TrayWnd
-    DllCall(SwitchDesktop, "ptr", IVirtualDesktopManagerInternal, "UPtr", IVirtualDesktop, "UInt")
-    DllCall(SwitchDesktop, "ptr", IVirtualDesktopManagerInternal, "UPtr", IVirtualDesktop, "UInt")
-    WinMinimize, ahk_class Shell_TrayWnd
-}
-VD_isWindowFullScreen( winTitle ) {
-    ;checks if the specified window is full screen
-
-    winID := WinExist( winTitle )
-
-    If ( !winID )
-        Return false
-
-    WinGet style, Style, ahk_id %WinID%
-    WinGetPos ,,,winW,winH, %winTitle%
-    ; 0x800000 is WS_BORDER.
-    ; 0x20000000 is WS_MINIMIZE.
-    ; no border and not minimized
-    Return ((style & 0x20800000) or winH < A_ScreenHeight or winW < A_ScreenWidth) ? false : true
-}
 
 VD_isValidWindow(hWnd)
 {
