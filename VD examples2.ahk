@@ -22,6 +22,8 @@ SetControlDelay -1
 
 VD.init()
 
+MsgBox % VD.getDesktopOfWindow("A")
+
 ; MsgBox % VD._strGUID_from_Hwnd(WinExist("A"))
 
 ; MsgBox % VD.getCount()

@@ -104,7 +104,7 @@ class VD {
         {
             MsgBox IApplicationViewCollection interface not supported.
         }
-        this.GetViewForHwnd := this._vtable(IApplicationViewCollection, 6) ; (IntPtr hwnd, out IApplicationView view);
+        this.GetViewForHwnd := this._vtable(this.IApplicationViewCollection, 6) ; (IntPtr hwnd, out IApplicationView view);
 
 
         ;----------------------
@@ -167,41 +167,27 @@ class VD {
         }
         theHwnd:=found[1]
 
+        desktopGUID_ofWindow:=this._strGUID_from_Hwnd(theHwnd)
 
-        DetectHiddenWindows, on
-        WinGet, hwndsOfWinTitle, List, %wintitle%
-        DetectHiddenWindows, off
-        loop % hwndsOfWinTitle {
-            if (!this._isValidWindow(hwndsOfWinTitle%A_Index%)) {
-                continue
-            }
+        IObjectArray:=this._dll_GetDesktops()
 
-        }
-        ; IVirtualDesktopManagerInternal::GetDesktops method
-        IObjectArray := 0
-        DllCall(GetDesktops, "UPtr", IVirtualDesktopManagerInternal, "UPtrP", IObjectArray, "UInt")
-        ; IObjectArray::GetCount method
-        ; https://docs.microsoft.com/en-us/windows/desktop/api/objectarray/nf-objectarray-iobjectarray-getcount
+        ; IObjectArray::GetCount ;https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop.cs#L239-L243
+        GetCount:=this._vtable(IObjectArray,3)
         vd_Count := 0
-        DllCall(this._vtable(IObjectArray,3), "UPtr", IObjectArray, "UIntP", vd_Count, "UInt")
+        DllCall(GetCount, "UPtr", IObjectArray, "UInt*", vd_Count)
 
-        VarSetCapacity(vd_strGUID, (38 + 1) * 2)
-        VarSetCapacity(vd_GUID, 16)
-
-        IVirtualDesktop := 0
-        Loop % (vd_Count)
+        GetAt:=this._vtable(IObjectArray,4)
+        Loop % vd_Count
         {
-            ; https://github.com/nullpo-head/Windows-10-Virtual-Desktop-Switching-Shortcut/blob/master/VirtualDesktopSwitcher/VirtualDesktopSwitcher/VirtualDesktops.h
-            DllCall("Ole32.dll\CLSIDFromString", "Str", "{FF72FFDD-BE7E-43FC-9C03-AD81681E88E4}", "UPtr", &vd_GUID)
-
-            ; IObjectArray::GetAt method
-            ; https://docs.microsoft.com/en-us/windows/desktop/api/objectarray/nf-objectarray-iobjectarray-getat
-            DllCall(this._vtable(IObjectArray,4), "UPtr", IObjectArray, "UInt", A_Index-1, "UPtr", &vd_GUID, "UPtrP", IVirtualDesktop, "UInt")
+            IVirtualDesktop:=0
+            DllCall(GetAt, "UPtr", IObjectArray, "UInt", A_Index - 1, "Ptr", this.Ptr_IID_IVirtualDesktop, "Ptr*", IVirtualDesktop)
 
             ; IVirtualDesktop::GetID method
-            DllCall(this._vtable(IVirtualDesktop,4), "UPtr", IVirtualDesktop, "UPtr", &vd_GUID, "UInt")
-            DllCall("Ole32.dll\StringFromGUID2", "UPtr", &vd_GUID, "UPtr", &vd_strGUID, "Int", 38 + 1)
-            if (StrGet(&vd_strGUID, "UTF-16") = desktopOfWindow) {
+            GetID:=this._vtable(IVirtualDesktop,4)
+            VarSetCapacity(vd_GUID, 16)
+            DllCall(GetID, "UPtr", IVirtualDesktop, "Ptr", &vd_GUID)
+            thisDesktopGUID:=this._string_from_GUID(vd_GUID)
+            if (thisDesktopGUID == desktopGUID_ofWindow) {
                 return A_Index
             }
         }
@@ -250,7 +236,7 @@ class VD {
 
             pView:=this._view_from_Hwnd(outHwndList%A_Index%)
             pfCanViewMoveDesktops := 0
-            DllCall(CanViewMoveDesktops, "ptr", IVirtualDesktopManagerInternal, "Ptr", pView, "int*", pfCanViewMoveDesktops) ; return value BOOL
+            DllCall(this.CanViewMoveDesktops, "UPtr", this.IVirtualDesktopManagerInternal, "Ptr", pView, "int*", pfCanViewMoveDesktops) ; return value BOOL
             if (!pfCanViewMoveDesktops) {
                 continue
             }
@@ -275,17 +261,15 @@ class VD {
             return false
         }
 
-        VarSetCapacity(strGUID_Desktop, 38 * 2) ;38 is StrLen("{FF72FFDD-BE7E-43FC-9C03-AD81681E88E4}")
-        DllCall("Ole32.dll\StringFromGUID2", "UPtr", &GUID_Desktop, "UPtr", &strGUID_Desktop, "Int", 38 + 1)
-        desktopOfWindow:=StrGet(&strGUID_Desktop, "UTF-16")
-        if (!desktopOfWindow) {
+        desktopGUID:=this._string_from_GUID(GUID_Desktop)
+        if (!desktopGUID) {
             return false
         }
-        if (desktopOfWindow=="{00000000-0000-0000-0000-000000000000}") {
+        if (desktopGUID=="{00000000-0000-0000-0000-000000000000}") {
             return false
         }
 
-        return desktopOfWindow
+        return desktopGUID
     }
     ;internal methods end
 
@@ -340,6 +324,11 @@ class VD {
     ;-------------------
     _vtable(ppv, index) {
         Return NumGet(NumGet(0+ppv)+A_PtrSize*index)
+    }
+    _string_from_GUID(Byref byref_GUID) {
+        VarSetCapacity(strGUID, 38 * 2) ;38 is StrLen("{FF72FFDD-BE7E-43FC-9C03-AD81681E88E4}")
+        DllCall("Ole32.dll\StringFromGUID2", "UPtr", &byref_GUID, "UPtr", &strGUID, "Int", 38 + 1)
+        return StrGet(&strGUID, "UTF-16")
     }
     ;utility methods end
 
