@@ -172,7 +172,7 @@ class VD {
         return desktopNum
     }
 
-    sendToDesktop(wintitle,desktopNum,followYourWindow:=true,activateYourWindow:=true)
+    sendWindowToDesktop(wintitle,desktopNum,followYourWindow:=true,activateYourWindow:=true)
     {
         found:=this._getFirstValidWindow(wintitle)
         if (!found) {
@@ -191,21 +191,22 @@ class VD {
 
         if (followYourWindow) {
             this.goToDesktop(desktopNum)
-            if (activateYourWindow) {
-                WinActivate, ahk_id %theHwnd%
-            }
+        }
+        if (activateYourWindow) {
+            WinActivate, ahk_id %theHwnd%
         }
     }
 
     goToDesktopOfWindow(wintitle, activateYourWindow:=true) {
         desktopNum:=this.getDesktopNumOfWindow(wintitle)
         this.goToDesktop(desktopNum)
+
         if (activateYourWindow) {
             WinActivate, ahk_id %theHwnd%
         }
     }
 
-    getCurrentDesktop()
+    getCurrentDesktopNum()
     {
         global
         IVirtualDesktop_ofCurrentDesktop := 0
@@ -215,6 +216,11 @@ class VD {
         return desktopNum
     }
 
+    sendWindowToCurrentDesktop(wintitle,activateYourWindow:=true)
+    {
+        desktopNum:=this.getCurrentDesktopNum()
+        this.sendWindowToDesktop(wintitle, desktopNum, false, activateYourWindow)
+    }
     ;actual methods end
 
     ;internal methods start
@@ -400,23 +406,6 @@ VD_getCurrentIVirtualDesktop()
     CurrentIVirtualDesktop := 0
     DllCall(GetCurrentDesktop, "UPtr", IVirtualDesktopManagerInternal, "UPtrP", CurrentIVirtualDesktop, "UInt")
     return CurrentIVirtualDesktop
-}
-
-VD_sendToCurrentDesktop(wintitle,activate:=true)
-{
-    global
-
-    if (VD_ByrefpViewAndHwnd(wintitle, thePView, theHwnd)) { ;Byref
-        return
-    }
-
-    CurrentIVirtualDesktop := 0
-    DllCall(GetCurrentDesktop, "UPtr", IVirtualDesktopManagerInternal, "UPtrP", CurrentIVirtualDesktop, "UInt")
-
-    DllCall(MoveViewToDesktop, "ptr", IVirtualDesktopManagerInternal, "Ptr", thePView, "UPtr", CurrentIVirtualDesktop, "UInt")
-    if (activate)
-        WinActivate, ahk_id %theHwnd%
-
 }
 
 ; VD_toggleShowOnAllDesktops(wintitle) {
