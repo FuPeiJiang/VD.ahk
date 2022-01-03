@@ -160,14 +160,13 @@ class VD {
 
     getDesktopOfWindow(wintitle)
     {
-
         found:=this._getFirstValidWindow(wintitle)
         if (!found) {
             return -1 ;for false
         }
         theHwnd:=found[1]
 
-        desktopGUID_ofWindow:=this._strGUID_from_Hwnd(theHwnd)
+        desktopGUID_ofWindow:=this._desktopGUID_from_Hwnd(theHwnd)
 
         IObjectArray:=this._dll_GetDesktops()
 
@@ -189,6 +188,32 @@ class VD {
             thisDesktopGUID:=this._string_from_GUID(vd_GUID)
             if (thisDesktopGUID == desktopGUID_ofWindow) {
                 return A_Index
+            }
+        }
+        return -1 ;for false
+    }
+
+    sendToDesktop(wintitle,desktopNum,followYourWindow:=true,activateYourWindow:=true)
+    {
+        found:=this._getFirstValidWindow(wintitle)
+        if (!found) {
+            return -1 ;for false
+        }
+        theHwnd:=found[1]
+        thePView:=found[2]
+
+        IObjectArray:=this._dll_GetDesktops()
+
+        GetAt:=this._vtable(IObjectArray,4)
+        IVirtualDesktop:=0
+        DllCall(GetAt, "UPtr", IObjectArray, "UInt", desktopNum - 1, "Ptr", this.Ptr_IID_IVirtualDesktop, "Ptr*", IVirtualDesktop)
+
+        DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal, "Ptr", thePView, "Ptr", IVirtualDesktop)
+
+        if (followYourWindow) {
+            this.goToDesktop(desktopNum)
+            if (activateYourWindow) {
+                WinActivate, ahk_id %theHwnd%
             }
         }
     }
@@ -253,7 +278,7 @@ class VD {
         return pView
     }
 
-    _strGUID_from_Hwnd(theHwnd) {
+    _desktopGUID_from_Hwnd(theHwnd) {
         VarSetCapacity(GUID_Desktop, 16)
         HRESULT := DllCall(this.GetWindowDesktopId, "UPtr", this.IVirtualDesktopManager, "Ptr", theHwnd, "UPtr", &GUID_Desktop)
         if (!(HRESULT==0))
@@ -271,6 +296,7 @@ class VD {
 
         return desktopGUID
     }
+
     ;internal methods end
 
     ;utility methods start
@@ -439,39 +465,6 @@ VD_goToDesktopOfWindow(wintitle, activate:=true)
             VD_SwitchDesktop(IVirtualDesktop)
             if (activate)
                 WinActivate, ahk_id %theHwnd%
-        }
-    }
-}
-
-VD_sendToDesktop(wintitle,whichDesktop,followYourWindow:=true,activate:=true)
-{
-    global
-
-    if (VD_ByrefpViewAndHwnd(wintitle, thePView, theHwnd)) { ;Byref
-        return
-    }
-
-    if (thePView) {
-        IObjectArray := 0
-        DllCall(GetDesktops, "UPtr", IVirtualDesktopManagerInternal, "UPtrP", IObjectArray, "UInt")
-
-        VarSetCapacity(vd_strGUID, (38 + 1) * 2)
-        VarSetCapacity(vd_GUID, 16)
-
-        IVirtualDesktop := 0
-
-        ; https://github.com/nullpo-head/Windows-10-Virtual-Desktop-Switching-Shortcut/blob/master/VirtualDesktopSwitcher/VirtualDesktopSwitcher/VirtualDesktops.h
-        DllCall("Ole32.dll\CLSIDFromString", "Str", "{FF72FFDD-BE7E-43FC-9C03-AD81681E88E4}", "UPtr", &vd_GUID)
-
-        ; IObjectArray::GetAt method
-        ; https://docs.microsoft.com/en-us/windows/desktop/api/objectarray/nf-objectarray-iobjectarray-getat
-        DllCall(this._vtable(IObjectArray,4), "UPtr", IObjectArray, "UInt", whichDesktop - 1, "UPtr", &vd_GUID, "UPtrP", IVirtualDesktop, "UInt")
-
-        DllCall(MoveViewToDesktop, "ptr", IVirtualDesktopManagerInternal, "Ptr", thePView, "UPtr", IVirtualDesktop, "UInt")
-
-        if (followYourWindow) {
-            VD_SwitchDesktop(IVirtualDesktop)
-            WinActivate, ahk_id %theHwnd%
         }
     }
 }
