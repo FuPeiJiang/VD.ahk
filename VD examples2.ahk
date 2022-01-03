@@ -22,7 +22,9 @@ SetControlDelay -1
 
 VD.init()
 
-MsgBox % VD.getDesktopOfWindow("A")
+; VD.goToDesktopOfWindow("ahk_class Notepad++")
+
+MsgBox % VD.getDesktopNumOfWindow("A")
 
 ; MsgBox % VD._strGUID_from_Hwnd(WinExist("A"))
 

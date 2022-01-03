@@ -81,7 +81,7 @@ class VD {
         this.SwitchDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 9) ; void SwitchDesktop(IVirtualDesktop desktop);
         this.CreateDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 10) ; IVirtualDesktop CreateDesktop();
         this.RemoveDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 11) ; void RemoveDesktop(IVirtualDesktop desktop, IVirtualDesktop fallback);
-        ; this.FindDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 12) ; IVirtualDesktop FindDesktop(ref Guid desktopid);
+        this.FindDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 12) ; IVirtualDesktop FindDesktop(ref Guid desktopid);
 
         ;https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop.cs#L225-L234
         this.IVirtualDesktopPinnedApps := ComObjQuery(IServiceProvider, "{B5A399E7-1C87-46B8-88E9-FC5747B171BD}", "{4CE81583-1E4C-4632-A621-07A53543148F}")
@@ -158,7 +158,7 @@ class VD {
 
     }
 
-    getDesktopOfWindow(wintitle)
+    getDesktopNumOfWindow(wintitle)
     {
         found:=this._getFirstValidWindow(wintitle)
         if (!found) {
@@ -166,31 +166,10 @@ class VD {
         }
         theHwnd:=found[1]
 
-        desktopGUID_ofWindow:=this._desktopGUID_from_Hwnd(theHwnd)
+        IVirtualDesktop_ofWindow:=this._IVirtualDesktop_from_Hwnd(theHwnd)
 
-        IObjectArray:=this._dll_GetDesktops()
-
-        ; IObjectArray::GetCount ;https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop.cs#L239-L243
-        GetCount:=this._vtable(IObjectArray,3)
-        vd_Count := 0
-        DllCall(GetCount, "UPtr", IObjectArray, "UInt*", vd_Count)
-
-        GetAt:=this._vtable(IObjectArray,4)
-        Loop % vd_Count
-        {
-            IVirtualDesktop:=0
-            DllCall(GetAt, "UPtr", IObjectArray, "UInt", A_Index - 1, "Ptr", this.Ptr_IID_IVirtualDesktop, "Ptr*", IVirtualDesktop)
-
-            ; IVirtualDesktop::GetID method
-            GetID:=this._vtable(IVirtualDesktop,4)
-            VarSetCapacity(vd_GUID, 16)
-            DllCall(GetID, "UPtr", IVirtualDesktop, "Ptr", &vd_GUID)
-            thisDesktopGUID:=this._string_from_GUID(vd_GUID)
-            if (thisDesktopGUID == desktopGUID_ofWindow) {
-                return A_Index
-            }
-        }
-        return -1 ;for false
+        desktopNum:=this._desktopNum_from_IVirtualDesktop(IVirtualDesktop_ofWindow)
+        return desktopNum
     }
 
     sendToDesktop(wintitle,desktopNum,followYourWindow:=true,activateYourWindow:=true)
@@ -216,6 +195,24 @@ class VD {
                 WinActivate, ahk_id %theHwnd%
             }
         }
+    }
+
+    goToDesktopOfWindow(wintitle, activateYourWindow:=true) {
+        desktopNum:=this.getDesktopNumOfWindow(wintitle)
+        this.goToDesktop(desktopNum)
+        if (activateYourWindow) {
+            WinActivate, ahk_id %theHwnd%
+        }
+    }
+
+    getCurrentDesktop()
+    {
+        global
+        IVirtualDesktop_ofCurrentDesktop := 0
+        DllCall(this.GetCurrentDesktop, "UPtr", this.IVirtualDesktopManagerInternal, "Ptr*", IVirtualDesktop_ofCurrentDesktop)
+
+        desktopNum:=this._desktopNum_from_IVirtualDesktop(IVirtualDesktop_ofCurrentDesktop)
+        return desktopNum
     }
 
     ;actual methods end
@@ -281,8 +278,7 @@ class VD {
     _desktopGUID_from_Hwnd(theHwnd) {
         VarSetCapacity(GUID_Desktop, 16)
         HRESULT := DllCall(this.GetWindowDesktopId, "UPtr", this.IVirtualDesktopManager, "Ptr", theHwnd, "UPtr", &GUID_Desktop)
-        if (!(HRESULT==0))
-        {
+        if (!(HRESULT==0)) {
             return false
         }
 
@@ -295,6 +291,39 @@ class VD {
         }
 
         return desktopGUID
+    }
+
+    _IVirtualDesktop_from_Hwnd(theHwnd) {
+        VarSetCapacity(GUID_Desktop, 16)
+        HRESULT := DllCall(this.GetWindowDesktopId, "UPtr", this.IVirtualDesktopManager, "Ptr", theHwnd, "Ptr", &GUID_Desktop)
+        if (!(HRESULT==0)) {
+            return false
+        }
+
+        IVirtualDesktop_ofWindow:=0
+        DllCall(this.FindDesktop, "UPtr", this.IVirtualDesktopManagerInternal, "Ptr", &GUID_Desktop, "Ptr*", IVirtualDesktop_ofWindow)
+
+        return IVirtualDesktop_ofWindow
+    }
+
+    _desktopNum_from_IVirtualDesktop(IVirtualDesktop) {
+        IObjectArray:=this._dll_GetDesktops()
+        ; IObjectArray::GetCount ;https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop.cs#L239-L243
+        GetCount:=this._vtable(IObjectArray,3)
+        vd_Count := 0
+        DllCall(GetCount, "UPtr", IObjectArray, "UInt*", vd_Count)
+
+        GetAt:=this._vtable(IObjectArray,4)
+        Loop % vd_Count
+        {
+            IVirtualDesktop_ofDesktop:=0
+            DllCall(GetAt, "UPtr", IObjectArray, "UInt", A_Index - 1, "Ptr", this.Ptr_IID_IVirtualDesktop, "Ptr*", IVirtualDesktop_ofDesktop)
+
+            if (IVirtualDesktop_ofDesktop == IVirtualDesktop) {
+                return A_Index
+            }
+        }
+        return -1 ;for false
     }
 
     ;internal methods end
@@ -371,102 +400,6 @@ VD_getCurrentIVirtualDesktop()
     CurrentIVirtualDesktop := 0
     DllCall(GetCurrentDesktop, "UPtr", IVirtualDesktopManagerInternal, "UPtrP", CurrentIVirtualDesktop, "UInt")
     return CurrentIVirtualDesktop
-}
-
-VD_getCurrentDesktop() ;this will return whichDesktop
-{
-    global
-    CurrentIVirtualDesktop := 0
-    DllCall(GetCurrentDesktop, "UPtr", IVirtualDesktopManagerInternal, "UPtrP", CurrentIVirtualDesktop, "UInt")
-
-    VarSetCapacity(vd_strGUID, (38 + 1) * 2)
-    VarSetCapacity(vd_GUID, 16)
-
-    DllCall(this._vtable(CurrentIVirtualDesktop,4), "UPtr", CurrentIVirtualDesktop, "UPtr", &vd_GUID, "UInt")
-
-    DllCall("Ole32.dll\StringFromGUID2", "UPtr", &vd_GUID, "UPtr", &vd_strGUID, "Int", 38 + 1)
-    currentDesktop_strGUID:=StrGet(&vd_strGUID, "UTF-16")
-
-    ; IVirtualDesktopManagerInternal::GetDesktops method
-    IObjectArray := 0
-    DllCall(GetDesktops, "UPtr", IVirtualDesktopManagerInternal, "UPtrP", IObjectArray, "UInt")
-    ; IObjectArray::GetCount method
-    ; https://docs.microsoft.com/en-us/windows/desktop/api/objectarray/nf-objectarray-iobjectarray-getcount
-    vd_Count := 0
-    DllCall(this._vtable(IObjectArray,3), "UPtr", IObjectArray, "UIntP", vd_Count, "UInt")
-
-    IVirtualDesktop := 0
-    Loop % (vd_Count)
-    {
-        ; https://github.com/nullpo-head/Windows-10-Virtual-Desktop-Switching-Shortcut/blob/master/VirtualDesktopSwitcher/VirtualDesktopSwitcher/VirtualDesktops.h
-        DllCall("Ole32.dll\CLSIDFromString", "Str", "{FF72FFDD-BE7E-43FC-9C03-AD81681E88E4}", "UPtr", &vd_GUID)
-
-        ; IObjectArray::GetAt method
-        ; https://docs.microsoft.com/en-us/windows/desktop/api/objectarray/nf-objectarray-iobjectarray-getat
-        DllCall(this._vtable(IObjectArray,4), "UPtr", IObjectArray, "UInt", A_Index-1, "UPtr", &vd_GUID, "UPtrP", IVirtualDesktop, "UInt")
-
-        ; IVirtualDesktop::GetID method
-        DllCall(this._vtable(IVirtualDesktop,4), "UPtr", IVirtualDesktop, "UPtr", &vd_GUID, "UInt")
-        DllCall("Ole32.dll\StringFromGUID2", "UPtr", &vd_GUID, "UPtr", &vd_strGUID, "Int", 38 + 1)
-        if (StrGet(&vd_strGUID, "UTF-16") = currentDesktop_strGUID) {
-            return A_Index
-        }
-    }
-}
-
-VD_goToDesktopOfWindow(wintitle, activate:=true)
-{
-    global
-    DetectHiddenWindows, on
-    WinGet, hwndsOfWinTitle, List, %wintitle%
-    DetectHiddenWindows, off
-    loop % hwndsOfWinTitle {
-        IfEqual, False, % VD_isValidWindow(hwndsOfWinTitle%A_Index%), continue
-
-        VarSetCapacity(vd_GUID, 16)
-        vd_HRESULT := DllCall(GetWindowDesktopId, "UPtr", IVirtualDesktopManager, "Ptr", hwndsOfWinTitle%A_Index%, "UPtr", &vd_GUID, "UInt")
-        if ( !vd_HRESULT ) ; OK
-        {
-            VarSetCapacity(vd_strGUID, (38 + 1) * 2)
-            DllCall("Ole32.dll\StringFromGUID2", "UPtr", &vd_GUID, "UPtr", &vd_strGUID, "Int", 38 + 1)
-            desktopOfWindow:=StrGet(&vd_strGUID, "UTF-16")
-            if (desktopOfWindow and desktopOfWindow!="{00000000-0000-0000-0000-000000000000}") {
-                theHwnd:=hwndsOfWinTitle%A_Index%
-                break
-            }
-        }
-    }
-
-    ; IVirtualDesktopManagerInternal::GetDesktops method
-    IObjectArray := 0
-    DllCall(GetDesktops, "UPtr", IVirtualDesktopManagerInternal, "UPtrP", IObjectArray, "UInt")
-    ; IObjectArray::GetCount method
-    ; https://docs.microsoft.com/en-us/windows/desktop/api/objectarray/nf-objectarray-iobjectarray-getcount
-    vd_Count := 0
-    DllCall(this._vtable(IObjectArray,3), "UPtr", IObjectArray, "UIntP", vd_Count, "UInt")
-
-    VarSetCapacity(vd_strGUID, (38 + 1) * 2)
-    VarSetCapacity(vd_GUID, 16)
-
-    IVirtualDesktop := 0
-    Loop % (vd_Count)
-    {
-        ; https://github.com/nullpo-head/Windows-10-Virtual-Desktop-Switching-Shortcut/blob/master/VirtualDesktopSwitcher/VirtualDesktopSwitcher/VirtualDesktops.h
-        DllCall("Ole32.dll\CLSIDFromString", "Str", "{FF72FFDD-BE7E-43FC-9C03-AD81681E88E4}", "UPtr", &vd_GUID)
-
-        ; IObjectArray::GetAt method
-        ; https://docs.microsoft.com/en-us/windows/desktop/api/objectarray/nf-objectarray-iobjectarray-getat
-        DllCall(this._vtable(IObjectArray,4), "UPtr", IObjectArray, "UInt", A_Index-1, "UPtr", &vd_GUID, "UPtrP", IVirtualDesktop, "UInt")
-
-        ; IVirtualDesktop::GetID method
-        DllCall(this._vtable(IVirtualDesktop,4), "UPtr", IVirtualDesktop, "UPtr", &vd_GUID, "UInt")
-        DllCall("Ole32.dll\StringFromGUID2", "UPtr", &vd_GUID, "UPtr", &vd_strGUID, "Int", 38 + 1)
-        if (StrGet(&vd_strGUID, "UTF-16") = desktopOfWindow) {
-            VD_SwitchDesktop(IVirtualDesktop)
-            if (activate)
-                WinActivate, ahk_id %theHwnd%
-        }
-    }
 }
 
 VD_sendToCurrentDesktop(wintitle,activate:=true)
