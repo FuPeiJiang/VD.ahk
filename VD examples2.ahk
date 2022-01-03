@@ -22,9 +22,18 @@ SetControlDelay -1
 
 VD.init()
 
+; VD.createDesktop(true)
+; VD.createUntil(5, true)
+VD.createUntil(5, false)
+
+; VD.removeDesktop(5)
+; VD.removeDesktop(VD.GetCount())
+
+; VD.goToDesktop(1)
+
 ; VD.goToDesktopOfWindow("ahk_class Notepad++")
 
-MsgBox % VD.getDesktopNumOfWindow("A")
+; MsgBox % VD.getDesktopNumOfWindow("A")
 
 ; MsgBox % VD._strGUID_from_Hwnd(WinExist("A"))
 

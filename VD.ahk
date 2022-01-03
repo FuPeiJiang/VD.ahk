@@ -79,8 +79,8 @@ class VD {
         this.GetDesktops := this._vtable(this.IVirtualDesktopManagerInternal, 7) ; IObjectArray GetDesktops();
         this.GetAdjacentDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 8) ; int GetAdjacentDesktop(IVirtualDesktop from, int direction, out IVirtualDesktop desktop);
         this.SwitchDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 9) ; void SwitchDesktop(IVirtualDesktop desktop);
-        this.CreateDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 10) ; IVirtualDesktop CreateDesktop();
-        this.RemoveDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 11) ; void RemoveDesktop(IVirtualDesktop desktop, IVirtualDesktop fallback);
+        this.Ptr_CreateDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 10) ; IVirtualDesktop CreateDesktop();
+        this.Ptr_RemoveDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 11) ; void RemoveDesktop(IVirtualDesktop desktop, IVirtualDesktop fallback);
         this.FindDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 12) ; IVirtualDesktop FindDesktop(ref Guid desktopid);
 
         ;https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop.cs#L225-L234
@@ -137,18 +137,11 @@ class VD {
     ;actual methods start
     getCount()
     {
-        IObjectArray:=this._dll_GetDesktops()
-
-        ; IObjectArray::GetCount ;https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop.cs#L239-L243
-        GetCount:=this._vtable(IObjectArray,3)
-
-        vd_Count := 0
-        DllCall(GetCount, "UPtr", IObjectArray, "UInt*", vd_Count)
-        return vd_Count
+        return this._GetDesktops_Obj().GetCount()
     }
 
     goToDesktop(desktopNum) {
-        IVirtualDesktop:=this._IVirtualDesktop_from_desktopNum(desktopNum)
+        IVirtualDesktop:=this._GetDesktops_Obj().GetAt(desktopNum)
         this._SwitchDesktop(IVirtualDesktop)
 
         if (this._isWindowFullScreen("A")) {
@@ -181,11 +174,7 @@ class VD {
         theHwnd:=found[1]
         thePView:=found[2]
 
-        IObjectArray:=this._dll_GetDesktops()
-
-        GetAt:=this._vtable(IObjectArray,4)
-        IVirtualDesktop:=0
-        DllCall(GetAt, "UPtr", IObjectArray, "UInt", desktopNum - 1, "Ptr", this.Ptr_IID_IVirtualDesktop, "Ptr*", IVirtualDesktop)
+        IVirtualDesktop:=this._GetDesktops_Obj().GetAt(desktopNum)
 
         DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal, "Ptr", thePView, "Ptr", IVirtualDesktop)
 
@@ -208,7 +197,6 @@ class VD {
 
     getCurrentDesktopNum()
     {
-        global
         IVirtualDesktop_ofCurrentDesktop := 0
         DllCall(this.GetCurrentDesktop, "UPtr", this.IVirtualDesktopManagerInternal, "Ptr*", IVirtualDesktop_ofCurrentDesktop)
 
@@ -221,19 +209,65 @@ class VD {
         desktopNum:=this.getCurrentDesktopNum()
         this.sendWindowToDesktop(wintitle, desktopNum, false, activateYourWindow)
     }
+
+    createDesktop(goThere:=true) {
+        IVirtualDesktop_ofNewDesktop:=0
+        DllCall(this.Ptr_CreateDesktop, "UPtr", this.IVirtualDesktopManagerInternal, "Ptr*", IVirtualDesktop_ofNewDesktop)
+
+        if (goThere) {
+            ;we could assume that it's the rightmost desktop:
+            ; desktopNum:=this.getCount()
+            ;but I'm not risking it
+            desktopNum:=this._desktopNum_from_IVirtualDesktop(IVirtualDesktop_ofNewDesktop)
+            this.goToDesktop(desktopNum)
+        }
+    }
+
+    createUntil(howMany, goToLastlyCreated:=true) {
+        howManyThereAlreadyAre:=Vd.getCount()
+        if (howManyThereAlreadyAre>=howMany) {
+            return
+        }
+
+        ;this will create until one less than wanted
+        loop % howMany - howManyThereAlreadyAre - 1 {
+            this.createDesktop(false)
+        }
+        this.createDesktop(goToLastlyCreated)
+    }
+
+    removeDesktop(desktopNum, fallback_desktopNum:=false) {
+        ;FALLBACK IS ONLY USED IF YOU ARE CURRENTLY ON THE VD BEING DELETED
+        ;but we NEED a fallback, regardless, so I'm not checking if you are currently on the vd being deleted
+
+        Desktops_Obj:=this._GetDesktops_Obj()
+
+        ;if no fallback,
+        if (!fallback_desktopNum) {
+
+            ;look left
+            if (desktopNum > 1) {
+                fallback_desktopNum:=desktopNum - 1
+            }
+            ;look right
+            else if (desktopNum < Desktops_Obj.GetCount()) {
+                fallback_desktopNum:=desktopNum + 1
+            }
+            ;no fallback to go to
+            else {
+                return false
+            }
+        }
+
+        IVirtualDesktop:=Desktops_Obj.GetAt(desktopNum)
+        IVirtualDesktop_fallback:=Desktops_Obj.GetAt(fallback_desktopNum)
+
+        DllCall(this.Ptr_RemoveDesktop, "UPtr", this.IVirtualDesktopManagerInternal, "Ptr", IVirtualDesktop, "Ptr", IVirtualDesktop_fallback)
+    }
+
     ;actual methods end
 
     ;internal methods start
-    _IVirtualDesktop_from_desktopNum(desktopNum) {
-        IObjectArray:=this._dll_GetDesktops()
-
-        GetAt:=this._vtable(IObjectArray,4)
-
-        IVirtualDesktop:=0
-        DllCall(GetAt, "UPtr", IObjectArray, "UInt", desktopNum - 1, "Ptr", this.Ptr_IID_IVirtualDesktop, "Ptr*", IVirtualDesktop)
-        return IVirtualDesktop
-    }
-
     _SwitchDesktop(IVirtualDesktop) {
         ;activate taskbar before
         WinActivate, ahk_class Shell_TrayWnd
@@ -246,7 +280,7 @@ class VD {
     _pleaseSwitchDesktop(desktopNum) {
         ;IVirtualDesktop should be calculated again because IVirtualDesktop could have changed
         ;what we want is the same desktopNum
-        IVirtualDesktop:=this._IVirtualDesktop_from_desktopNum(desktopNum)
+        IVirtualDesktop:=this._GetDesktops_Obj().GetAt(desktopNum)
         this._SwitchDesktop(IVirtualDesktop)
         ;this method is goToDesktop(), but without the recursion, to prevent recursion
     }
@@ -313,23 +347,21 @@ class VD {
     }
 
     _desktopNum_from_IVirtualDesktop(IVirtualDesktop) {
-        IObjectArray:=this._dll_GetDesktops()
-        ; IObjectArray::GetCount ;https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop.cs#L239-L243
-        GetCount:=this._vtable(IObjectArray,3)
-        vd_Count := 0
-        DllCall(GetCount, "UPtr", IObjectArray, "UInt*", vd_Count)
-
-        GetAt:=this._vtable(IObjectArray,4)
-        Loop % vd_Count
+        Desktops_Obj:=this._GetDesktops_Obj()
+        Loop % Desktops_Obj.GetCount()
         {
-            IVirtualDesktop_ofDesktop:=0
-            DllCall(GetAt, "UPtr", IObjectArray, "UInt", A_Index - 1, "Ptr", this.Ptr_IID_IVirtualDesktop, "Ptr*", IVirtualDesktop_ofDesktop)
+            IVirtualDesktop_ofDesktop:=Desktops_Obj.GetAt(A_Index)
 
             if (IVirtualDesktop_ofDesktop == IVirtualDesktop) {
                 return A_Index
             }
         }
         return -1 ;for false
+    }
+
+    _GetDesktops_Obj() {
+        IObjectArray:=this._dll_GetDesktops()
+        return new this.IObjectArray_Wrapper(IObjectArray, this.Ptr_IID_IVirtualDesktop)
     }
 
     ;internal methods end
@@ -391,6 +423,27 @@ class VD {
         DllCall("Ole32.dll\StringFromGUID2", "UPtr", &byref_GUID, "UPtr", &strGUID, "Int", 38 + 1)
         return StrGet(&strGUID, "UTF-16")
     }
+
+    class IObjectArray_Wrapper {
+        __New(IObjectArray, Ptr_IID_Interface) {
+            this.IObjectArray:=IObjectArray
+            this.Ptr_IID_Interface:=Ptr_IID_Interface
+
+            this.Ptr_GetAt:=VD._vtable(IObjectArray,4)
+            this.Ptr_GetCount:=VD._vtable(IObjectArray,3)
+        }
+        GetAt(oneBasedIndex) {
+            Ptr_Interface:=0
+            DllCall(this.Ptr_GetAt, "UPtr", this.IObjectArray, "UInt", oneBasedIndex - 1, "Ptr", this.Ptr_IID_Interface, "Ptr*", Ptr_Interface)
+            return Ptr_Interface
+        }
+        GetCount() {
+            Count := 0
+            DllCall(this.Ptr_GetCount, "UPtr", this.IObjectArray, "UInt*", Count)
+            return Count
+        }
+
+    }
     ;utility methods end
 
 
@@ -398,74 +451,6 @@ class VD {
 }
 
 /*
-
-
-VD_getCurrentIVirtualDesktop()
-{
-    global GetCurrentDesktop, IVirtualDesktopManagerInternal
-    CurrentIVirtualDesktop := 0
-    DllCall(GetCurrentDesktop, "UPtr", IVirtualDesktopManagerInternal, "UPtrP", CurrentIVirtualDesktop, "UInt")
-    return CurrentIVirtualDesktop
-}
-
-; VD_toggleShowOnAllDesktops(wintitle) {
-; VD_toggleShowOnAllDesktops(wintitle) {
-; WinGet, WinExStyle, ExStyle, % wintitle
-; If (WinExStyle & 0x00000080)
-; WinSet, ExStyle, -0x00000080, % wintitle
-; else
-; WinSet, ExStyle, +0x00000080, % wintitle
-; }
-
-; VD_showOnAllDesktops(wintitle, enableOrDisable:=true) {
-; WinSet, ExStyle, % (enableOrDisable ? "+" : "-") "0x00000080", % wintitle
-; }
-
-VD_createDesktop(goThere:=true) {
-    global CreateDesktop, IVirtualDesktopManagerInternal
-
-    DllCall(CreateDesktop, "UPtr", IVirtualDesktopManagerInternal, "Ptr*", newlyCreatedDesktop)
-
-    if (goThere) {
-        VD_goToDesktop(VD_getCount())
-    }
-}
-
-VD_createUntil(howMany) {
-
-    loop % howMany - VD_getCount() {
-        VD_createDesktop(false)
-    }
-
-    if (goThere) {
-        VD_goToDesktop(VD_getCount())
-    }
-}
-
-VD_removeDesktop(whichDesktop, fallback_which:=false) {
-    ;FALLBACK IS ONLY USED IF YOU ARE CURRENTLY ON THAT VD
-    VD_internal_removeDesktop(VD_IVirtualDesktop_from_whichDesktop(whichDesktop), VD_IVirtualDesktop_from_whichDesktop(fallback_which))
-}
-
-VD_internal_removeDesktop(IVirtualDesktop, fallback:=false) {
-    global RemoveDesktop, GetAdjacentDesktop, IVirtualDesktopManagerInternal
-
-    if (fallback==false) {
-        ;look left
-        DllCall(GetAdjacentDesktop, "UPtr", IVirtualDesktopManagerInternal, "Ptr", IVirtualDesktop, "Uint", 3, "Ptr*", fallback) ; 3 = LeftDirection
-        if (fallback==0) {
-            ;look right
-            DllCall(GetAdjacentDesktop, "UPtr", IVirtualDesktopManagerInternal, "Ptr", IVirtualDesktop, "Uint", 4, "Ptr*", fallback) ; 4 = RightDirection
-            if (fallback==0) {
-                return false
-            }
-        }
-    }
-
-    ;FALLBACK IS ONLY USED IF YOU ARE CURRENTLY ON THAT VD
-    DllCall(RemoveDesktop, "UPtr", IVirtualDesktopManagerInternal, "Ptr", IVirtualDesktop, "Ptr", fallback)
-
-}
 
 VD_IsWindowPinned(wintitle) {
     global IsViewPinned, IVirtualDesktopPinnedApps
