@@ -74,14 +74,13 @@ Postmessage,0xB1,0,StrLen("Numpad0"),, % "ahk_id " HWndExplanation_Edit ;move ca
 
 ;include the library
 #Include VD.ahk
-VD.init() ;you HAVE to call this, call this when you want to init global vars, takes 0.04 seconds for me.
+; VD.init() ;optional
 
 ;you should WinHide invisible programs that have a window.
 WinHide, % "Malwarebytes Tray Application"
 ;#SETUP END
 
 VD.createUntil(3) ;create until we have at least 3 VD
-
 
 return
 
