@@ -44,7 +44,7 @@ f1 to see which desktop you currently are in
 
 but at this point, just use Win + Tab..
 these functions are mostly for script only,
-for example: I used VD_createUntil(3)
+for example: I used VD.createUntil(3)
 at the start of this tutorial, to make sure we have at least 3 VD
 
 ^+NumpadAdd (Ctrl Alt + Numpad+) to create until you have 3 desktops
@@ -66,7 +66,7 @@ gui, add, Edit, -vscroll -E0x200 +hwndHWndExplanation_Edit, % explanation
 CtlColors.Attach(HWndExplanation_Edit, hex_RGBtoBGR(decimalToHex(0+defaultBackgroundColor)))
 
 Gui, Color,
-gui, show,, VD_examplesWinTile
+gui, show,, VD.ahk examples WinTitle
 WinSet, Redraw
 Postmessage,0xB1,0,StrLen("Numpad0"),, % "ahk_id " HWndExplanation_Edit ;move caret to end
 ; Postmessage,0xB1,-1,-1,, % "ahk_id " HWndExplanation_Edit ;move caret to end
@@ -74,94 +74,94 @@ Postmessage,0xB1,0,StrLen("Numpad0"),, % "ahk_id " HWndExplanation_Edit ;move ca
 
 ;include the library
 #Include VD.ahk
-vd_init() ;you HAVE to call this, call this when you want to init global vars, takes 0.04 seconds for me.
+VD.init() ;you HAVE to call this, call this when you want to init global vars, takes 0.04 seconds for me.
 
 ;you should WinHide invisible programs that have a window.
 WinHide, % "Malwarebytes Tray Application"
 ;#SETUP END
 
-VD_createUntil(3) ;create until we have at least 3 VD
+VD.createUntil(3) ;create until we have at least 3 VD
 
 
 return
 
 ;#useful stuff
-numpad1::VD_goToDesktop(1)
-numpad2::VD_goToDesktop(2)
-numpad3::VD_goToDesktop(3)
+numpad1::VD.goToDesktopNum(1)
+numpad2::VD.goToDesktopNum(2)
+numpad3::VD.goToDesktopNum(3)
 
 ;followYourWindow:=true
-numpad4::VD_sendToDesktop("A",1,true)
-numpad5::VD_sendToDesktop("A",2,true)
-numpad6::VD_sendToDesktop("A",3,true)
+numpad4::VD.sendWindowToDesktopNum("A",1,true)
+numpad5::VD.sendWindowToDesktopNum("A",2,true)
+numpad6::VD.sendWindowToDesktopNum("A",3,true)
 
 ;followYourWindow:=false
-numpad7::VD_sendToDesktop("A",1,false)
-numpad8::VD_sendToDesktop("A",2,false)
-numpad9::VD_sendToDesktop("A",3,false)
+numpad7::VD.sendWindowToDesktopNum("A",1,false)
+numpad8::VD.sendWindowToDesktopNum("A",2,false)
+numpad9::VD.sendWindowToDesktopNum("A",3,false)
 
 ;to come back to this window
 #NumpadMult:: ;#*
-    VD_goToDesktopOfWindow("VD_examplesWinTile")
-    ; VD_goToDesktopOfWindow("ahk_exe code.exe")
+    VD.goToDesktopOfWindow("VD.ahk examples WinTitle")
+    ; VD.goToDesktopOfWindow("ahk_exe code.exe")
 return
 
 ;getters and stuff
 f6::
-    msgbox % VD_getDesktopOfWindow("VD_examplesWinTile")
-    ; msgbox % VD_getDesktopOfWindow("ahk_exe GitHubDesktop.exe")
+    msgbox % VD.getDesktopNumOfWindow("VD.ahk examples WinTitle")
+    ; msgbox % VD.getDesktopNumOfWindow("ahk_exe GitHubDesktop.exe")
 return
 f1::
-    msgbox % VD_getCurrentDesktop()
+    msgbox % VD.getCurrentDesktopNum()
 return
 f2::
-    msgbox % VD_getCount()
+    msgbox % VD.getCount()
 return
 
 ;Create/Remove Desktop
-!NumpadAdd::VD_createDesktop()
-#NumpadAdd::VD_createDesktop(false) ;don't go to newly created
+!NumpadAdd::VD.createDesktop()
+#NumpadAdd::VD.createDesktop(false) ;don't go to newly created
 
-!NumpadSub::VD_removeDesktop(VD_getCurrentDesktop())
-#!NumpadSub::VD_removeDesktop(VD_getCount()) ;removes 3rd desktop if there are 3 desktops
+!NumpadSub::VD.removeDesktop(VD.getCurrentDesktopNum())
+#!NumpadSub::VD.removeDesktop(VD.getCount()) ;removes 3rd desktop if there are 3 desktops
 
 ^+NumpadAdd::
-VD_createUntil(3) ;create until we have at least 3 VD
+VD.createUntil(3) ;create until we have at least 3 VD
 return
 
 ^+NumpadSub::
-VD_createUntil(3) ;create until we have at least 3 VD
+VD.createUntil(3) ;create until we have at least 3 VD
 sleep 1000
 ;FALLBACK IS ONLY USED IF YOU ARE CURRENTLY ON THAT VD
-VD_removeDesktop(3, 1)
+VD.removeDesktop(3, 1)
 return
 
 ;Pin Window
 numpad0::
-    VD_TogglePinWindow("A")
+    VD.TogglePinWindow("A")
 return
 ^numpad0::
-    VD_PinWindow("A")
+    VD.PinWindow("A")
 return
 !numpad0::
-    VD_UnPinWindow("A")
+    VD.UnPinWindow("A")
 return
 #numpad0::
-    MsgBox % VD_IsWindowPinned("A")
+    MsgBox % VD.IsWindowPinned("A")
 return
 
 ;Pin App
 numpadDot::
-    VD_TogglePinApp("A")
+    VD.TogglePinApp("A")
 return
 ^numpadDot::
-    VD_PinApp("A")
+    VD.PinApp("A")
 return
 !numpadDot::
-    VD_UnPinApp("A")
+    VD.UnPinApp("A")
 return
 #numpadDot::
-    MsgBox % VD_IsAppPinned("A")
+    MsgBox % VD.IsAppPinned("A")
 return
 
 f3::Exitapp

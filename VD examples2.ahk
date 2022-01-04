@@ -29,7 +29,7 @@ VD.init()
 ; VD.removeDesktop(5)
 ; VD.removeDesktop(VD.GetCount())
 
-; VD.goToDesktop(1)
+; VD.goToDesktopNum(1)
 
 ; VD.goToDesktopOfWindow("ahk_class Notepad++")
 
@@ -55,8 +55,8 @@ return
     MsgBox % VD.IsWindowPinned("A")
 return
 
-numpad1::VD.goToDesktop(1)
-numpad2::VD.goToDesktop(2)
-numpad3::VD.goToDesktop(3)
+numpad1::VD.goToDesktopNum(1)
+numpad2::VD.goToDesktopNum(2)
+numpad3::VD.goToDesktopNum(3)
 
 f3::Exitapp

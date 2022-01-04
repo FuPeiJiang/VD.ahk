@@ -1,34 +1,30 @@
-; must call VD_init() before any of these functions
-; VD_getCurrentDesktop() ;this will return whichDesktop
-; VD_getDesktopOfWindow(wintitle) ;this will return whichDesktop ;please use VD_goToDesktopOfWindow instead if you just want to go there.
-; VD_getCount() ;this will return the number of virtual desktops you currently have
-; VD_goToDesktop(whichDesktop)
-; VD_goToDesktopOfWindow(wintitle, activate:=true)
-; VD_sendToDesktop(wintitle,whichDesktop,followYourWindow:=true,activate:=true)
-; VD_sendToCurrentDesktop(wintitle,activate:=true)
+; VD.getCurrentDesktopNum()
+; VD.getDesktopNumOfWindow(wintitle) ;please use VD.goToDesktopOfWindow instead if you just want to go there.
 
-; VD_createDesktop(goThere:=true) ; VD_createUntil(howMany, goThere:=true)
-; VD_removeDesktop(whichDesktop, fallback_which:=false)
+; VD.getCount() ;how many virtual desktops you now have
+
+; VD.goToDesktopNum(desktopNum)
+; VD.goToDesktopOfWindow(wintitle, activateYourWindow:=true)
+
+; VD.sendWindowToDesktopNum(wintitle,desktopNum,followYourWindow:=true,activateYourWindow:=true)
+; VD.sendWindowToCurrentDesktop(wintitle,activateYourWindow:=true)
+
+; optional: call VD.init() to initialize internal variables before using methods, or else variables will be initialized when you first use the class(I think)
+
+; VD.createDesktop(goThere:=true) ; VD.createUntil(howMany, goToLastlyCreated:=true)
+; VD.removeDesktop(desktopNum, fallback_desktopNum:=false)
 
 ; "Show this window on all desktops"
-; VD_IsWindowPinned(wintitle)
-; VD_TogglePinWindow(wintitle)
-; VD_PinWindow(wintitle)
-; VD_UnPinWindow(wintitle)
+; VD.IsWindowPinned(wintitle)
+; VD.TogglePinWindow(wintitle)
+; VD.PinWindow(wintitle)
+; VD.UnPinWindow(wintitle)
 
 ; "Show windows from this app on all desktops"
-; VD_IsAppPinned(wintitle)
-; VD_TogglePinApp(wintitle)
-; VD_PinApp(wintitle)
-; VD_UnPinApp(wintitle)
-
-; internal functions
-; VD_getCurrentIVirtualDesktop()
-; VD_SwitchDesktop(IVirtualDesktop)
-; VD_isValidWindow(hWnd)
-; VD_getWintitle(hWnd)
-; VD_IsWindow(hWnd){
-; this._vtable(ppv, idx)
+; VD.IsAppPinned(wintitle)
+; VD.TogglePinApp(wintitle)
+; VD.PinApp(wintitle)
+; VD.UnPinApp(wintitle)
 
 ; Thanks to:
 ; Blackholyman:
@@ -37,6 +33,10 @@
 ; Flipeador:
 ; https://www.autohotkey.com/boards/viewtopic.php?t=54202#p234192
 ; https://www.autohotkey.com/boards/viewtopic.php?t=54202#p234309
+; and then later
+; MScholtes:
+; https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop.cs
+; (for all the other functions I didnt know about. and windows 11)
 
 class VD {
 
@@ -135,12 +135,11 @@ class VD {
     ;dll methods end
 
     ;actual methods start
-    getCount()
-    {
+    getCount() { ;how many virtual desktops you now have
         return this._GetDesktops_Obj().GetCount()
     }
 
-    goToDesktop(desktopNum) {
+    goToDesktopNum(desktopNum) {
         IVirtualDesktop:=this._GetDesktops_Obj().GetAt(desktopNum)
         this._SwitchDesktop(IVirtualDesktop)
 
@@ -165,7 +164,7 @@ class VD {
         return desktopNum
     }
 
-    sendWindowToDesktop(wintitle,desktopNum,followYourWindow:=true,activateYourWindow:=true)
+    sendWindowToDesktopNum(wintitle,desktopNum,followYourWindow:=true,activateYourWindow:=true)
     {
         found:=this._getFirstValidWindow(wintitle)
         if (!found) {
@@ -179,7 +178,7 @@ class VD {
         DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal, "Ptr", thePView, "Ptr", IVirtualDesktop)
 
         if (followYourWindow) {
-            this.goToDesktop(desktopNum)
+            this.goToDesktopNum(desktopNum)
         }
         if (activateYourWindow) {
             WinActivate, ahk_id %theHwnd%
@@ -188,7 +187,7 @@ class VD {
 
     goToDesktopOfWindow(wintitle, activateYourWindow:=true) {
         desktopNum:=this.getDesktopNumOfWindow(wintitle)
-        this.goToDesktop(desktopNum)
+        this.goToDesktopNum(desktopNum)
 
         if (activateYourWindow) {
             WinActivate, ahk_id %theHwnd%
@@ -207,7 +206,7 @@ class VD {
     sendWindowToCurrentDesktop(wintitle,activateYourWindow:=true)
     {
         desktopNum:=this.getCurrentDesktopNum()
-        this.sendWindowToDesktop(wintitle, desktopNum, false, activateYourWindow)
+        this.sendWindowToDesktopNum(wintitle, desktopNum, false, activateYourWindow)
     }
 
     createDesktop(goThere:=true) {
@@ -219,7 +218,7 @@ class VD {
             ; desktopNum:=this.getCount()
             ;but I'm not risking it
             desktopNum:=this._desktopNum_from_IVirtualDesktop(IVirtualDesktop_ofNewDesktop)
-            this.goToDesktop(desktopNum)
+            this.goToDesktopNum(desktopNum)
         }
     }
 
@@ -326,7 +325,7 @@ class VD {
         ;what we want is the same desktopNum
         IVirtualDesktop:=this._GetDesktops_Obj().GetAt(desktopNum)
         this._SwitchDesktop(IVirtualDesktop)
-        ;this method is goToDesktop(), but without the recursion, to prevent recursion
+        ;this method is goToDesktopNum(), but without the recursion, to prevent recursion
     }
 
     _getFirstValidWindow(wintitle) {
