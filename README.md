@@ -1,12 +1,12 @@
-## VD.ahk: Virtual Desktop
-#### goToDesktopNum()
-#### sendWindowToDesktopNum()
-#### getDesktopNumOfWindow()
-#### createDesktop()
-#### PinWindow()
-#### getCurrentDesktopNum()
-#### getCount()
-#### more
+# VD.ahk: Virtual Desktop
+* `goToDesktopNum()`
+* `sendWindowToDesktopNum()`
+* `getDesktopNumOfWindow()`
+* `createDesktop()`
+* `PinWindow()`
+* `getCurrentDesktopNum()`
+* `getCount()`
+* more
 
 ### Just run the examples, everything explained inside
 the most useful ones:<br>
@@ -64,3 +64,8 @@ Process, Priority,, H
 SetWinDelay -1
 SetControlDelay -1
 ```
+___
+if you want global functions style instead of a class:<br>
+eg: `VD_goToDesktopNum()` instead of `VD.goToDesktopNum()`<br>
+then visit branch `global_functions`<br>
+but it won't be updated
