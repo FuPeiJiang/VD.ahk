@@ -24,7 +24,7 @@ VD.init()
 
 ; VD.createDesktop(true)
 ; VD.createUntil(5, true)
-VD.createUntil(5, false)
+; VD.createUntil(5, false)
 
 ; VD.removeDesktop(5)
 ; VD.removeDesktop(VD.GetCount())
@@ -39,6 +39,20 @@ VD.createUntil(5, false)
 
 ; MsgBox % VD.getCount()
 
+return
+
+;Pin Window
+numpad0::
+    VD.TogglePinWindow("A")
+return
+^numpad0::
+    VD.PinWindow("A")
+return
+!numpad0::
+    VD.UnPinWindow("A")
+return
+#numpad0::
+    MsgBox % VD.IsWindowPinned("A")
 return
 
 numpad1::VD.goToDesktop(1)

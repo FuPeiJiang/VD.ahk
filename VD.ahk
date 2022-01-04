@@ -265,6 +265,50 @@ class VD {
         DllCall(this.Ptr_RemoveDesktop, "UPtr", this.IVirtualDesktopManagerInternal, "Ptr", IVirtualDesktop, "Ptr", IVirtualDesktop_fallback)
     }
 
+    IsWindowPinned(wintitle) {
+        found:=this._getFirstValidWindow(wintitle)
+        if (!found) {
+            return -1 ;for false
+        }
+        thePView:=found[2]
+
+        viewIsPinned:=this._IsViewPinned(thePView)
+        return viewIsPinned
+    }
+    TogglePinWindow(wintitle) {
+        found:=this._getFirstValidWindow(wintitle)
+        if (!found) {
+            return -1 ;for false
+        }
+        thePView:=found[2]
+
+        viewIsPinned:=this._IsViewPinned(thePView)
+        if (viewIsPinned) {
+            DllCall(this.UnPinView, "UPtr", this.IVirtualDesktopPinnedApps, "Ptr", thePView)
+        } else {
+            DllCall(this.PinView, "UPtr", this.IVirtualDesktopPinnedApps, "Ptr", thePView)
+        }
+
+    }
+    PinWindow(wintitle) {
+        found:=this._getFirstValidWindow(wintitle)
+        if (!found) {
+            return -1 ;for false
+        }
+        thePView:=found[2]
+
+        DllCall(this.PinView, "UPtr", this.IVirtualDesktopPinnedApps, "Ptr", thePView)
+    }
+    UnPinWindow(wintitle) {
+        found:=this._getFirstValidWindow(wintitle)
+        if (!found) {
+            return -1 ;for false
+        }
+        thePView:=found[2]
+
+        DllCall(this.UnPinView, "UPtr", this.IVirtualDesktopPinnedApps, "Ptr", thePView)
+    }
+
     ;actual methods end
 
     ;internal methods start
@@ -364,6 +408,12 @@ class VD {
         return new this.IObjectArray_Wrapper(IObjectArray, this.Ptr_IID_IVirtualDesktop)
     }
 
+    _IsViewPinned(thePView) {
+        viewIsPinned:=0
+        DllCall(this.IsViewPinned, "UPtr", this.IVirtualDesktopPinnedApps, "Ptr", thePView, "Int*",viewIsPinned)
+        return viewIsPinned
+    }
+
     ;internal methods end
 
     ;utility methods start
@@ -446,179 +496,4 @@ class VD {
     }
     ;utility methods end
 
-
-
 }
-
-/*
-
-VD_IsWindowPinned(wintitle) {
-    global IsViewPinned, IVirtualDesktopPinnedApps
-
-    if (VD_ByrefpViewAndHwnd(wintitle, thePView, theHwnd)) { ;Byref
-        return
-    }
-    ; https://github.com/Ciantic/VirtualDesktopAccessor/blob/5bc1bbaab247b5d72e70abc9432a15275fd2d229/VirtualDesktopAccessor/dllmain.h#L377
-    ; pinnedApps->IsViewPinned(pView, &isPinned);
-    viewIsPinned:=0
-    DllCall(IsViewPinned, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView, "Int*",viewIsPinned)
-    return viewIsPinned
-}
-VD_TogglePinWindow(wintitle) {
-    global IsViewPinned, PinView, UnPinView, IVirtualDesktopPinnedApps
-
-    if (VD_ByrefpViewAndHwnd(wintitle, thePView, theHwnd)) { ;Byref
-        return
-    }
-
-    viewIsPinned:=0
-    DllCall(IsViewPinned, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView, "Int*",viewIsPinned)
-    if (viewIsPinned) {
-        DllCall(UnPinView, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView)
-    } else {
-        DllCall(PinView, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView)
-    }
-
-}
-VD_PinWindow(wintitle) {
-    global PinView, IVirtualDesktopPinnedApps
-
-    if (VD_ByrefpViewAndHwnd(wintitle, thePView, theHwnd)) { ;Byref
-        return
-    }
-
-    DllCall(PinView, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView)
-}
-VD_UnPinWindow(wintitle) {
-    global UnPinView, IVirtualDesktopPinnedApps
-
-    if (VD_ByrefpViewAndHwnd(wintitle, thePView, theHwnd)) { ;Byref
-        return
-    }
-
-    DllCall(UnPinView, "UPtr", IVirtualDesktopPinnedApps, "Ptr", thePView)
-}
-
-VD_IsAppPinned(wintitle) {
-    global IsAppIdPinned, IVirtualDesktopPinnedApps
-
-    if (VD_ByrefpViewAndHwnd(wintitle, thePView, theHwnd)) { ;Byref
-        return
-    }
-
-    appId:=VD_AppIdFromView(thePView)
-
-    appIsPinned:=0
-    DllCall(IsAppIdPinned, "UPtr", IVirtualDesktopPinnedApps, "Ptr", appId, "Int*",appIsPinned)
-    return appIsPinned
-}
-VD_TogglePinApp(wintitle) {
-    global IsAppIdPinned, PinAppID, UnpinAppID, IVirtualDesktopPinnedApps
-
-    if (VD_ByrefpViewAndHwnd(wintitle, thePView, theHwnd)) { ;Byref
-        return
-    }
-
-    appId:=VD_AppIdFromView(thePView)
-
-    DllCall(IsAppIdPinned, "UPtr", IVirtualDesktopPinnedApps, "Ptr", appId, "Int*",appIsPinned)
-    if (appIsPinned) {
-        DllCall(UnpinAppID, "UPtr", IVirtualDesktopPinnedApps, "Ptr", appId)
-    } else {
-        DllCall(PinAppID, "UPtr", IVirtualDesktopPinnedApps, "Ptr", appId)
-    }
-
-}
-VD_PinApp(wintitle) {
-    global PinAppID, IVirtualDesktopPinnedApps
-
-    if (VD_ByrefpViewAndHwnd(wintitle, thePView, theHwnd)) { ;Byref
-        return
-    }
-
-    appId:=VD_AppIdFromView(thePView)
-
-    DllCall(PinAppID, "UPtr", IVirtualDesktopPinnedApps, "Ptr", appId)
-}
-VD_UnPinApp(wintitle) {
-    global UnpinAppID, IVirtualDesktopPinnedApps
-
-    if (VD_ByrefpViewAndHwnd(wintitle, thePView, theHwnd)) { ;Byref
-        return
-    }
-
-    appId:=VD_AppIdFromView(thePView)
-
-    DllCall(UnpinAppID, "UPtr", IVirtualDesktopPinnedApps, "Ptr", appId)
-}
-
-;start of internal functions
-
-VD_AppIdFromView(view) {
-    ; revelation, view IS the object, I was looking everywhere for CLSID of IApplicationView
-
-    GetAppUserModelId:=this._vtable(view, 17)
-
-    ; p(GetAppUserModelId)
-
-    ; appId:=""
-    ; VarSetCapacity(appId, 3000)
-    ; DllCall(GetAppUserModelId, "UPtr", view, "Ptr", &appId)
-    DllCall(GetAppUserModelId, "UPtr", view, "Ptr*", appId)
-
-    ; Ptr* passes the address to Receive the string
-    ; &RECT passes the address to, well input the RECT, not for output
-    ; VarSetCapacity(Rect, 16)  ; A RECT is a struct consisting of four 32-bit integers (i.e. 4*4=16).
-    ; DllCall("GetWindowRect", "Ptr", WinExist(), "Ptr", &Rect)  ; WinExist() returns an HWND.
-    ; MsgBox % "Left " . NumGet(Rect, 0, "Int") . " Top " . NumGet(Rect, 4, "Int")
-    ; . " Right " . NumGet(Rect, 8, "Int") . " Bottom " . NumGet(Rect, 12, "Int")
-    ; wait what?, now I'm confused
-    ; it is because the function says [out]. not in. [in] write to YOUR struct
-    ; , [out] CREATES the struct and returns the pointer to you
-
-    ; DllCall(GetAppUserModelId, "UPtr", view, "Str", appId)
-    ; p(appId)
-    ; DllCall(GetAppUserModelId, "UPtr", view, "Ptr", &appId)
-    ; p(StrGet(appId, 3000, "UTF-16"))
-
-    ; https://stackoverflow.com/questions/27977474/how-to-get-appusermodelid-for-any-app-in-windows-7-8-using-vc#27977668
-    ; https://docs.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-getcurrentprocessexplicitappusermodelid?redirectedfrom=MSDN
-    ;   [out] PWSTR *AppID
-    ; A pointer that receives the address of the AppUserModelID assigned to the process. The caller is responsible for freeing this string with CoTaskMemFree when it is no longer needed. (lol)
-
-    ; p(appId)
-    ; p(StrGet(appId, "UTF-16"))
-
-    ; File := FileOpen(A_LineFile "\..\notes\dump", "w")
-    ; File.RawWrite(0+appId, 3000)
-    ; File.Close()
-
-    return appId
-}
-
-VD_ByrefpViewAndHwnd(wintitle, Byref pView,Byref theHwnd) {
-    ;false if found, true if notFound
-    global CanViewMoveDesktops, IVirtualDesktopManagerInternal
-
-    DetectHiddenWindows, on
-    WinGet, outHwndList, List, % wintitle
-    DetectHiddenWindows, off
-    loop % outHwndList {
-        if (!VD_isValidWindow(outHwndList%A_Index%)) {
-            continue
-        }
-
-        pView:=VD_ViewFromHwnd(outHwndList%A_Index%)
-
-        pfCanViewMoveDesktops := 0
-        DllCall(CanViewMoveDesktops, "ptr", IVirtualDesktopManagerInternal, "Ptr", pView, "int*", pfCanViewMoveDesktops, "UInt") ; return value BOOL
-        if (pfCanViewMoveDesktops)
-        {
-            theHwnd:=outHwndList%A_Index%
-            return false
-        }
-    }
-    return True
-}
-
-*/
