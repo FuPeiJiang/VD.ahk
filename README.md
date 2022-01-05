@@ -69,3 +69,16 @@ if you want global functions style instead of a class:<br>
 eg: `VD_goToDesktopNum()` instead of `VD.goToDesktopNum()`<br>
 then visit branch `global_functions`<br>
 but it won't be updated
+___
+from https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop11.cs#L161-L185<br>
+Windows 11 has more functionality,<br>
+if you need:<br>
+* MoveDesktop: `// move current desktop to desktop in index (-> index = 0..Count-1)`<br>
+* SetDesktopName<br>
+* SetDesktopWallpaper<br>
+* GetDesktopIsPerMonitor<br>
+* etc.
+* or anything else that's not On this list
+
+[create an issue](https://github.com/MScholtes/VirtualDesktop/issues/new)
+saying what function(s) you need, what you'll be using it for (I'm curious)
