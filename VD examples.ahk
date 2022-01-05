@@ -75,14 +75,14 @@ numpad2::VD.goToDesktopNum(2)
 numpad3::VD.goToDesktopNum(3)
 
 ;followYourWindow:=true
-numpad4::VD.sendWindowToDesktopNum("A",1,true)
-numpad5::VD.sendWindowToDesktopNum("A",2,true)
-numpad6::VD.sendWindowToDesktopNum("A",3,true)
+numpad4::VD.moveWindowToDesktopNum("A",1,true)
+numpad5::VD.moveWindowToDesktopNum("A",2,true)
+numpad6::VD.moveWindowToDesktopNum("A",3,true)
 
 ;followYourWindow:=false
-numpad7::VD.sendWindowToDesktopNum("A",1,false)
-numpad8::VD.sendWindowToDesktopNum("A",2,false)
-numpad9::VD.sendWindowToDesktopNum("A",3,false)
+numpad7::VD.moveWindowToDesktopNum("A",1,false)
+numpad8::VD.moveWindowToDesktopNum("A",2,false)
+numpad9::VD.moveWindowToDesktopNum("A",3,false)
 
 ;to come back to this window
 #NumpadMult:: ;#*

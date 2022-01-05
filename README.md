@@ -1,6 +1,6 @@
 # VD.ahk: Virtual Desktop
 * `goToDesktopNum()`
-* `sendWindowToDesktopNum()`
+* `moveWindowToDesktopNum()`
 * `getDesktopNumOfWindow()`
 * `createDesktop()`
 * `PinWindow()`

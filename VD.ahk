@@ -6,8 +6,8 @@
 ; VD.goToDesktopNum(desktopNum)
 ; VD.goToDesktopOfWindow(wintitle, activateYourWindow:=true)
 
-; VD.sendWindowToDesktopNum(wintitle,desktopNum,followYourWindow:=true,activateYourWindow:=true)
-; VD.sendWindowToCurrentDesktop(wintitle,activateYourWindow:=true)
+; VD.moveWindowToDesktopNum(wintitle,desktopNum,followYourWindow:=true,activateYourWindow:=true)
+; VD.moveWindowToCurrentDesktop(wintitle,activateYourWindow:=true)
 
 ; optional: call VD.init() to initialize internal variables before using methods, or else variables will be initialized when you first use the class(I think)
 
@@ -50,21 +50,30 @@ class VD {
     {
         splitByDot:=StrSplit(A_OSVersion, ".")
         buildNumber:=splitByDot[3]
+        windowsVersion:=0
         if (buildNumber < 22000)
         {
             ; Windows 10
             IID_IVirtualDesktopManagerInternal_:="{F31574D6-B682-4CDC-BD56-1827860ABEC6}" ;https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop.cs#L178-L191
-            this._dll_GetDesktops:=this._dll_GetDesktops_Win10 ;conditionally assign method to method
-            this._dll_SwitchDesktop:=this._dll_SwitchDesktop_Win10 ;conditionally assign method to method
             IID_IVirtualDesktop_:="{FF72FFDD-BE7E-43FC-9C03-AD81681E88E4}" ;https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop.cs#L149-L150
+            windowsVersion:=10
+            ;conditionally assign method to method
+            this._dll_GetCurrentDesktop:=this._dll_GetCurrentDesktop_Win10
+            this._dll_GetDesktops:=this._dll_GetDesktops_Win10
+            this._dll_SwitchDesktop:=this._dll_SwitchDesktop_Win10
+            this._dll_CreateDesktop:=this._dll_CreateDesktop_Win10
         }
         else
         {
             ; Windows 11
             IID_IVirtualDesktopManagerInternal_:="{B2F925B9-5A0F-4D2E-9F4D-2B1507593C10}" ;https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop11.cs#L163-L185
-            this._dll_GetDesktops:=this._dll_GetDesktops_Win11 ;conditionally assign method to method
-            this._dll_SwitchDesktop:=this._dll_SwitchDesktop_Win11 ;conditionally assign method to method
             IID_IVirtualDesktop_:="{536D3495-B208-4CC9-AE26-DE8111275BF8}" ;https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop11.cs#L149-L150
+            windowsVersion:=11
+            ;conditionally assign method to method
+            this._dll_GetCurrentDesktop:=this._dll_GetCurrentDesktop_Win11
+            this._dll_GetDesktops:=this._dll_GetDesktops_Win11
+            this._dll_SwitchDesktop:=this._dll_SwitchDesktop_Win11
+            this._dll_CreateDesktop:=this._dll_CreateDesktop_Win11
         }
         ;----------------------
         this.IVirtualDesktopManager := ComObjCreate("{AA509086-5CA9-4C25-8F95-589D3C07B48A}", "{A5CD92FF-29BE-454C-8D04-D82879FB3F1B}")
@@ -82,8 +91,14 @@ class VD {
         this.GetAdjacentDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 8) ; int GetAdjacentDesktop(IVirtualDesktop from, int direction, out IVirtualDesktop desktop);
         this.SwitchDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 9) ; void SwitchDesktop(IVirtualDesktop desktop);
         this.Ptr_CreateDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 10) ; IVirtualDesktop CreateDesktop();
-        this.Ptr_RemoveDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 11) ; void RemoveDesktop(IVirtualDesktop desktop, IVirtualDesktop fallback);
-        this.FindDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 12) ; IVirtualDesktop FindDesktop(ref Guid desktopid);
+        if (windowsVersion==10) {
+            this.Ptr_RemoveDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 11) ; void RemoveDesktop(IVirtualDesktop desktop, IVirtualDesktop fallback);
+            this.FindDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 12) ; IVirtualDesktop FindDesktop(ref Guid desktopid);
+        } else {
+            ; this.MoveDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 11) ; void MoveDesktop(IVirtualDesktop desktop, IntPtr hWndOrMon, int nIndex);
+            this.Ptr_RemoveDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 12) ; void RemoveDesktop(IVirtualDesktop desktop, IVirtualDesktop fallback);
+            this.FindDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 13) ; IVirtualDesktop FindDesktop(ref Guid desktopid);
+        }
 
         ;https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop.cs#L225-L234
         this.IVirtualDesktopPinnedApps := ComObjQuery(IServiceProvider, "{B5A399E7-1C87-46B8-88E9-FC5747B171BD}", "{4CE81583-1E4C-4632-A621-07A53543148F}")
@@ -118,6 +133,16 @@ class VD {
 
     }
     ;dll methods start
+    _dll_GetCurrentDesktop_Win10() {
+        IVirtualDesktop_ofCurrentDesktop := 0
+        DllCall(this.GetCurrentDesktop, "UPtr", this.IVirtualDesktopManagerInternal, "Ptr*", IVirtualDesktop_ofCurrentDesktop)
+        return IVirtualDesktop_ofCurrentDesktop
+    }
+    _dll_GetCurrentDesktop_Win11() {
+        IVirtualDesktop_ofCurrentDesktop := 0
+        DllCall(this.GetCurrentDesktop, "UPtr", this.IVirtualDesktopManagerInternal, "Ptr", 0, "Ptr*", IVirtualDesktop_ofCurrentDesktop)
+        return IVirtualDesktop_ofCurrentDesktop
+    }
     _dll_GetDesktops_Win10() {
         IObjectArray := 0
         DllCall(this.GetDesktops, "UPtr", this.IVirtualDesktopManagerInternal, "Ptr*", IObjectArray)
@@ -133,6 +158,16 @@ class VD {
     }
     _dll_SwitchDesktop_Win11(IVirtualDesktop) {
         DllCall(this.SwitchDesktop, "ptr", this.IVirtualDesktopManagerInternal, "Ptr", 0, "UPtr", IVirtualDesktop)
+    }
+    _dll_CreateDesktop_Win10() {
+        IVirtualDesktop_ofNewDesktop:=0
+        DllCall(this.Ptr_CreateDesktop, "UPtr", this.IVirtualDesktopManagerInternal, "Ptr*", IVirtualDesktop_ofNewDesktop)
+        return IVirtualDesktop_ofNewDesktop
+    }
+    _dll_CreateDesktop_Win11() {
+        IVirtualDesktop_ofNewDesktop:=0
+        DllCall(this.Ptr_CreateDesktop, "UPtr", this.IVirtualDesktopManagerInternal, "Ptr", 0, "Ptr*", IVirtualDesktop_ofNewDesktop)
+        return IVirtualDesktop_ofNewDesktop
     }
     ;dll methods end
 
@@ -166,7 +201,7 @@ class VD {
         return desktopNum
     }
 
-    sendWindowToDesktopNum(wintitle,desktopNum,followYourWindow:=true,activateYourWindow:=true)
+    moveWindowToDesktopNum(wintitle,desktopNum,followYourWindow:=true,activateYourWindow:=true)
     {
         found:=this._getFirstValidWindow(wintitle)
         if (!found) {
@@ -198,22 +233,20 @@ class VD {
 
     getCurrentDesktopNum()
     {
-        IVirtualDesktop_ofCurrentDesktop := 0
-        DllCall(this.GetCurrentDesktop, "UPtr", this.IVirtualDesktopManagerInternal, "Ptr*", IVirtualDesktop_ofCurrentDesktop)
+        IVirtualDesktop_ofCurrentDesktop:=this._dll_GetCurrentDesktop()
 
         desktopNum:=this._desktopNum_from_IVirtualDesktop(IVirtualDesktop_ofCurrentDesktop)
         return desktopNum
     }
 
-    sendWindowToCurrentDesktop(wintitle,activateYourWindow:=true)
+    moveWindowToCurrentDesktop(wintitle,activateYourWindow:=true)
     {
         desktopNum:=this.getCurrentDesktopNum()
-        this.sendWindowToDesktopNum(wintitle, desktopNum, false, activateYourWindow)
+        this.moveWindowToDesktopNum(wintitle, desktopNum, false, activateYourWindow)
     }
 
     createDesktop(goThere:=true) {
-        IVirtualDesktop_ofNewDesktop:=0
-        DllCall(this.Ptr_CreateDesktop, "UPtr", this.IVirtualDesktopManagerInternal, "Ptr*", IVirtualDesktop_ofNewDesktop)
+        IVirtualDesktop_ofNewDesktop:=this._dll_CreateDesktop()
 
         if (goThere) {
             ;we could assume that it's the rightmost desktop:
