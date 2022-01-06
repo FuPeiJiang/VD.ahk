@@ -1,5 +1,7 @@
 # VD.ahk: Virtual Desktop
 
+no dependencies, no **virtual-desktop-accessor.dll**
+
 ### Just run the examples, everything explained inside
 the most useful ones:<br>
 * <kbd>Numpad1</kbd> to go to `Desktop 1`<br>
