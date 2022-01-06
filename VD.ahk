@@ -374,8 +374,8 @@ class VD {
         DetectHiddenWindows, on
         SetTitleMatchMode, 2
         WinGet, outHwndList, List, % wintitle
-        SetTitleMatchMode, 1
-        DetectHiddenWindows, off
+
+        returnValue:=false
         loop % outHwndList {
             if (!this._isValidWindow(outHwndList%A_Index%)) {
                 continue
@@ -388,10 +388,13 @@ class VD {
                 continue
             }
             ;we can finally return
-            return [outHwndList%A_Index%, pView]
+            returnValue:=[outHwndList%A_Index%, pView]
+            break
         }
-        ;none found
-        return false
+
+        SetTitleMatchMode, 1
+        DetectHiddenWindows, off
+        return returnValue
     }
 
     _view_from_Hwnd(theHwnd) {
@@ -476,8 +479,9 @@ class VD {
 
     _isValidWindow(hWnd)
     {
-        ; DetectHiddenWindows, on ;I think hWnd always detects HiddenWindows
+        ; DetectHiddenWindows, on ;this is needed, but for optimization the caller will do it
 
+        returnValue:=false
         breakToReturnFalse:
         loop 1 {
             WinGetTitle, title, ahk_id %hWnd%
@@ -498,12 +502,10 @@ class VD {
                 break breakToReturnFalse
             }
 
-            ; DetectHiddenWindows, off ;I think hWnd always detects HiddenWindows
-            return true
-
+            returnValue:=true
         }
-        ; DetectHiddenWindows, off ;I think hWnd always detects HiddenWindows
-        return false
+        ; DetectHiddenWindows, off ;this is needed, but for optimization the caller will do it
+        return returnValue
     }
     ;-------------------
     _vtable(ppv, index) {
