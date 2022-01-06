@@ -1,6 +1,6 @@
 # VD.ahk: Virtual Desktop
 
-no dependencies, no **virtual-desktop-accessor.dll**
+no dependencies no **virtual-desktop-accessor.dll**, Windows 11 support
 
 ### Just run the examples, everything explained inside
 the most useful ones:<br>
