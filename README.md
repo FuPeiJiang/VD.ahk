@@ -1,23 +1,44 @@
 # VD.ahk: Virtual Desktop
-* `goToDesktopNum()`
-* `moveWindowToDesktopNum()`
-* `getDesktopNumOfWindow()`
-* `createDesktop()`
-* `PinWindow()`
-* `getCurrentDesktopNum()`
-* `getCount()`
-* more
 
 ### Just run the examples, everything explained inside
 the most useful ones:<br>
 * <kbd>Numpad1</kbd> to go to `Desktop 1`<br>
 * <kbd>Numpad2</kbd> to go to `Desktop 2`<br>
 * <kbd>Numpad3</kbd> to go to `Desktop 3`<br>
-- <kbd>Numpad4</kbd> to move the active window to `Desktop 1`<br>
-- <kbd>Numpad5</kbd> to move the active window to `Desktop 2`<br>
-- <kbd>Numpad6</kbd> to move the active window to `Desktop 3`<br>
+```autohotkey
+numpad1::VD.goToDesktopNum(1)
+numpad2::VD.goToDesktopNum(2)
+numpad3::VD.goToDesktopNum(3)
+```
+
+* <kbd>Win + x</kbd> move VSCode to your current Desktop and WinActivate
+* <kbd>Win + e</kbd> move "explorer replacement program" to your current Desktop and WinActivate
+```autohotkey
+#x::VD.moveWindowToCurrentDesktop("ahk_exe Code.exe ahk_class Chrome_WidgetWin_1")
+#e::VD.moveWindowToCurrentDesktop("ahk_explorer ahk_exe AutoHotkey.exe")
+```
+<br>
+
+* <kbd>Numpad4</kbd> to move the active window to `Desktop 1`<br>
+* <kbd>Numpad5</kbd> to move the active window to `Desktop 2`<br>
+* <kbd>Numpad6</kbd> to move the active window to `Desktop 3`<br>
+```autohotkey
+;followYourWindow:=true
+numpad4::VD.moveWindowToDesktopNum("A",1,true)
+numpad5::VD.moveWindowToDesktopNum("A",2,true)
+numpad6::VD.moveWindowToDesktopNum("A",3,true)
+```
 
 you can remap everything
+___
+also has:
+* `createDesktop()`
+* `PinWindow()`
+
+- `getCount()` ;how many virtual desktops you now have
+- pretty much everything virtual desktop, or so I think!<br>
+  if there's anything missing/something you want: [create an issue](https://github.com/FuPeiJiang/VD.ahk/issues/new): I want to know what you're using it for
+
 
 <!-- Desktop2`nPress Numpad6 to move the active window to Desktop3 and go to Desktop 3 (follow the window) -->
 
