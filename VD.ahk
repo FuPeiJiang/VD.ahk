@@ -347,7 +347,7 @@ class VD {
 
     ;internal methods start
     _SwitchDesktop(IVirtualDesktop) {
-        ;activate taskbar before
+        ;activate taskbar before ;https://github.com/mzomparelli/zVirtualDesktop/issues/59#issuecomment-317613971
         WinActivate, ahk_class Shell_TrayWnd
         WinWaitActive, ahk_class Shell_TrayWnd
         this._dll_SwitchDesktop(IVirtualDesktop)
