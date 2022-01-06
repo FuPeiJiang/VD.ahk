@@ -367,7 +367,9 @@ class VD {
         global CanViewMoveDesktops, IVirtualDesktopManagerInternal
 
         DetectHiddenWindows, on
+        SetTitleMatchMode, 2
         WinGet, outHwndList, List, % wintitle
+        SetTitleMatchMode, 1
         DetectHiddenWindows, off
         loop % outHwndList {
             if (!this._isValidWindow(outHwndList%A_Index%)) {
@@ -469,7 +471,7 @@ class VD {
 
     _isValidWindow(hWnd)
     {
-        DetectHiddenWindows, on
+        ; DetectHiddenWindows, on ;I think hWnd always detects HiddenWindows
 
         breakToReturnFalse:
         loop 1 {
@@ -491,11 +493,11 @@ class VD {
                 break breakToReturnFalse
             }
 
-            DetectHiddenWindows, off
+            ; DetectHiddenWindows, off ;I think hWnd always detects HiddenWindows
             return true
 
         }
-        DetectHiddenWindows, off
+        ; DetectHiddenWindows, off ;I think hWnd always detects HiddenWindows
         return false
     }
     ;-------------------
