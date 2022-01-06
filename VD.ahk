@@ -6,8 +6,8 @@
 ; VD.goToDesktopNum(desktopNum)
 ; VD.goToDesktopOfWindow(wintitle, activateYourWindow:=true)
 
-; VD.moveWindowToDesktopNum(wintitle,desktopNum,followYourWindow:=true,activateYourWindow:=true)
-; VD.moveWindowToCurrentDesktop(wintitle,activateYourWindow:=true)
+; VD.MoveWindowToDesktopNum(wintitle,desktopNum,followYourWindow:=true,activateYourWindow:=true)
+; VD.MoveWindowToCurrentDesktop(wintitle,activateYourWindow:=true)
 
 ; optional: call VD.init() to initialize internal variables before using methods, or else variables will be initialized when you first use the class(I think)
 
@@ -201,7 +201,7 @@ class VD {
         return desktopNum
     }
 
-    moveWindowToDesktopNum(wintitle,desktopNum,followYourWindow:=true,activateYourWindow:=true)
+    MoveWindowToDesktopNum(wintitle,desktopNum,followYourWindow:=true,activateYourWindow:=true)
     {
         found:=this._getFirstValidWindow(wintitle)
         if (!found) {
@@ -212,10 +212,15 @@ class VD {
 
         IVirtualDesktop:=this._GetDesktops_Obj().GetAt(desktopNum)
 
-        DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal, "Ptr", thePView, "Ptr", IVirtualDesktop)
-
         if (followYourWindow) {
+            DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal, "Ptr", thePView, "Ptr", IVirtualDesktop)
             this.goToDesktopNum(desktopNum)
+        } else {
+            ;activate taskbar before ;https://github.com/mzomparelli/zVirtualDesktop/issues/59#issuecomment-317613971
+            WinActivate, ahk_class Shell_TrayWnd
+            WinWaitActive, ahk_class Shell_TrayWnd
+            DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal, "Ptr", thePView, "Ptr", IVirtualDesktop)
+            WinMinimize, ahk_class Shell_TrayWnd
         }
         if (activateYourWindow) {
             WinActivate, ahk_id %theHwnd%
@@ -239,10 +244,10 @@ class VD {
         return desktopNum
     }
 
-    moveWindowToCurrentDesktop(wintitle,activateYourWindow:=true)
+    MoveWindowToCurrentDesktop(wintitle,activateYourWindow:=true)
     {
         desktopNum:=this.getCurrentDesktopNum()
-        this.moveWindowToDesktopNum(wintitle, desktopNum, false, activateYourWindow)
+        this.MoveWindowToDesktopNum(wintitle, desktopNum, false, activateYourWindow)
     }
 
     createDesktop(goThere:=true) {

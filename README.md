@@ -16,8 +16,8 @@ numpad3::VD.goToDesktopNum(3)
 * <kbd>Win + x</kbd> move VSCode to your current Desktop and WinActivate
 * <kbd>Win + e</kbd> move "explorer replacement program" to your current Desktop and WinActivate
 ```autohotkey
-#x::VD.moveWindowToCurrentDesktop("ahk_exe Code.exe ahk_class Chrome_WidgetWin_1")
-#e::VD.moveWindowToCurrentDesktop("ahk_explorer ahk_exe AutoHotkey.exe")
+#x::VD.MoveWindowToCurrentDesktop("ahk_exe Code.exe ahk_class Chrome_WidgetWin_1")
+#e::VD.MoveWindowToCurrentDesktop("ahk_explorer ahk_exe AutoHotkey.exe")
 ```
 <br>
 
@@ -26,9 +26,9 @@ numpad3::VD.goToDesktopNum(3)
 * <kbd>Numpad6</kbd> to move the active window to `Desktop 3`<br>
 ```autohotkey
 ;followYourWindow:=true
-numpad4::VD.moveWindowToDesktopNum("A",1,true)
-numpad5::VD.moveWindowToDesktopNum("A",2,true)
-numpad6::VD.moveWindowToDesktopNum("A",3,true)
+numpad4::VD.MoveWindowToDesktopNum("A",1,true)
+numpad5::VD.MoveWindowToDesktopNum("A",2,true)
+numpad6::VD.MoveWindowToDesktopNum("A",3,true)
 ```
 
 you can remap everything
