@@ -216,11 +216,17 @@ class VD {
             DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal, "Ptr", thePView, "Ptr", IVirtualDesktop)
             this.goToDesktopNum(desktopNum)
         } else {
-            ;activate taskbar before ;https://github.com/mzomparelli/zVirtualDesktop/issues/59#issuecomment-317613971
-            WinActivate, ahk_class Shell_TrayWnd
-            WinWaitActive, ahk_class Shell_TrayWnd
-            DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal, "Ptr", thePView, "Ptr", IVirtualDesktop)
-            WinMinimize, ahk_class Shell_TrayWnd
+            ; if (this._IsViewActive(thePView)) {
+            if (wintitle=="A" || this._IsViewActive(thePView)) {
+                ;to activate next window under active, for repeated calls to VD.moveWindowToDesktopNum("A", 3, false)
+                ;activate taskbar before ;https://github.com/mzomparelli/zVirtualDesktop/issues/59#issuecomment-317613971
+                WinActivate, ahk_class Shell_TrayWnd
+                WinWaitActive, ahk_class Shell_TrayWnd
+                DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal, "Ptr", thePView, "Ptr", IVirtualDesktop)
+                WinMinimize, ahk_class Shell_TrayWnd
+            } else {
+                DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal, "Ptr", thePView, "Ptr", IVirtualDesktop)
+            }
         }
         if (activateYourWindow) {
             WinActivate, ahk_id %theHwnd%
@@ -506,6 +512,15 @@ class VD {
         }
         ; DetectHiddenWindows, off ;this is needed, but for optimization the caller will do it
         return returnValue
+    }
+    _IsViewActive(Ptr_View) {
+        found:=this._getFirstValidWindow(wintitle)
+        if (!found) {
+            return false
+        }
+        thePView:=found[2]
+
+        return thePView == Ptr_View
     }
     ;-------------------
     _vtable(ppv, index) {
