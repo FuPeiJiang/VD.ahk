@@ -219,9 +219,17 @@ class VD {
 
     MoveWindowToCurrentDesktop(wintitle,activateYourWindow:=true)
     {
-        currentDesktopNum:=this.getCurrentDesktopNum()
+        found:=this._getFirstValidWindow(wintitle)
+        if (!found) {
+            return -1 ;for false
+        }
+        theHwnd:=found[1]
+        thePView:=found[2]
 
-        this.MoveWindowToDesktopNum(wintitle, currentDesktopNum)
+        currentDesktopNum:=this.getCurrentDesktopNum()
+        IVirtualDesktop:=this._GetDesktops_Obj().GetAt(currentDesktopNum)
+
+        this._MoveView_to_IVirtualDesktop(thePView, IVirtualDesktop)
 
         if (activateYourWindow) {
             WinActivate % "ahk_id " theHwnd
@@ -347,13 +355,14 @@ class VD {
 
     ;internal methods start
     _MoveView_to_IVirtualDesktop(thePView, IVirtualDesktop) {
-        ; https://github.com/pmb6tz/windows-desktop-switcher/issues/77
-        ; DllCall("User32\AllowSetForegroundWindow", "Int",-1) ;ASFW_ANY is -1 ;https://www.reddit.com/r/AutoHotkey/comments/qvkjhh/comment/hkx42s7/?utm_source=share&utm_medium=web2x&context=3
         DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal, "Ptr", thePView, "Ptr", IVirtualDesktop)
         this._activateWindowUnder()
-        ; DllCall("User32\AllowSetForegroundWindow", "Int",-1) ;ASFW_ANY is -1 ;https://www.reddit.com/r/AutoHotkey/comments/qvkjhh/comment/hkx42s7/?utm_source=share&utm_medium=web2x&context=3
     }
     _SwitchIVirtualDesktop(IVirtualDesktop) {
+        ;activate taskbar before ;https://github.com/mzomparelli/zVirtualDesktop/issues/59#issuecomment-317613971
+        WinActivate, ahk_class Shell_TrayWnd
+        WinWaitActive, ahk_class Shell_TrayWnd
+
         this._dll_SwitchDesktop(IVirtualDesktop)
         this._activateWindowUnder()
     }
@@ -367,6 +376,8 @@ class VD {
     }
 
     _activateWindowUnder() {
+        ; if this doesn't work
+        ;try https://www.autohotkey.com/boards/viewtopic.php?t=28760#p326541
         found:=this._getFirstWindowUnder()
         if (!found) {
             return -1 ;for false
