@@ -9,7 +9,8 @@
 ; VD.MoveWindowToDesktopNum(wintitle,desktopNum)
 ; VD.MoveWindowToCurrentDesktop(wintitle,activateYourWindow:=true)
 
-; optional: call VD.init() to initialize internal variables before using methods, or else variables will be initialized when you first use the class(I think)
+; COMMENT THIS OUT IF YOU DON'T WANT TO INIT AT START OF SCRIPT
+; > static dummyStatic1 := VD.init()
 
 ; VD.createDesktop(goThere:=true) ; VD.createUntil(howMany, goToLastlyCreated:=true)
 ; VD.removeDesktop(desktopNum, fallback_desktopNum:=false)
@@ -40,13 +41,10 @@
 
 class VD {
 
-    static dummyStatic1 := VD._init()
+    ; COMMENT THIS OUT IF YOU DON'T WANT TO INIT AT START OF SCRIPT
+    static dummyStatic1 := VD.init()
 
-    init() { ;if you want to init early
-        ; dummyStatic1 will be initiated and call _init()
-    }
-
-    _init()
+    init()
     {
         splitByDot:=StrSplit(A_OSVersion, ".")
         buildNumber:=splitByDot[3]
