@@ -24,11 +24,16 @@ numpad3::VD.goToDesktopNum(3)
 * <kbd>Numpad4</kbd> to move the active window to `Desktop 1`<br>
 * <kbd>Numpad5</kbd> to move the active window to `Desktop 2`<br>
 * <kbd>Numpad6</kbd> to move the active window to `Desktop 3`<br>
+* here, I choose to follow the window
 ```autohotkey
-;followYourWindow:=true
-numpad4::VD.MoveWindowToDesktopNum("A",1,true)
-numpad5::VD.MoveWindowToDesktopNum("A",2,true)
-numpad6::VD.MoveWindowToDesktopNum("A",3,true)
+numpad4::VD.MoveWindowToDesktopNum("A",1), VD.goToDesktopNum(1)
+numpad5::VD.MoveWindowToDesktopNum("A",2), VD.goToDesktopNum(2)
+numpad6::VD.MoveWindowToDesktopNum("A",3), VD.goToDesktopNum(3)
+```
+```autohotkey
+numpad7::VD.MoveWindowToDesktopNum("A",1)
+numpad8::VD.MoveWindowToDesktopNum("A",2)
+numpad9::VD.MoveWindowToDesktopNum("A",3)
 ```
 
 you can remap everything
