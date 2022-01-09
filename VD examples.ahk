@@ -74,15 +74,15 @@ numpad1::VD.goToDesktopNum(1)
 numpad2::VD.goToDesktopNum(2)
 numpad3::VD.goToDesktopNum(3)
 
-;followYourWindow:=true
-numpad4::VD.MoveWindowToDesktopNum("A",1,true)
-numpad5::VD.MoveWindowToDesktopNum("A",2,true)
-numpad6::VD.MoveWindowToDesktopNum("A",3,true)
+;follow your window
+numpad4::VD.MoveWindowToDesktopNum("A",1), VD.goToDesktopNum(1)
+numpad5::VD.MoveWindowToDesktopNum("A",2), VD.goToDesktopNum(2)
+numpad6::VD.MoveWindowToDesktopNum("A",3), VD.goToDesktopNum(3)
 
-;followYourWindow:=false
-numpad7::VD.MoveWindowToDesktopNum("A",1,false)
-numpad8::VD.MoveWindowToDesktopNum("A",2,false)
-numpad9::VD.MoveWindowToDesktopNum("A",3,false)
+;just move window
+numpad7::VD.MoveWindowToDesktopNum("A",1)
+numpad8::VD.MoveWindowToDesktopNum("A",2)
+numpad9::VD.MoveWindowToDesktopNum("A",3)
 
 ;to come back to this window
 #NumpadMult:: ;#*

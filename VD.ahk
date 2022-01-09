@@ -6,7 +6,7 @@
 ; VD.goToDesktopNum(desktopNum)
 ; VD.goToDesktopOfWindow(wintitle, activateYourWindow:=true)
 
-; VD.MoveWindowToDesktopNum(wintitle,desktopNum,followYourWindow:=true,activateYourWindow:=true)
+; VD.MoveWindowToDesktopNum(wintitle,desktopNum)
 ; VD.MoveWindowToCurrentDesktop(wintitle,activateYourWindow:=true)
 
 ; optional: call VD.init() to initialize internal variables before using methods, or else variables will be initialized when you first use the class(I think)
@@ -131,6 +131,8 @@ class VD {
         this.Ptr_IID_IVirtualDesktop := DllCall( "GlobalAlloc", "UInt",0x40, "UInt", 16, "Ptr")
         DllCall("Ole32.dll\CLSIDFromString", "Str", IID_IVirtualDesktop_, "Ptr", this.Ptr_IID_IVirtualDesktop)
 
+        ;----------------------
+
     }
     ;dll methods start
     _dll_GetCurrentDesktop_Win10() {
@@ -178,7 +180,7 @@ class VD {
 
     goToDesktopNum(desktopNum) {
         IVirtualDesktop:=this._GetDesktops_Obj().GetAt(desktopNum)
-        this._SwitchDesktop(IVirtualDesktop)
+        this._SwitchIVirtualDesktop(IVirtualDesktop)
 
         if (this._isWindowFullScreen("A")) {
             timerFunc := ObjBindMethod(this, "_pleaseSwitchDesktop", desktopNum) ;https://www.autohotkey.com/docs/commands/SetTimer.htm#ExampleClass
@@ -201,7 +203,7 @@ class VD {
         return desktopNum
     }
 
-    MoveWindowToDesktopNum(wintitle,desktopNum,followYourWindow:=true,activateYourWindow:=true)
+    MoveWindowToDesktopNum(wintitle,desktopNum)
     {
         found:=this._getFirstValidWindow(wintitle)
         if (!found) {
@@ -212,24 +214,17 @@ class VD {
 
         IVirtualDesktop:=this._GetDesktops_Obj().GetAt(desktopNum)
 
-        if (followYourWindow) {
-            DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal, "Ptr", thePView, "Ptr", IVirtualDesktop)
-            this.goToDesktopNum(desktopNum)
-        } else {
-            ; if (this._IsViewActive(thePView)) {
-            if (wintitle=="A" || this._IsViewActive(thePView)) {
-                ;to activate next window under active, for repeated calls to VD.moveWindowToDesktopNum("A", 3, false)
-                ;activate taskbar before ;https://github.com/mzomparelli/zVirtualDesktop/issues/59#issuecomment-317613971
-                WinActivate, ahk_class Shell_TrayWnd
-                WinWaitActive, ahk_class Shell_TrayWnd
-                DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal, "Ptr", thePView, "Ptr", IVirtualDesktop)
-                WinMinimize, ahk_class Shell_TrayWnd
-            } else {
-                DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal, "Ptr", thePView, "Ptr", IVirtualDesktop)
-            }
-        }
+        this._MoveView_to_IVirtualDesktop(thePView, IVirtualDesktop)
+    }
+
+    MoveWindowToCurrentDesktop(wintitle,activateYourWindow:=true)
+    {
+        currentDesktopNum:=this.getCurrentDesktopNum()
+
+        this.MoveWindowToDesktopNum(wintitle, currentDesktopNum)
+
         if (activateYourWindow) {
-            WinActivate, ahk_id %theHwnd%
+            WinActivate % "ahk_id " theHwnd
         }
     }
 
@@ -248,12 +243,6 @@ class VD {
 
         desktopNum:=this._desktopNum_from_IVirtualDesktop(IVirtualDesktop_ofCurrentDesktop)
         return desktopNum
-    }
-
-    MoveWindowToCurrentDesktop(wintitle,activateYourWindow:=true)
-    {
-        desktopNum:=this.getCurrentDesktopNum()
-        this.MoveWindowToDesktopNum(wintitle, desktopNum, false, activateYourWindow)
     }
 
     createDesktop(goThere:=true) {
@@ -357,25 +346,62 @@ class VD {
     ;actual methods end
 
     ;internal methods start
-    _SwitchDesktop(IVirtualDesktop) {
-        ;activate taskbar before ;https://github.com/mzomparelli/zVirtualDesktop/issues/59#issuecomment-317613971
-        WinActivate, ahk_class Shell_TrayWnd
-        WinWaitActive, ahk_class Shell_TrayWnd
+    _MoveView_to_IVirtualDesktop(thePView, IVirtualDesktop) {
+        ; https://github.com/pmb6tz/windows-desktop-switcher/issues/77
+        ; DllCall("User32\AllowSetForegroundWindow", "Int",-1) ;ASFW_ANY is -1 ;https://www.reddit.com/r/AutoHotkey/comments/qvkjhh/comment/hkx42s7/?utm_source=share&utm_medium=web2x&context=3
+        DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal, "Ptr", thePView, "Ptr", IVirtualDesktop)
+        this._activateWindowUnder()
+        ; DllCall("User32\AllowSetForegroundWindow", "Int",-1) ;ASFW_ANY is -1 ;https://www.reddit.com/r/AutoHotkey/comments/qvkjhh/comment/hkx42s7/?utm_source=share&utm_medium=web2x&context=3
+    }
+    _SwitchIVirtualDesktop(IVirtualDesktop) {
         this._dll_SwitchDesktop(IVirtualDesktop)
-        this._dll_SwitchDesktop(IVirtualDesktop)
-        WinMinimize, ahk_class Shell_TrayWnd
+        this._activateWindowUnder()
     }
 
     _pleaseSwitchDesktop(desktopNum) {
         ;IVirtualDesktop should be calculated again because IVirtualDesktop could have changed
         ;what we want is the same desktopNum
         IVirtualDesktop:=this._GetDesktops_Obj().GetAt(desktopNum)
-        this._SwitchDesktop(IVirtualDesktop)
+        this._SwitchIVirtualDesktop(IVirtualDesktop)
         ;this method is goToDesktopNum(), but without the recursion, to prevent recursion
     }
 
+    _activateWindowUnder() {
+        found:=this._getFirstWindowUnder()
+        if (!found) {
+            return -1 ;for false
+        }
+        theHwnd:=found[1]
+        ; MsgBox % theHwnd
+
+        WinGet, OutputVar_MinMax, MinMax, % "ahk_id " theHwnd
+        if (!(OutputVar_MinMax==-1)) {
+            WinActivate % "ahk_id " theHwnd
+        }
+    }
+
+    _getFirstWindowUnder() {
+        returnValue:=false
+        WinGet, outHwndList, List
+        loop % outHwndList {
+            if (!this._isValidWindow(outHwndList%A_Index%)) {
+                continue
+            }
+
+            pView:=this._view_from_Hwnd(outHwndList%A_Index%)
+            pfCanViewMoveDesktops := 0
+            DllCall(this.CanViewMoveDesktops, "UPtr", this.IVirtualDesktopManagerInternal, "Ptr", pView, "int*", pfCanViewMoveDesktops) ; return value BOOL
+            if (!pfCanViewMoveDesktops) {
+                continue
+            }
+            ;we can finally return
+            returnValue:=[outHwndList%A_Index%, pView]
+            break
+        }
+        return returnValue
+    }
+
     _getFirstValidWindow(wintitle) {
-        global CanViewMoveDesktops, IVirtualDesktopManagerInternal
 
         DetectHiddenWindows, on
         SetTitleMatchMode, 2

@@ -1,0 +1,27 @@
+movewindowtocurrentVD
+    window is active
+        ; do nothing
+    window is not active
+        ; fwef
+    window is in another VD
+        move to current VD
+        conditionally activate
+
+
+moveActiveWindowToAnotherVD
+    Shell_TrayWnd
+    move
+    Shell_TrayWnd
+
+moveNotActiveWindowToAnotherVD
+moveWindowInAnotherVDToAnotherVD
+    move
+
+
+moveWindow
+    if active
+        Shell_TrayWnd
+        move
+        Shell_TrayWnd
+    else
+        move
