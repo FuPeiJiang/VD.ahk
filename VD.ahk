@@ -195,10 +195,23 @@ class VD {
         }
         theHwnd:=found[1]
 
-        IVirtualDesktop_ofWindow:=this._IVirtualDesktop_from_Hwnd(theHwnd)
+        desktopNum_ofWindow:=this._desktopGUID_from_Hwnd(theHwnd)
+        return desktopNum_ofWindow
+    }
 
-        desktopNum:=this._desktopNum_from_IVirtualDesktop(IVirtualDesktop_ofWindow)
-        return desktopNum
+    goToDesktopOfWindow(wintitle, activateYourWindow:=true) {
+        found:=this._getFirstValidWindow(wintitle)
+        if (!found) {
+            return -1 ;for false
+        }
+        theHwnd:=found[1]
+
+        desktopNum_ofWindow:=this._desktopGUID_from_Hwnd(theHwnd)
+        this.goToDesktopNum(desktopNum_ofWindow)
+
+        if (activateYourWindow) {
+            WinActivate, ahk_id %theHwnd%
+        }
     }
 
     MoveWindowToDesktopNum(wintitle,desktopNum)
@@ -231,15 +244,6 @@ class VD {
 
         if (activateYourWindow) {
             WinActivate % "ahk_id " theHwnd
-        }
-    }
-
-    goToDesktopOfWindow(wintitle, activateYourWindow:=true) {
-        desktopNum:=this.getDesktopNumOfWindow(wintitle)
-        this.goToDesktopNum(desktopNum)
-
-        if (activateYourWindow) {
-            WinActivate, ahk_id %theHwnd%
         }
     }
 
@@ -385,7 +389,7 @@ class VD {
 
         WinGet, OutputVar_MinMax, MinMax, % "ahk_id " theHwnd
         if (!(OutputVar_MinMax==-1)) {
-            WinActivate % "ahk_id " theHwnd
+            WinActivate, ahk_id %theHwnd%
         }
     }
 
@@ -486,6 +490,12 @@ class VD {
             }
         }
         return -1 ;for false
+    }
+
+    _desktopNum_from_Hwnd(theHwnd) {
+        IVirtualDesktop:=this._IVirtualDesktop_from_Hwnd(theHwnd)
+        desktopNum:=this._desktopNum_from_IVirtualDesktop(IVirtualDesktop)
+        return desktopNum
     }
 
     _GetDesktops_Obj() {
