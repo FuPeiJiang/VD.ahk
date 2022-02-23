@@ -358,6 +358,7 @@ class VD {
     ;internal methods start
     _MoveView_to_IVirtualDesktop(thePView, IVirtualDesktop) {
         DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal, "Ptr", thePView, "Ptr", IVirtualDesktop)
+        DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal, "Ptr", thePView, "Ptr", IVirtualDesktop)
         this._activateWindowUnder()
     }
     _SwitchIVirtualDesktop(IVirtualDesktop) {
@@ -365,6 +366,7 @@ class VD {
         WinActivate, ahk_class Shell_TrayWnd
         WinWaitActive, ahk_class Shell_TrayWnd
 
+        this._dll_SwitchDesktop(IVirtualDesktop)
         this._dll_SwitchDesktop(IVirtualDesktop)
         this._activateWindowUnder()
     }
