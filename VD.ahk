@@ -195,7 +195,7 @@ class VD {
         }
         theHwnd:=found[1]
 
-        desktopNum_ofWindow:=this._desktopGUID_from_Hwnd(theHwnd)
+        desktopNum_ofWindow:=this._desktopNum_from_Hwnd(theHwnd)
         return desktopNum_ofWindow
     }
 
@@ -206,7 +206,7 @@ class VD {
         }
         theHwnd:=found[1]
 
-        desktopNum_ofWindow:=this._desktopGUID_from_Hwnd(theHwnd)
+        desktopNum_ofWindow:=this._desktopNum_from_Hwnd(theHwnd)
         this.goToDesktopNum(desktopNum_ofWindow)
 
         if (activateYourWindow) {
@@ -446,24 +446,6 @@ class VD {
         pView := 0
         DllCall(this.GetViewForHwnd, "UPtr", this.IApplicationViewCollection, "Ptr", theHwnd, "Ptr*", pView)
         return pView
-    }
-
-    _desktopGUID_from_Hwnd(theHwnd) {
-        VarSetCapacity(GUID_Desktop, 16)
-        HRESULT := DllCall(this.GetWindowDesktopId, "UPtr", this.IVirtualDesktopManager, "Ptr", theHwnd, "UPtr", &GUID_Desktop)
-        if (!(HRESULT==0)) {
-            return false
-        }
-
-        desktopGUID:=this._string_from_GUID(GUID_Desktop)
-        if (!desktopGUID) {
-            return false
-        }
-        if (desktopGUID=="{00000000-0000-0000-0000-000000000000}") {
-            return false
-        }
-
-        return desktopGUID
     }
 
     _IVirtualDesktop_from_Hwnd(theHwnd) {
