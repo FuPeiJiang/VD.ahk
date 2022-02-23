@@ -54,6 +54,8 @@ at the start of this tutorial, to make sure we have at least 3 VD
 more below, look at the hotkeys in code.
 )
 gui, add, Edit, -vscroll -E0x200 +hwndHWndExplanation_Edit, % explanation ; https://www.autohotkey.com/boards/viewtopic.php?t=3956#p21359
+;deselect edit text BY moving caret to start
+Postmessage,0xB1,0,0,, % "ahk_id " HWndExplanation_Edit
 gui, show,, VD.ahk examples WinTitle
 ;END of gui stuff
 
