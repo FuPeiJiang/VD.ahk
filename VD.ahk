@@ -567,7 +567,11 @@ class VD {
             this.Ptr_IID_Interface:=Ptr_IID_Interface
 
             this.Ptr_GetAt:=VD._vtable(IObjectArray,4)
-            this.Ptr_GetCount:=VD._vtable(IObjectArray,3)
+        }
+        __Delete() {
+            ;IUnknown::Release
+            Ptr_Release:=VD._vtable(this.IObjectArray,2)
+            DllCall(Ptr_Release, "UPtr", this.IObjectArray)
         }
         GetAt(oneBasedIndex) {
             Ptr_Interface:=0
@@ -575,8 +579,9 @@ class VD {
             return Ptr_Interface
         }
         GetCount() {
+            Ptr_GetCount:=VD._vtable(this.IObjectArray,3)
             Count := 0
-            DllCall(this.Ptr_GetCount, "UPtr", this.IObjectArray, "UInt*", Count)
+            DllCall(Ptr_GetCount, "UPtr", this.IObjectArray, "UInt*", Count)
             return Count
         }
 
