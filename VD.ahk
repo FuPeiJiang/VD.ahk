@@ -85,17 +85,31 @@ class VD {
         this.MoveViewToDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 4) ; void MoveViewToDesktop(object pView, IVirtualDesktop desktop);
         this.GetCurrentDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 6) ; IVirtualDesktop GetCurrentDesktop();
         this.CanViewMoveDesktops := this._vtable(this.IVirtualDesktopManagerInternal, 5) ; bool CanViewMoveDesktops(object pView);
-        this.GetDesktops := this._vtable(this.IVirtualDesktopManagerInternal, 7) ; IObjectArray GetDesktops();
-        this.GetAdjacentDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 8) ; int GetAdjacentDesktop(IVirtualDesktop from, int direction, out IVirtualDesktop desktop);
-        this.SwitchDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 9) ; void SwitchDesktop(IVirtualDesktop desktop);
-        this.Ptr_CreateDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 10) ; IVirtualDesktop CreateDesktop();
+
+        ; starting with Windows 11 22489, MS added an extra call GetAllCurrentDesktops at slot 7
+        ; see https://github.com/MScholtes/VirtualDesktop/blob/master/VirtualDesktop11Insider.cs#L170
+        ; because 22581 is now out in the wild as release preview, we have to adjust the vtable
+        win11offset := 7
+        if (buildNumber < 22489) {
+            ; windows 10 and older windows 11 situation, see https://github.com/MScholtes/VirtualDesktop/blob/master/VirtualDesktop11.cs
+            win11offset := 7
+        }
+        else
+        {
+            ; windows 11 starting at 22489 see https://github.com/MScholtes/VirtualDesktop/blob/master/VirtualDesktop11Insider.cs
+            win11offset := 8
+        }
+        this.GetDesktops := this._vtable(this.IVirtualDesktopManagerInternal, win11offset+0) ; IObjectArray GetDesktops();
+        this.GetAdjacentDesktop := this._vtable(this.IVirtualDesktopManagerInternal, win11offset+1) ; int GetAdjacentDesktop(IVirtualDesktop from, int direction, out IVirtualDesktop desktop);
+        this.SwitchDesktop := this._vtable(this.IVirtualDesktopManagerInternal, win11offset+2) ; void SwitchDesktop(IVirtualDesktop desktop);
+        this.Ptr_CreateDesktop := this._vtable(this.IVirtualDesktopManagerInternal, win11offset+3) ; IVirtualDesktop CreateDesktop();
         if (windowsVersion==10) {
-            this.Ptr_RemoveDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 11) ; void RemoveDesktop(IVirtualDesktop desktop, IVirtualDesktop fallback);
-            this.FindDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 12) ; IVirtualDesktop FindDesktop(ref Guid desktopid);
+            this.Ptr_RemoveDesktop := this._vtable(this.IVirtualDesktopManagerInternal, win11offset+4) ; void RemoveDesktop(IVirtualDesktop desktop, IVirtualDesktop fallback);
+            this.FindDesktop := this._vtable(this.IVirtualDesktopManagerInternal, win11offset+5) ; IVirtualDesktop FindDesktop(ref Guid desktopid);
         } else {
-            ; this.MoveDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 11) ; void MoveDesktop(IVirtualDesktop desktop, IntPtr hWndOrMon, int nIndex);
-            this.Ptr_RemoveDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 12) ; void RemoveDesktop(IVirtualDesktop desktop, IVirtualDesktop fallback);
-            this.FindDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 13) ; IVirtualDesktop FindDesktop(ref Guid desktopid);
+            ; this.MoveDesktop := this._vtable(this.IVirtualDesktopManagerInternal, win11ofset+4) ; void MoveDesktop(IVirtualDesktop desktop, IntPtr hWndOrMon, int nIndex);
+            this.Ptr_RemoveDesktop := this._vtable(this.IVirtualDesktopManagerInternal, win11offset+5) ; void RemoveDesktop(IVirtualDesktop desktop, IVirtualDesktop fallback);
+            this.FindDesktop := this._vtable(this.IVirtualDesktopManagerInternal, win11offset+6) ; IVirtualDesktop FindDesktop(ref Guid desktopid);
         }
 
         ;https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop.cs#L225-L234
