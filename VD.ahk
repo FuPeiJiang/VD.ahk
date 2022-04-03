@@ -89,15 +89,14 @@ class VD {
         ; starting with Windows 11 22489, MS added an extra call GetAllCurrentDesktops at slot 7
         ; see https://github.com/MScholtes/VirtualDesktop/blob/master/VirtualDesktop11Insider.cs#L170
         ; because 22581 is now out in the wild as release preview, we have to adjust the vtable
-        win11offset := 7
-        if (buildNumber < 22489) {
-            ; windows 10 and older windows 11 situation, see https://github.com/MScholtes/VirtualDesktop/blob/master/VirtualDesktop11.cs
-            win11offset := 7
+        if (buildNumber >= 22489) {
+            ; windows 11 starting at 22489 see https://github.com/MScholtes/VirtualDesktop/blob/master/VirtualDesktop11Insider.cs
+            win11offset := 8
         }
         else
         {
-            ; windows 11 starting at 22489 see https://github.com/MScholtes/VirtualDesktop/blob/master/VirtualDesktop11Insider.cs
-            win11offset := 8
+            ; windows 10 and pre-22489 windows 11 situation, see https://github.com/MScholtes/VirtualDesktop/blob/master/VirtualDesktop11.cs
+            win11offset := 7            
         }
         this.GetDesktops := this._vtable(this.IVirtualDesktopManagerInternal, win11offset+0) ; IObjectArray GetDesktops();
         this.GetAdjacentDesktop := this._vtable(this.IVirtualDesktopManagerInternal, win11offset+1) ; int GetAdjacentDesktop(IVirtualDesktop from, int direction, out IVirtualDesktop desktop);
