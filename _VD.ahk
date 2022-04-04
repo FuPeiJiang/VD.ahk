@@ -38,8 +38,14 @@
 
 class VD {
 
-    ; include "VD.ahk" to automatically init at start of script
-    ; include "_VD.ahk" to manually `VD.init()` when you want, like after a GUI has rendered
+    ; #Include VD.ahk
+    ; or
+    ; #Include _VD.ahk
+    ; ...{startup code}
+    ; VD.init()
+
+    ; VD.ahk : calls `VD.init()` on #Include
+    ; _VD.ahk : `VD.init()` when you want, like after a GUI has rendered, for startup performance reasons
     init()
     {
         splitByDot:=StrSplit(A_OSVersion, ".")

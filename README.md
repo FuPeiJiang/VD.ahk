@@ -3,7 +3,7 @@
 no dependencies no **virtual-desktop-accessor.dll**, Windows 11 support
 
 ### Just run the examples, everything explained inside
-the most useful ones:<br>
+
 * <kbd>Numpad1</kbd> to go to `Desktop 1`<br>
 * <kbd>Numpad2</kbd> to go to `Desktop 2`<br>
 * <kbd>Numpad3</kbd> to go to `Desktop 3`<br>
