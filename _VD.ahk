@@ -246,6 +246,16 @@ class VD {
         this._MoveView_to_IVirtualDesktop(thePView, IVirtualDesktop)
     }
 
+    MoveWindowToRelativeDesktopNum(wintitle,relativeNum)
+    {
+        targetNum:=this.getDesktopNumOfWindow(wintitle) + relativeNum
+        targetNum:=Mod(targetNum, this.getCount())
+        while (targetNum <= 0) {
+            targetNum:=targetNum + this.getCount()
+        }
+        return this.MoveWindowToDesktopNum(wintitle, targetNum)
+    }
+
     MoveWindowToCurrentDesktop(wintitle,activateYourWindow:=true)
     {
         found:=this._getFirstValidWindow(wintitle)
