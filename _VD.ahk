@@ -250,7 +250,7 @@ class VD {
     {
         targetNum:=this.getDesktopNumOfWindow(wintitle) + relativeNum
         targetNum:=Mod(targetNum, this.getCount())
-        while (targetNum <= 0) {
+        if (targetNum <= 0) {
             targetNum:=targetNum + this.getCount()
         }
         return this.MoveWindowToDesktopNum(wintitle, targetNum)
