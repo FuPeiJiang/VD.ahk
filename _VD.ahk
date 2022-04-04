@@ -9,9 +9,6 @@
 ; VD.MoveWindowToDesktopNum(wintitle,desktopNum)
 ; VD.MoveWindowToCurrentDesktop(wintitle,activateYourWindow:=true)
 
-; COMMENT THIS OUT IF YOU DON'T WANT TO INIT AT START OF SCRIPT
-; > static dummyStatic1 := VD.init()
-
 ; VD.createDesktop(goThere:=true) ; VD.createUntil(howMany, goToLastlyCreated:=true)
 ; VD.removeDesktop(desktopNum, fallback_desktopNum:=false)
 
@@ -41,9 +38,8 @@
 
 class VD {
 
-    ; COMMENT THIS OUT IF YOU DON'T WANT TO INIT AT START OF SCRIPT
-    static dummyStatic1 := VD.init()
-
+    ; include "VD.ahk" to automatically init at start of script
+    ; include "_VD.ahk" to manually `VD.init()` when you want, like after a GUI has rendered
     init()
     {
         splitByDot:=StrSplit(A_OSVersion, ".")
