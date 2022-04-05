@@ -35,11 +35,19 @@ numpad7::VD.MoveWindowToDesktopNum("A",1)
 numpad8::VD.MoveWindowToDesktopNum("A",2)
 numpad9::VD.MoveWindowToDesktopNum("A",3)
 ```
+...
+```autohotkey
+; move window to left and follow it
+#!left::VD.goToDesktopNum(VD.MoveWindowToRelativeDesktopNum("A", -1))
+; move window to right and follow it
+#!right::VD.goToDesktopNum(VD.MoveWindowToRelativeDesktopNum("A", 1))
+```
 
 you can remap everything
 ___
 also has:
 * `createDesktop()`
+
 * `PinWindow()`
 
 - `getCount()` ;how many virtual desktops you now have

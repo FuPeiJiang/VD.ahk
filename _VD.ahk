@@ -6,8 +6,9 @@
 ; VD.goToDesktopNum(desktopNum)
 ; VD.goToDesktopOfWindow(wintitle, activateYourWindow:=true)
 
-; VD.MoveWindowToDesktopNum(wintitle,desktopNum)
-; VD.MoveWindowToCurrentDesktop(wintitle,activateYourWindow:=true)
+; VD.MoveWindowToDesktopNum(wintitle, desktopNum)
+; VD.MoveWindowToCurrentDesktop(wintitle, activateYourWindow:=true)
+; VD.MoveWindowToRelativeDesktopNum(wintitle, relative_desktopNum)
 
 ; VD.createDesktop(goThere:=true) ; VD.createUntil(howMany, goToLastlyCreated:=true)
 ; VD.removeDesktop(desktopNum, fallback_desktopNum:=false)
@@ -233,7 +234,7 @@ class VD {
         }
     }
 
-    MoveWindowToDesktopNum(wintitle,desktopNum)
+    MoveWindowToDesktopNum(wintitle, desktopNum)
     {
         found:=this._getFirstValidWindow(wintitle)
         if (!found) {
@@ -247,7 +248,37 @@ class VD {
         this._MoveView_to_IVirtualDesktop(thePView, IVirtualDesktop)
     }
 
-    MoveWindowToCurrentDesktop(wintitle,activateYourWindow:=true)
+    MoveWindowToRelativeDesktopNum(wintitle, relative_desktopNum)
+    {
+        found:=this._getFirstValidWindow(wintitle)
+        if (!found) {
+            return -1 ;for false
+        }
+        theHwnd:=found[1]
+        thePView:=found[2]
+
+        desktopNum_ofWindow:=this._desktopNum_from_Hwnd(theHwnd)
+
+        Desktops_Obj:=this._GetDesktops_Obj()
+        count_Desktops:=Desktops_Obj.GetCount()
+
+        absolute_desktopNum:=desktopNum_ofWindow + relative_desktopNum
+        ;// The 1-based indices wrap around on the first and last desktop.
+        ;// say count_Desktops:=3
+        absolute_desktopNum:=Mod(absolute_desktopNum, count_Desktops)
+        ; 4 -> 1
+        if (absolute_desktopNum <= 0) {
+            ; 0 -> 3
+            absolute_desktopNum:=absolute_desktopNum + count_Desktops
+        }
+
+        IVirtualDesktop:=Desktops_Obj.GetAt(absolute_desktopNum)
+
+        this._MoveView_to_IVirtualDesktop(thePView, IVirtualDesktop)
+        return absolute_desktopNum
+    }
+
+    MoveWindowToCurrentDesktop(wintitle, activateYourWindow:=true)
     {
         found:=this._getFirstValidWindow(wintitle)
         if (!found) {

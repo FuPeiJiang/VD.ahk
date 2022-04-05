@@ -93,6 +93,11 @@ numpad7::VD.MoveWindowToDesktopNum("A",1)
 numpad8::VD.MoveWindowToDesktopNum("A",2)
 numpad9::VD.MoveWindowToDesktopNum("A",3)
 
+; move window to left and follow it
+#!left::VD.goToDesktopNum(VD.MoveWindowToRelativeDesktopNum("A", -1))
+; move window to right and follow it
+#!right::VD.goToDesktopNum(VD.MoveWindowToRelativeDesktopNum("A", 1))
+
 ;to come back to this window
 #NumpadMult:: ;#*
     VD.goToDesktopOfWindow("VD.ahk examples WinTitle")
