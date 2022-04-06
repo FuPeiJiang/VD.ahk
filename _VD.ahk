@@ -207,8 +207,7 @@ class VD {
 
     }
 
-    getDesktopNumOfWindow(wintitle)
-    {
+    getDesktopNumOfWindow(wintitle) {
         found:=this._getFirstValidWindow(wintitle)
         if (!found) {
             return -1 ;for false
@@ -297,15 +296,14 @@ class VD {
         }
     }
 
-    getCurrentDesktopNum()
-    {
+    getCurrentDesktopNum() {
         IVirtualDesktop_ofCurrentDesktop:=this._dll_GetCurrentDesktop()
 
         desktopNum:=this._desktopNum_from_IVirtualDesktop(IVirtualDesktop_ofCurrentDesktop)
         return desktopNum
     }
 
-    createDesktop(goThere:=true) {
+    createDesktop(goThere:=false) {
         IVirtualDesktop_ofNewDesktop:=this._dll_CreateDesktop()
 
         if (goThere) {
@@ -317,8 +315,8 @@ class VD {
         }
     }
 
-    createUntil(howMany, goToLastlyCreated:=true) {
-        howManyThereAlreadyAre:=Vd.getCount()
+    createUntil(howMany, goToLastlyCreated:=false) {
+        howManyThereAlreadyAre:=this.getCount()
         if (howManyThereAlreadyAre>=howMany) {
             return
         }
