@@ -12,37 +12,34 @@ Process, Priority,, H
 SetWinDelay -1
 SetControlDelay -1
 
-#Include ..\VD.ahk
-VD_init()
+#Include ..\_VD.ahk
+VD.init()
 
 arrayOfWindowsInfo:=[] ;to store {desktopNum:number, str:INFO}
 
 DetectHiddenWindows, on
 WinGet windows, List
-Loop %windows%
+Loop % windows
 {
-    id := windows%A_Index%
-    IfEqual, False, % VD_isValidWindow(id), continue
-    ahk_idId := "ahk_id " id
-    desktopOfWindow:=VD_getDesktopOfWindow(ahk_idId)
-    if (desktopOfWindow)
+    hwnd := windows%A_Index%
+    desktopOfWindow:=VD.getDesktopNumOfWindow("ahk_id " hwnd)
+    if (desktopOfWindow > -1)
     {
-        whichDesktop:="Desktop " desktopOfWindow
 
-        ;useful
-        WinGetTitle, OutputTitle, %ahk_idId%
-        WinGetClass, OutputClass, %ahk_idId%
-        WinGet, OutputEXE, ProcessName, %ahk_idId%
-        useFulStr:="`nWinTitle: " OutputTitle "`nclass: " OutputClass "`nEXE: " OutputEXE
+        if (desktopOfWindow==0) {
+            whichDesktop:="DesktopNum: Show on all desktops"
+        } else {
+            whichDesktop:="DesktopNum: " desktopOfWindow
+        }
 
-        ;not that useful
-        WinGet, OutputFULLPATH, ProcessPath, %ahk_idId%
-        WinGet, OutputPID, PID, %ahk_idId%
+        WinGetTitle, Title_, % "ahk_id " hwnd
+        WinGetClass, Class_, % "ahk_id " hwnd
+        WinGet, Exe_, ProcessName, % "ahk_id " hwnd
+        WinGet, PID_, PID, % "ahk_id " hwnd
+        WinGet, ID_, ID, % "ahk_id " hwnd
+        finalStr:=whichDesktop "`n" Title_ "`nahk_class " Class_ "`nahk_exe " Exe_ "`nahk_pid " PID_ "`nahk_id " ID_ " || " Format("0x{:X}", ID_)
 
-        notThatUseFulStr:="`n`nFULLPATH: " OutputFULLPATH "`nPID: " OutputPID "`nID: " id
-        WinGet, OutputVar, ProcessPath, A
-
-        arrayOfWindowsInfo.Push({desktopNum:desktopOfWindow, str:whichDesktop useFulStr notThatUseFulStr})
+        arrayOfWindowsInfo.Push({desktopNum:desktopOfWindow, str:finalStr})
     }
 }
 DetectHiddenWindows, off
@@ -55,11 +52,11 @@ for k, v in arrayOfWindowsInfo {
     ArrayStreamArray.push(v["str"])
 }
 
-streamArray(ArrayStreamArray,1100,200)
+streamArray(ArrayStreamArray,1100,250)
 return
 
 
-streamArray(Byref arr,Byref width,Byref height)
+streamArray(arr, width, height)
 {
     global ArrayStreamArray, ArrayStreamIndex, ArrayStreamGuiId, ArrayStreamTextId, ArrayStreamIndexTextId, ArrayStreamLength
 
@@ -77,7 +74,7 @@ streamArray(Byref arr,Byref width,Byref height)
         ArrayStreamIndexTextId:="ahk_id " ArrayStreamIndexText
         Gui, Font, s12 Bold
 
-        gui, add, Text, x20 w%width% h%height% hwndArrayStreamTextBox, % ArrayStreamArray[1]
+        gui, add, Text, % "x20 w" width - 20 " h" height " hwndArrayStreamTextBox", % ArrayStreamArray[1]
 
         Gui, Font, s18 Bold
         gui, add, button,w70 h35 gArrayStreamGoLeft, 🠔
@@ -85,7 +82,7 @@ streamArray(Byref arr,Byref width,Byref height)
         Gui,Font, s12 Normal
 
         heightPlus:=height+90
-        gui, show, w%width% h%heightPlus%
+        gui, show, % "w" width " h" heightPlus
         ArrayStreamTextId:="ahk_id " ArrayStreamTextBox
         ArrayStreamIndex:=1
     }
@@ -115,7 +112,7 @@ return
 #if
 
 
-sortArrByKey(ar,byref key) {
+sortArrByKey(ar, key) {
     str=
     for k,v in ar {
         str.=v[key] "+" k "|"

@@ -1,5 +1,6 @@
 ; VD.getCurrentDesktopNum()
 ; VD.getDesktopNumOfWindow(wintitle) ;please use VD.goToDesktopOfWindow instead if you just want to go there.
+; VD.getDesktopNumOfWindow(wintitle) ;returns 0 for "Show on all desktops"
 
 ; VD.getCount() ;how many virtual desktops you now have
 
@@ -215,7 +216,7 @@ class VD {
         theHwnd:=found[1]
 
         desktopNum_ofWindow:=this._desktopNum_from_Hwnd(theHwnd)
-        return desktopNum_ofWindow
+        return desktopNum_ofWindow ; 0 for "Show on all desktops"
     }
 
     goToDesktopOfWindow(wintitle, activateYourWindow:=true) {
@@ -505,7 +506,7 @@ class VD {
                 return A_Index
             }
         }
-        return -1 ;for false
+        return 0 ;for "Show on all desktops"
     }
 
     _desktopNum_from_Hwnd(theHwnd) {
