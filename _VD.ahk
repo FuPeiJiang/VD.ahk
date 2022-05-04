@@ -447,48 +447,32 @@ class VD {
         returnValue:=false
         WinGet, outHwndList, List
         loop % outHwndList {
-            if (!this._isValidWindow(outHwndList%A_Index%)) {
-                continue
+            if (pView:=this._isValidWindow(outHwndList%A_Index%)) {
+                returnValue:=[outHwndList%A_Index%, pView]
+                break
             }
-
-            pView:=this._view_from_Hwnd(outHwndList%A_Index%)
-            pfCanViewMoveDesktops := 0
-            DllCall(this.CanViewMoveDesktops, "UPtr", this.IVirtualDesktopManagerInternal, "Ptr", pView, "int*", pfCanViewMoveDesktops) ; return value BOOL
-            if (!pfCanViewMoveDesktops) {
-                continue
-            }
-            ;we can finally return
-            returnValue:=[outHwndList%A_Index%, pView]
-            break
         }
         return returnValue
     }
 
     _getFirstValidWindow(wintitle) {
 
+        bak_DetectHiddenWindows:=A_DetectHiddenWindows
+        bak_TitleMatchMode:=A_TitleMatchMode
         DetectHiddenWindows, on
         SetTitleMatchMode, 2
         WinGet, outHwndList, List, % wintitle
 
         returnValue:=false
         loop % outHwndList {
-            if (!this._isValidWindow(outHwndList%A_Index%)) {
-                continue
+            if (pView:=this._isValidWindow(outHwndList%A_Index%)) {
+                returnValue:=[outHwndList%A_Index%, pView]
+                break
             }
-
-            pView:=this._view_from_Hwnd(outHwndList%A_Index%)
-            pfCanViewMoveDesktops := 0
-            DllCall(this.CanViewMoveDesktops, "UPtr", this.IVirtualDesktopManagerInternal, "Ptr", pView, "int*", pfCanViewMoveDesktops) ; return value BOOL
-            if (!pfCanViewMoveDesktops) {
-                continue
-            }
-            ;we can finally return
-            returnValue:=[outHwndList%A_Index%, pView]
-            break
         }
 
-        SetTitleMatchMode, 1
-        DetectHiddenWindows, off
+        SetTitleMatchMode % bak_TitleMatchMode
+        DetectHiddenWindows % bak_DetectHiddenWindows
         return returnValue
     }
 
@@ -560,14 +544,15 @@ class VD {
         Return ((style & 0x20800000) or winH < A_ScreenHeight or winW < A_ScreenWidth) ? false : true
     }
 
-    _isValidWindow(hWnd)
+    _isValidWindow(hWnd) ;returns pView if succeeded
     {
         ; DetectHiddenWindows, on ;this is needed, but for optimization the caller will do it
 
         returnValue:=false
         breakToReturnFalse:
         loop 1 {
-            WinGetTitle, title, ahk_id %hWnd%
+            ; WinGetTitle, title, ahk_id %hWnd%
+            WinGetTitle, title, % "ahk_id " hwnd
             if (!title) {
                 break breakToReturnFalse
             }
@@ -585,7 +570,17 @@ class VD {
                 break breakToReturnFalse
             }
 
-            returnValue:=true
+            pView:=this._view_from_Hwnd(hWnd)
+            if (!pView) {
+                break breakToReturnFalse
+            }
+            pfCanViewMoveDesktops := 0
+            DllCall(this.CanViewMoveDesktops, "UPtr", this.IVirtualDesktopManagerInternal, "Ptr", pView, "int*", pfCanViewMoveDesktops) ; return value BOOL
+            if (!pfCanViewMoveDesktops) {
+                break breakToReturnFalse
+            }
+
+            returnValue:=pView
         }
         ; DetectHiddenWindows, off ;this is needed, but for optimization the caller will do it
         return returnValue
