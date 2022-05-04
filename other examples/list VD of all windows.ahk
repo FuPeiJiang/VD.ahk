@@ -55,6 +55,7 @@ for k, v in arrayOfWindowsInfo {
 streamArray(ArrayStreamArray,1100,250)
 return
 
+f3::Exitapp
 
 streamArray(arr, width, height)
 {
@@ -112,17 +113,12 @@ return
 #if
 
 
-sortArrByKey(ar, key) {
-    str=
+sortArrByKey(ar, key, sortType:="N") {
+    str:=""
     for k,v in ar {
         str.=v[key] "+" k "|"
     }
     length:=ar.Length()
-    firstValue:=ar[1][key]
-    if firstValue is number
-    {
-        sortType := "N"
-    }
     Sort, str, % "D| " sortType
     finalAr:=[]
     finalAr.SetCapacity(length)
@@ -136,5 +132,3 @@ sortArrByKey(ar, key) {
     }
     return finalAr
 }
-
-f3::Exitapp
