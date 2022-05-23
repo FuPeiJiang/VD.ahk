@@ -208,6 +208,47 @@ class VD {
 
     }
 
+    getNameFromDesktopNum(desktopNum) {
+        IVirtualDesktop:=this._GetDesktops_Obj().GetAt(desktopNum)
+        GetName:=this._vtable(IVirtualDesktop,6)
+        desktopName:=""
+        ; ok3:=DllCall(GetName, "UPtr", IVirtualDesktop, "Ptr*", desktopName)
+        ; ok3:=DllCall(GetName, "UPtr", IVirtualDesktop, "Ptr*")
+        ; ok3:=DllCall(GetName, "UPtr", IVirtualDesktop, "Ptr")
+        ; ok3:=DllCall(GetName, "UPtr", IVirtualDesktop)
+        /* why10:=DllCall(this._vtable(IVirtualDesktop,10), "UPtr", IVirtualDesktop, "Ptr")
+        ; why9:=DllCall(this._vtable(IVirtualDesktop,9), "UPtr", IVirtualDesktop, "Ptr")
+        ; why8:=DllCall(this._vtable(IVirtualDesktop,8), "UPtr", IVirtualDesktop, "Ptr")
+        why7:=DllCall(this._vtable(IVirtualDesktop,7), "UPtr", IVirtualDesktop, "Ptr")
+        why6:=DllCall(this._vtable(IVirtualDesktop,6), "UPtr", IVirtualDesktop, "Ptr")
+        why5:=DllCall(this._vtable(IVirtualDesktop,5), "UPtr", IVirtualDesktop, "Ptr")
+        ; why4:=DllCall(this._vtable(IVirtualDesktop,4), "UPtr", IVirtualDesktop, "Ptr")
+        why3:=DllCall(this._vtable(IVirtualDesktop,3), "UPtr", IVirtualDesktop, "Ptr")
+        ; why2:=DllCall(this._vtable(IVirtualDesktop,2), "UPtr", IVirtualDesktop, "Ptr")
+        ; why1:=DllCall(this._vtable(IVirtualDesktop,1), "UPtr", IVirtualDesktop, "Ptr")
+ */
+        ; why10:=DllCall(this._vtable(IVirtualDesktop,10), "UPtr", IVirtualDesktop, "Ptr*", ohPlease)
+        ; why9:=DllCall(this._vtable(IVirtualDesktop,9), "UPtr", IVirtualDesktop, "Ptr*", ohPlease9)
+        ; why8:=DllCall(this._vtable(IVirtualDesktop,8), "UPtr", IVirtualDesktop, "Ptr*", ohPlease8)
+        ; why7:=DllCall(this._vtable(IVirtualDesktop,7), "UPtr", IVirtualDesktop, "Ptr*", ohPlease7)
+        ; why6:=DllCall(this._vtable(IVirtualDesktop,6), "UPtr", IVirtualDesktop, "Ptr*", ohPlease6)
+        ; why5:=DllCall(this._vtable(IVirtualDesktop,5), "UPtr", IVirtualDesktop, "Ptr*", ohPlease5)
+        ; why4:=DllCall(this._vtable(IVirtualDesktop,4), "UPtr", IVirtualDesktop, "Ptr*", ohPlease4)
+        ; why3:=DllCall(this._vtable(IVirtualDesktop,3), "UPtr", IVirtualDesktop, "Ptr*", ohPlease3)
+        ; why2:=DllCall(this._vtable(IVirtualDesktop,2), "UPtr", IVirtualDesktop, "Ptr*", ohPlease2)
+        ; why1:=DllCall(this._vtable(IVirtualDesktop,1), "UPtr", IVirtualDesktop, "Ptr*", ohPlease1)
+
+        ; VarSetCapacity(Rect, 100, 0)
+        ; why6:=DllCall(this._vtable(IVirtualDesktop,6), "UPtr", IVirtualDesktop, "Ptr", &Rect, "Ptr")
+        ; okNone:=StrGet(&Rect, 100)
+
+        why6:=DllCall(this._vtable(IVirtualDesktop,6), "Ptr", IVirtualDesktop)
+        ok1:=ErrorLevel
+        ok2:=A_LastError
+        MsgBox % desktopName
+        return desktopName
+    }
+
     getDesktopNumOfWindow(wintitle) {
         found:=this._getFirstValidWindow(wintitle)
         if (!found) {
