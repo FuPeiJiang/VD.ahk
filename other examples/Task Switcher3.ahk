@@ -11,11 +11,11 @@ SetControlDelay, -1
 
 #Include ..\_VD.ahk
 VD.init()
+VD.getNameFromDesktopNum(1)
+return
 
 MenuItemTitleLength:=100
-
 OnMessage( 0x0006, "HandleMessage" ) ;to detect gui lose focus
-
 ; f1::
 arrayOfWindowsInfo:=[] ;to store {desktopNum:number, str:INFO}
 

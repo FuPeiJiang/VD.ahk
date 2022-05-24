@@ -237,10 +237,31 @@ class VD {
         ; why3:=DllCall(this._vtable(IVirtualDesktop,3), "UPtr", IVirtualDesktop, "Ptr*", ohPlease3)
         ; why2:=DllCall(this._vtable(IVirtualDesktop,2), "UPtr", IVirtualDesktop, "Ptr*", ohPlease2)
         ; why1:=DllCall(this._vtable(IVirtualDesktop,1), "UPtr", IVirtualDesktop, "Ptr*", ohPlease1)
+        ok1:=ErrorLevel
+        ok2:=A_LastError
+        ; ret:=DllCall("combase\WindowsCreateString", "Ptr",0, "UInt",0, "Ptr*",Ptr_HString)
+        ret:=DllCall("combase\WindowsCreateStringReference", "Ptr",0, "UInt",0, "Ptr*",Ptr_HString, "Ptr*",HSTRING_HEADER)
+        QueryInterface:=this._vtable(IVirtualDesktop, 0)
+        VarSetCapacity(CLSID, 16)
+        DllCall("Ole32.dll\CLSIDFromString", "Str","{31EBDE3F-6EC3-4CBD-B9FB-0EF6D09B41F4}", "Ptr",&CLSID)
+        ret:=DllCall(QueryInterface, "UPtr",IVirtualDesktop, "Ptr",&CLSID, "Ptr*", IVirtualDesktop2)
 
-        ; VarSetCapacity(Rect, 100, 0)
+
+        VarSetCapacity(GUID_Desktop, 200)
+        ; why4:=DllCall(this._vtable(IVirtualDesktop,4), "UPtr", IVirtualDesktop, "Ptr", &GUID_Desktop, "Cdecl")
+        ; why4:=DllCall(this._vtable(IVirtualDesktop,4), "UPtr", IVirtualDesktop, "Ptr", &GUID_Desktop)
+        ; why6:=DllCall(this._vtable(IVirtualDesktop,6), "UPtr", IVirtualDesktop, "Ptr", &GUID_Desktop)
+        why5:=DllCall(this._vtable(IVirtualDesktop2, 5), "UPtr", IVirtualDesktop2, "Ptr*", Handle_DesktopName)
+        ; why5:=DllCall(this._vtable(IVirtualDesktop2, 5), "UPtr", IVirtualDesktop2, "Ptr")
+        Ptr_DesktopName:=DllCall("combase\WindowsGetStringRawBuffer", "Ptr",Handle_DesktopName, "UInt*",length, "Ptr")
+        desktopName:=StrGet(Ptr_DesktopName+0,"UTF-16")
+        ; why6:=DllCall(this._vtable(IVirtualDesktop, 6), "UPtr", IVirtualDesktop, "Ptr*")
+        okNone:=StrGet(&GUID_Desktop, 100, Encoding := "UTF-16")0
+
+
+
+        ; VarSetCapacity(Rect, 100, 1)
         ; why6:=DllCall(this._vtable(IVirtualDesktop,6), "UPtr", IVirtualDesktop, "Ptr", &Rect, "Ptr")
-        ; okNone:=StrGet(&Rect, 100)
 
         why6:=DllCall(this._vtable(IVirtualDesktop,6), "Ptr", IVirtualDesktop)
         ok1:=ErrorLevel
