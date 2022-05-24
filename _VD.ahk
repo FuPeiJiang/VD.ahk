@@ -62,6 +62,7 @@ class VD {
             this._dll_GetDesktops:=this._dll_GetDesktops_Win10
             this._dll_SwitchDesktop:=this._dll_SwitchDesktop_Win10
             this._dll_CreateDesktop:=this._dll_CreateDesktop_Win10
+            this._dll_GetName:=this._dll_GetName_Win10
         }
         else
         {
@@ -72,7 +73,7 @@ class VD {
             this._dll_GetCurrentDesktop:=this._dll_GetCurrentDesktop_Win11
             this._dll_GetDesktops:=this._dll_GetDesktops_Win11
             this._dll_SwitchDesktop:=this._dll_SwitchDesktop_Win11
-            this._dll_CreateDesktop:=this._dll_CreateDesktop_Win11
+            this._dll_GetName:=this._dll_GetName_Win11
         }
         ;----------------------
         this.IVirtualDesktopManager := ComObjCreate("{AA509086-5CA9-4C25-8F95-589D3C07B48A}", "{A5CD92FF-29BE-454C-8D04-D82879FB3F1B}")
@@ -190,6 +191,44 @@ class VD {
         DllCall(this.Ptr_CreateDesktop, "UPtr", this.IVirtualDesktopManagerInternal, "Ptr", 0, "Ptr*", IVirtualDesktop_ofNewDesktop)
         return IVirtualDesktop_ofNewDesktop
     }
+    _dll_GetName_Win10(IVirtualDesktop) {
+        QueryInterface:=this._vtable(IVirtualDesktop, 0)
+        VarSetCapacity(CLSID, 16)
+        DllCall("Ole32.dll\CLSIDFromString", "Str","{31EBDE3F-6EC3-4CBD-B9FB-0EF6D09B41F4}", "Ptr",&CLSID)
+        DllCall(QueryInterface, "UPtr",IVirtualDesktop, "Ptr",&CLSID, "Ptr*", IVirtualDesktop2)
+
+        GetName:=this._vtable(IVirtualDesktop2,5)
+        DllCall(GetName, "UPtr", IVirtualDesktop2, "Ptr*", Handle_DesktopName)
+        if (Handle_DesktopName==0) {
+            return "" ;you can't have empty desktopName so this can represent error
+        }
+        Ptr_DesktopName:=DllCall("combase\WindowsGetStringRawBuffer", "Ptr",Handle_DesktopName, "UInt*",length, "Ptr")
+        desktopName:=StrGet(Ptr_DesktopName+0,"UTF-16")
+        return desktopName
+    }
+    /* _dll_GetName_Win10(IVirtualDesktop) {
+        GetId := this._vtable(IVirtualDesktop, 4)
+        VarSetCapacity(GUID_Desktop, 16)
+        DllCall(GetId, "UPtr",IVirtualDesktop, "Ptr",&GUID_Desktop)
+
+        strGUID:=this._string_from_GUID(GUID_Desktop)
+        KeyName:="HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VirtualDesktops\Desktops\" strGUID
+        ;RegRead gives "" on key not found, convenient
+        RegRead, desktopName, % KeyName, % "Name"
+        ; I don't like this because registry can be edited, then it wouldn't reflect the desktopName
+        return desktopName
+    }
+    */
+    _dll_GetName_Win11() {
+        GetName:=this._vtable(IVirtualDesktop,6)
+        DllCall(GetName, "UPtr", IVirtualDesktop, "Ptr*", Handle_DesktopName)
+        if (Handle_DesktopName==0) {
+            return "" ;you can't have empty desktopName so this can represent error
+        }
+        Ptr_DesktopName:=DllCall("combase\WindowsGetStringRawBuffer", "Ptr",Handle_DesktopName, "UInt*",length, "Ptr")
+        desktopName:=StrGet(Ptr_DesktopName+0,"UTF-16")
+        return desktopName
+    }
     ;dll methods end
 
     ;actual methods start
@@ -206,6 +245,15 @@ class VD {
             SetTimer % timerFunc, -50
         }
 
+    }
+
+    getNameFromDesktopNum(desktopNum) {
+        IVirtualDesktop:=this._GetDesktops_Obj().GetAt(desktopNum)
+        _name:=this._dll_GetName(IVirtualDesktop)
+        return _name
+        ; if (_name=="") {
+            ; return "Desktop " _name
+        ; }
     }
 
     getDesktopNumOfWindow(wintitle) {
