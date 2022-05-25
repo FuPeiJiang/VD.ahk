@@ -54,7 +54,6 @@ for k, v in arrayOfWindowsInfo {
         Gui, Add, Text, % "x10 hwndOMG", % "Desktop " v.desktopNum
         ControlGetPos, Xpos, Ypos, Width, Height,, % "ahk_id " OMG
         Gui, Add, Text, % "x+3 y+-5 0x00000005 h1 w" guiWidth - (Xpos + Width)
-        continue
     }
 
     title:=SubStr(v.title, 1, MenuItemTitleLength)

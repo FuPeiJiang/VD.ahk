@@ -219,7 +219,7 @@ class VD {
         return desktopName
     }
     */
-    _dll_GetName_Win11() {
+    _dll_GetName_Win11(IVirtualDesktop) {
         GetName:=this._vtable(IVirtualDesktop,6)
         DllCall(GetName, "UPtr", IVirtualDesktop, "Ptr*", Handle_DesktopName)
         if (Handle_DesktopName==0) {

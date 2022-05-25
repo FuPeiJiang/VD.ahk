@@ -65,7 +65,6 @@ for k, v in arrayOfWindowsInfo {
         ArrForMenuItemPos.Push("")
         Menu, windows, Add
         ArrForMenuItemPos.Push("")
-        continue
     }
 
     title:=SubStr(v.title, 1, MenuItemTitleLength)
