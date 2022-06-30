@@ -79,9 +79,9 @@ class VD {
         this.IVirtualDesktopManager := ComObjCreate("{AA509086-5CA9-4C25-8F95-589D3C07B48A}", "{A5CD92FF-29BE-454C-8D04-D82879FB3F1B}")
         this.GetWindowDesktopId := this._vtable(this.IVirtualDesktopManager, 4)
 
-        IServiceProvider := ComObjCreate("{C2F03A33-21F5-47FA-B4BB-156362A2F239}", "{6D5140C1-7436-11CE-8034-00AA006009FA}")
+        this.IServiceProvider := ComObjCreate("{C2F03A33-21F5-47FA-B4BB-156362A2F239}", "{6D5140C1-7436-11CE-8034-00AA006009FA}")
 
-        this.IVirtualDesktopManagerInternal := ComObjQuery(IServiceProvider, "{C5E0CDCA-7B6E-41B2-9FC4-D93975CC467B}", IID_IVirtualDesktopManagerInternal_)
+        this.IVirtualDesktopManagerInternal := ComObjQuery(this.IServiceProvider, "{C5E0CDCA-7B6E-41B2-9FC4-D93975CC467B}", IID_IVirtualDesktopManagerInternal_)
 
         ; this.GetCount := this._vtable(this.IVirtualDesktopManagerInternal, 3 ; int GetCount();
         this.MoveViewToDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 4) ; void MoveViewToDesktop(object pView, IVirtualDesktop desktop);
@@ -120,7 +120,7 @@ class VD {
         }
 
         ;https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop.cs#L225-L234
-        this.IVirtualDesktopPinnedApps := ComObjQuery(IServiceProvider, "{B5A399E7-1C87-46B8-88E9-FC5747B171BD}", "{4CE81583-1E4C-4632-A621-07A53543148F}")
+        this.IVirtualDesktopPinnedApps := ComObjQuery(this.IServiceProvider, "{B5A399E7-1C87-46B8-88E9-FC5747B171BD}", "{4CE81583-1E4C-4632-A621-07A53543148F}")
 
         ; this.IsAppIdPinned := this._vtable(this.IVirtualDesktopPinnedApps, 3) ; bool IsAppIdPinned(string appId);
         ; this.PinAppID := this._vtable(this.IVirtualDesktopPinnedApps, 4) ; void PinAppID(string appId);
@@ -148,7 +148,7 @@ class VD {
 
         ; VarSetCapacity(IID_IVirtualDesktop, 16)
         ; this will never be garbage collected
-        this.Ptr_IID_IVirtualDesktop := DllCall( "GlobalAlloc", "UInt",0x40, "UInt", 16, "Ptr")
+        this.Ptr_IID_IVirtualDesktop := DllCall( "GlobalAlloc", "UInt",0x00, "UInt", 16, "Ptr")
         DllCall("Ole32.dll\CLSIDFromString", "Str", IID_IVirtualDesktop_, "Ptr", this.Ptr_IID_IVirtualDesktop)
 
         ;----------------------
@@ -448,6 +448,138 @@ class VD {
         thePView:=found[2]
 
         DllCall(this.UnPinView, "UPtr", this.IVirtualDesktopPinnedApps, "Ptr", thePView)
+    }
+
+    ; COM class start ;https://github.com/Ciantic/VirtualDesktopAccessor/blob/5bc1bbaab247b5d72e70abc9432a15275fd2d229/VirtualDesktopAccessor/dllmain.h#L718-L794
+    _QueryInterface(riid, ppvObject) {
+        if (!ppvObject) {
+            return 0x80070057 ;E_INVALIDARG
+        }
+
+        str_IID_IUnknown:="{00000000-0000-0000-C000-000000000046}"
+        str_IID_IVirtualDesktopNotification:="{C179334C-4295-40D3-BEA1-C654D965605A}"
+
+        VarSetCapacity(someStr, 40)
+        DllCall("Ole32\StringFromGUID2", "Ptr", riid, "Ptr",&someStr, "Ptr",40)
+        str_riid:=StrGet(&someStr)
+
+        if (str_riid==str_IID_IUnknown || str_riid==str_IID_IVirtualDesktopNotification) {
+            NumPut(this, ppvObject+0, 0, "Ptr")
+            VD._AddRef.Call(this)
+            return 0 ;S_OK
+        }
+        ; *ppvObject = NULL;
+        NumPut(0, ppvObject+0, 0, "Ptr")
+        return 0x80004002 ;E_NOINTERFACE
+
+        ; // Always set out parameter to NULL, validating it first.
+        ; if (!ppvObject)
+            ; return E_INVALIDARG;
+        ; *ppvObject = NULL;
+;
+        ; if (riid == IID_IUnknown || riid == IID_IVirtualDesktopNotification)
+        ; {
+            ; // Increment the reference count and return the pointer.
+            ; *ppvObject = (LPVOID)this;
+            ; AddRef();
+            ; return S_OK;
+        ; }
+        ; return E_NOINTERFACE;
+    }
+    _AddRef() {
+        refCount:=NumGet(this+0, A_PtrSize, "UInt")
+        refCount++
+        NumPut(refCount, this+0, A_PtrSize, "UInt")
+        ; NumPut(this + 4)
+        ; refCount:=
+
+        ; return InterlockedIncrement(&_referenceCount);
+        return refCount
+    }
+    _Release() {
+        refCount:=NumGet(this+0, A_PtrSize, "UInt")
+        refCount--
+        NumPut(refCount, this+0, A_PtrSize, "UInt")
+        ; ULONG result = InterlockedDecrement(&_referenceCount);
+        ; if (result == 0)
+        ; {
+            ; delete this;
+        ; }
+        return refCount
+    }
+    _VirtualDesktopCreated(pDesktop) {
+        ; Tooltip % 11111
+        VD.VirtualDesktopCreated.Call(VD._desktopNum_from_IVirtualDesktop(pDesktop))
+        return 0 ;S_OK
+    }
+    _VirtualDesktopDestroyBegin(pDesktopDestroyed, pDesktopFallback) {
+        ; Tooltip % 22222
+        VD.VirtualDesktopDestroyBegin.Call(VD._desktopNum_from_IVirtualDesktop(pDesktopDestroyed), VD._desktopNum_from_IVirtualDesktop(pDesktopFallback))
+        return 0 ;S_OK
+    }
+    _VirtualDesktopDestroyFailed(pDesktopDestroyed, pDesktopFallback) {
+        ; Tooltip % 33333
+        VD.VirtualDesktopDestroyFailed.Call(VD._desktopNum_from_IVirtualDesktop(pDesktopDestroyed), VD._desktopNum_from_IVirtualDesktop(pDesktopFallback))
+        return 0 ;S_OK
+    }
+    _VirtualDesktopDestroyed(pDesktopDestroyed, pDesktopFallback) {
+        ; Tooltip % 44444
+        VD.VirtualDesktopDestroyed.Call(VD._desktopNum_from_IVirtualDesktop(pDesktopDestroyed), VD._desktopNum_from_IVirtualDesktop(pDesktopFallback))
+        return 0 ;S_OK
+    }
+    _ViewVirtualDesktopChanged(pView) {
+        ; Tooltip % 55555
+        VD.ViewVirtualDesktopChanged.Call(pView)
+        return 0 ;S_OK
+    }
+    _CurrentVirtualDesktopChanged(pDesktopOld, pDesktopNew) {
+        VD.CurrentVirtualDesktopChanged.Call(VD._desktopNum_from_IVirtualDesktop(pDesktopOld), VD._desktopNum_from_IVirtualDesktop(pDesktopNew))
+        return 0 ;S_OK
+    }
+    RegisterDesktopNotifications() { ;https://github.com/Ciantic/VirtualDesktopAccessor/blob/5bc1bbaab247b5d72e70abc9432a15275fd2d229/VirtualDesktopAccessor/dllmain.h#L718-L794
+        methods:=DllCall("GlobalAlloc", "Uint",0x00, "Uint",9*A_PtrSize) ;PLEASE DON'T GARBAGE COLLECT IT, this took me hours to debug, I was lucky ahkv2 garbage collected slowly
+        NumPut(RegisterCallback("VD._QueryInterface", "F"), methods+0, 0*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback("VD._AddRef", "F"), methods+0, 1*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback("VD._Release", "F"), methods+0, 2*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback("VD._VirtualDesktopCreated", "F"), methods+0, 3*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback("VD._VirtualDesktopDestroyBegin", "F"), methods+0, 4*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback("VD._VirtualDesktopDestroyFailed", "F"), methods+0, 5*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback("VD._VirtualDesktopDestroyed", "F"), methods+0, 6*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback("VD._ViewVirtualDesktopChanged", "F"), methods+0, 7*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback("VD._CurrentVirtualDesktopChanged", "F"), methods+0, 8*A_PtrSize, "Ptr")
+
+        obj:=DllCall("GlobalAlloc", "Uint",0x00, "Uint",A_PtrSize + 4) ;PLEASE DON'T GARBAGE COLLECT IT, this took me hours to debug, I was lucky ahkv2 garbage collected slowly
+        NumPut(methods, obj+0, 0, "Ptr")
+        NumPut(0, obj+0, A_PtrSize, "UInt") ;refCount
+
+        ; "CoCreateInstance", "Ptr" rclsid, IntPtr pUnkOuter, UInt32 dwClsContext, IntPtr riid, IntPtr ppv);
+        ; pDesktopNotificationService:=ComObjCreate("{A501FDEC-4A09-464C-AE4E-1B9C21B84918}", "{0CD45E71-D927-4F15-8B0A-8FEF525337BF}")
+        this.IServiceProvider := ComObjCreate("{C2F03A33-21F5-47FA-B4BB-156362A2F239}", "{6D5140C1-7436-11CE-8034-00AA006009FA}")
+
+        pDesktopNotificationService := ComObjQuery(this.IServiceProvider, "{A501FDEC-4A09-464C-AE4E-1B9C21B84918}", "{0CD45E71-D927-4F15-8B0A-8FEF525337BF}")
+        Register:=this._vtable(pDesktopNotificationService, 3)
+        HRESULT:=DllCall(Register,"UPtr",pDesktopNotificationService, "Ptr",obj, "Uint*",pdwCookie:=0)
+        ; ok1:=ErrorLevel
+        ; ok2:=A_LastError
+        ; ok:=0
+
+        ; HRESULT hrNotificationService = pServiceProvider->QueryService(
+		; CLSID_IVirtualNotificationService,
+		; __uuidof(IVirtualDesktopNotificationService),
+		; (PVOID*)&pDesktopNotificationService);
+    }
+
+    VirtualDesktopCreated(desktopNum) {
+    }
+    VirtualDesktopDestroyBegin(desktopNum_Destroyed, desktopNum_Fallback) {
+    }
+    VirtualDesktopDestroyFailed(desktopNum_Destroyed, desktopNum_Fallback) {
+    }
+    VirtualDesktopDestroyed(desktopNum_Destroyed, desktopNum_Fallback) {
+    }
+    ViewVirtualDesktopChanged(pView) {
+    }
+    CurrentVirtualDesktopChanged(desktopNum_Old, desktopNum_New) {
     }
 
     ;actual methods end
