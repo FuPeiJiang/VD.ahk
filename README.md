@@ -76,6 +76,9 @@ Loop %id%
 
 MsgBox % foundProcesses
 ```
+detect when the virtual desktop changes
+> on occasion Windows will pull me to another desktop when I click on a notification, or I'll sometimes use the built-in Ctrl+Win+Left/Right to change desktop instead.
+https://github.com/FuPeiJiang/VD.ahk/blob/73e52f9fd5e6c2b413061105ad91da3653fa56e1/other%20examples/CurrentVirtualDesktopChanged%20RegisterDesktopNotifications.ahk#L9-L14
 
 <!-- Desktop2`nPress Numpad6 to move the active window to Desktop3 and go to Desktop 3 (follow the window) -->
 
