@@ -552,10 +552,6 @@ class VD {
         NumPut(methods, obj+0, 0, "Ptr")
         NumPut(0, obj+0, A_PtrSize, "UInt") ;refCount
 
-        ; "CoCreateInstance", "Ptr" rclsid, IntPtr pUnkOuter, UInt32 dwClsContext, IntPtr riid, IntPtr ppv);
-        ; pDesktopNotificationService:=ComObjCreate("{A501FDEC-4A09-464C-AE4E-1B9C21B84918}", "{0CD45E71-D927-4F15-8B0A-8FEF525337BF}")
-        this.IServiceProvider := ComObjCreate("{C2F03A33-21F5-47FA-B4BB-156362A2F239}", "{6D5140C1-7436-11CE-8034-00AA006009FA}")
-
         pDesktopNotificationService := ComObjQuery(this.IServiceProvider, "{A501FDEC-4A09-464C-AE4E-1B9C21B84918}", "{0CD45E71-D927-4F15-8B0A-8FEF525337BF}")
         Register:=this._vtable(pDesktopNotificationService, 3)
         HRESULT:=DllCall(Register,"UPtr",pDesktopNotificationService, "Ptr",obj, "Uint*",pdwCookie:=0)
