@@ -63,6 +63,7 @@ class VD {
             this._dll_SwitchDesktop:=this._dll_SwitchDesktop_Win10
             this._dll_CreateDesktop:=this._dll_CreateDesktop_Win10
             this._dll_GetName:=this._dll_GetName_Win10
+            this.RegisterDesktopNotifications:=this.RegisterDesktopNotifications_Win10
         }
         else
         {
@@ -74,6 +75,7 @@ class VD {
             this._dll_GetDesktops:=this._dll_GetDesktops_Win11
             this._dll_SwitchDesktop:=this._dll_SwitchDesktop_Win11
             this._dll_GetName:=this._dll_GetName_Win11
+            this.RegisterDesktopNotifications:=this.RegisterDesktopNotifications_Win11
         }
         ;----------------------
         this.IVirtualDesktopManager := ComObjCreate("{AA509086-5CA9-4C25-8F95-589D3C07B48A}", "{A5CD92FF-29BE-454C-8D04-D82879FB3F1B}")
@@ -451,7 +453,7 @@ class VD {
     }
 
     ; COM class start ;https://github.com/Ciantic/VirtualDesktopAccessor/blob/5bc1bbaab247b5d72e70abc9432a15275fd2d229/VirtualDesktopAccessor/dllmain.h#L718-L794
-    _QueryInterface(riid, ppvObject) {
+    _QueryInterface_Win10(riid, ppvObject) {
         if (!ppvObject) {
             return 0x80070057 ;E_INVALIDARG
         }
@@ -465,7 +467,7 @@ class VD {
 
         if (str_riid==str_IID_IUnknown || str_riid==str_IID_IVirtualDesktopNotification) {
             NumPut(this, ppvObject+0, 0, "Ptr")
-            VD._AddRef.Call(this)
+            VD._AddRef_Same.Call(this)
             return 0 ;S_OK
         }
         ; *ppvObject = NULL;
@@ -486,7 +488,7 @@ class VD {
         ; }
         ; return E_NOINTERFACE;
     }
-    _AddRef() {
+    _AddRef_Same() {
         refCount:=NumGet(this+0, A_PtrSize, "UInt")
         refCount++
         NumPut(refCount, this+0, A_PtrSize, "UInt")
@@ -496,7 +498,7 @@ class VD {
         ; return InterlockedIncrement(&_referenceCount);
         return refCount
     }
-    _Release() {
+    _Release_Same() {
         refCount:=NumGet(this+0, A_PtrSize, "UInt")
         refCount--
         NumPut(refCount, this+0, A_PtrSize, "UInt")
@@ -507,47 +509,127 @@ class VD {
         ; }
         return refCount
     }
-    _VirtualDesktopCreated(pDesktop) {
+    _VirtualDesktopCreated_Win10(pDesktop) {
         ; Tooltip % 11111
         VD.VirtualDesktopCreated.Call(VD._desktopNum_from_IVirtualDesktop(pDesktop))
         return 0 ;S_OK
     }
-    _VirtualDesktopDestroyBegin(pDesktopDestroyed, pDesktopFallback) {
+    _VirtualDesktopDestroyBegin_Win10(pDesktopDestroyed, pDesktopFallback) {
         ; Tooltip % 22222
         VD.VirtualDesktopDestroyBegin.Call(VD._desktopNum_from_IVirtualDesktop(pDesktopDestroyed), VD._desktopNum_from_IVirtualDesktop(pDesktopFallback))
         return 0 ;S_OK
     }
-    _VirtualDesktopDestroyFailed(pDesktopDestroyed, pDesktopFallback) {
+    _VirtualDesktopDestroyFailed_Win10(pDesktopDestroyed, pDesktopFallback) {
         ; Tooltip % 33333
         VD.VirtualDesktopDestroyFailed.Call(VD._desktopNum_from_IVirtualDesktop(pDesktopDestroyed), VD._desktopNum_from_IVirtualDesktop(pDesktopFallback))
         return 0 ;S_OK
     }
-    _VirtualDesktopDestroyed(pDesktopDestroyed, pDesktopFallback) {
+    _VirtualDesktopDestroyed_Win10(pDesktopDestroyed, pDesktopFallback) {
         ; Tooltip % 44444
         VD.VirtualDesktopDestroyed.Call(VD._desktopNum_from_IVirtualDesktop(pDesktopDestroyed), VD._desktopNum_from_IVirtualDesktop(pDesktopFallback))
         return 0 ;S_OK
     }
-    _ViewVirtualDesktopChanged(pView) {
+    _ViewVirtualDesktopChanged_Win10(pView) {
         ; Tooltip % 55555
         VD.ViewVirtualDesktopChanged.Call(pView)
         return 0 ;S_OK
     }
-    _CurrentVirtualDesktopChanged(pDesktopOld, pDesktopNew) {
+    _CurrentVirtualDesktopChanged_Win10(pDesktopOld, pDesktopNew) {
         VD.CurrentVirtualDesktopChanged.Call(VD._desktopNum_from_IVirtualDesktop(pDesktopOld), VD._desktopNum_from_IVirtualDesktop(pDesktopNew))
         return 0 ;S_OK
     }
-    RegisterDesktopNotifications() { ;https://github.com/Ciantic/VirtualDesktopAccessor/blob/5bc1bbaab247b5d72e70abc9432a15275fd2d229/VirtualDesktopAccessor/dllmain.h#L718-L794
+    RegisterDesktopNotifications_Win10() { ;https://github.com/Ciantic/VirtualDesktopAccessor/blob/5bc1bbaab247b5d72e70abc9432a15275fd2d229/VirtualDesktopAccessor/dllmain.h#L718-L794
         methods:=DllCall("GlobalAlloc", "Uint",0x00, "Uint",9*A_PtrSize) ;PLEASE DON'T GARBAGE COLLECT IT, this took me hours to debug, I was lucky ahkv2 garbage collected slowly
-        NumPut(RegisterCallback("VD._QueryInterface", "F"), methods+0, 0*A_PtrSize, "Ptr")
-        NumPut(RegisterCallback("VD._AddRef", "F"), methods+0, 1*A_PtrSize, "Ptr")
-        NumPut(RegisterCallback("VD._Release", "F"), methods+0, 2*A_PtrSize, "Ptr")
-        NumPut(RegisterCallback("VD._VirtualDesktopCreated", "F"), methods+0, 3*A_PtrSize, "Ptr")
-        NumPut(RegisterCallback("VD._VirtualDesktopDestroyBegin", "F"), methods+0, 4*A_PtrSize, "Ptr")
-        NumPut(RegisterCallback("VD._VirtualDesktopDestroyFailed", "F"), methods+0, 5*A_PtrSize, "Ptr")
-        NumPut(RegisterCallback("VD._VirtualDesktopDestroyed", "F"), methods+0, 6*A_PtrSize, "Ptr")
-        NumPut(RegisterCallback("VD._ViewVirtualDesktopChanged", "F"), methods+0, 7*A_PtrSize, "Ptr")
-        NumPut(RegisterCallback("VD._CurrentVirtualDesktopChanged", "F"), methods+0, 8*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback("VD._QueryInterface_Win10", "F"), methods+0, 0*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback("VD._AddRef_Same", "F"), methods+0, 1*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback("VD._Release_Same", "F"), methods+0, 2*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback("VD._VirtualDesktopCreated_Win10", "F"), methods+0, 3*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback("VD._VirtualDesktopDestroyBegin_Win10", "F"), methods+0, 4*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback("VD._VirtualDesktopDestroyFailed_Win10", "F"), methods+0, 5*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback("VD._VirtualDesktopDestroyed_Win10", "F"), methods+0, 6*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback("VD._ViewVirtualDesktopChanged_Win10", "F"), methods+0, 7*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback("VD._CurrentVirtualDesktopChanged_Win10", "F"), methods+0, 8*A_PtrSize, "Ptr")
 
+        this.RegisterDesktopNotifications_Same(methods)
+    }
+    ;COM class for Win11
+    _QueryInterface_Win11(riid, ppvObject) {
+        if (!ppvObject) {
+            return 0x80070057 ;E_INVALIDARG
+        }
+
+        str_IID_IUnknown:="{00000000-0000-0000-C000-000000000046}"
+        str_IID_IVirtualDesktopNotification:="{CD403E52-DEED-4C13-B437-B98380F2B1E8}"
+
+        VarSetCapacity(someStr, 40)
+        DllCall("Ole32\StringFromGUID2", "Ptr", riid, "Ptr",&someStr, "Ptr",40)
+        str_riid:=StrGet(&someStr)
+
+        if (str_riid==str_IID_IUnknown || str_riid==str_IID_IVirtualDesktopNotification) {
+            NumPut(this, ppvObject+0, 0, "Ptr")
+            VD._AddRef_Same.Call(this)
+            return 0 ;S_OK
+        }
+        ; *ppvObject = NULL;
+        NumPut(0, ppvObject+0, 0, "Ptr")
+        return 0x80004002 ;E_NOINTERFACE
+    }
+    _VirtualDesktopCreated_Win11(p0, pDesktop) {
+        ; Tooltip % 11111
+        VD.VirtualDesktopCreated.Call(VD._desktopNum_from_IVirtualDesktop(pDesktop))
+        return 0 ;S_OK
+    }
+    _VirtualDesktopDestroyBegin_Win11(p0, pDesktopDestroyed, pDesktopFallback) {
+        ; Tooltip % 22222
+        VD.VirtualDesktopDestroyBegin.Call(VD._desktopNum_from_IVirtualDesktop(pDesktopDestroyed), VD._desktopNum_from_IVirtualDesktop(pDesktopFallback))
+        return 0 ;S_OK
+    }
+    _VirtualDesktopDestroyFailed_Win11(p0, pDesktopDestroyed, pDesktopFallback) {
+        ; Tooltip % 33333
+        VD.VirtualDesktopDestroyFailed.Call(VD._desktopNum_from_IVirtualDesktop(pDesktopDestroyed), VD._desktopNum_from_IVirtualDesktop(pDesktopFallback))
+        return 0 ;S_OK
+    }
+    _VirtualDesktopDestroyed_Win11(p0, pDesktopDestroyed, pDesktopFallback) {
+        ; Tooltip % 44444
+        VD.VirtualDesktopDestroyed.Call(VD._desktopNum_from_IVirtualDesktop(pDesktopDestroyed), VD._desktopNum_from_IVirtualDesktop(pDesktopFallback))
+        return 0 ;S_OK
+    }
+    _ViewVirtualDesktopChanged_Win11(pView) {
+        ; Tooltip % 55555
+        VD.ViewVirtualDesktopChanged.Call(pView)
+        return 0 ;S_OK
+    }
+    _CurrentVirtualDesktopChanged_Win11(p0, pDesktopOld, pDesktopNew) {
+        VD.CurrentVirtualDesktopChanged.Call(VD._desktopNum_from_IVirtualDesktop(pDesktopOld), VD._desktopNum_from_IVirtualDesktop(pDesktopNew))
+        return 0 ;S_OK
+    }
+    _No_Op() {
+    }
+    RegisterDesktopNotifications_Win11() {
+        methods:=DllCall("GlobalAlloc", "Uint",0x00, "Uint",13*A_PtrSize) ;PLEASE DON'T GARBAGE COLLECT IT, this took me hours to debug, I was lucky ahkv2 garbage collected slowly
+        ; Thanks to mntone for IID and signatures https://mntone.hateblo.jp/entry/2021/05/23/121028#IVirtualDesktopNotification-3
+        ; Thanks to NyaMisty for explanation https://github.com/mntone/VirtualDesktop/pull/1#issuecomment-922269079
+        NumPut(RegisterCallback("VD._QueryInterface_Win11", "F"), methods+0, 0*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback("VD._AddRef_Same", "F"), methods+0, 1*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback("VD._Release_Same", "F"), methods+0, 2*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback("VD._VirtualDesktopCreated_Win11", "F"), methods+0, 3*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback("VD._VirtualDesktopDestroyBegin_Win11", "F"), methods+0, 4*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback("VD._VirtualDesktopDestroyFailed_Win11", "F"), methods+0, 5*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback("VD._VirtualDesktopDestroyed_Win11", "F"), methods+0, 6*A_PtrSize, "Ptr")
+        ; NumPut(RegisterCallback("VD._VirtualDesktopIsPerMonitorChanged_Win11", "F"), methods+0, 7*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback("VD._No_Op", "F"), methods+0, 7*A_PtrSize, "Ptr")
+        ; NumPut(RegisterCallback("VD._VirtualDesktopMoved_Win11", "F"), methods+0, 8*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback("VD._No_Op", "F"), methods+0, 8*A_PtrSize, "Ptr")
+        ; NumPut(RegisterCallback("VD._VirtualDesktopNameChanged_Win11", "F"), methods+0, 9*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback("VD._No_Op", "F"), methods+0, 9*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback("VD._ViewVirtualDesktopChanged_Win11", "F"), methods+0, 10*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback("VD._CurrentVirtualDesktopChanged_Win11", "F"), methods+0, 11*A_PtrSize, "Ptr")
+        ; NumPut(RegisterCallback("VD._VirtualDesktopWallpaperChanged_Win11", "F"), methods+0, 12*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback("VD._No_Op", "F"), methods+0, 12*A_PtrSize, "Ptr")
+
+        this.RegisterDesktopNotifications_Same(methods)
+    }
+    RegisterDesktopNotifications_Same(methods) {
         obj:=DllCall("GlobalAlloc", "Uint",0x00, "Uint",A_PtrSize + 4) ;PLEASE DON'T GARBAGE COLLECT IT, this took me hours to debug, I was lucky ahkv2 garbage collected slowly
         NumPut(methods, obj+0, 0, "Ptr")
         NumPut(0, obj+0, A_PtrSize, "UInt") ;refCount
