@@ -9,9 +9,13 @@ SetBatchLines -1
 #Include ..\VD.ahk
 
 VD.startShellMessage()
-VD.Run_lock_VD("""C:\Program Files (x86)\Hourglass\Hourglass.exe""","","","","Hourglass.exe",2,3)
-; VD.Run_lock_VD("""C:\Program Files (x86)\Hourglass\Hourglass.exe""","","","","Hourglass.exe",2,VD.getCurrentDesktopNum()) ;I like to be explicit
-
+VD.goToDesktopNum(1)
+;assume no OneNote window exists
+;first window needs 5 seconds to ready
+Run % "shell:AppsFolder\Microsoft.Office.OneNote_8wekyb3d8bbwe!microsoft.onenoteim"
+Sleep 5000 ;subsequent runs will be ignored without waiting 5000ms
+VD.Run("shell:AppsFolder\Microsoft.Office.OneNote_8wekyb3d8bbwe!microsoft.onenoteim","","OneNote for Windows 10","ApplicationFrameWindow","ApplicationFrameHost.exe",2)
+VD.Run("shell:AppsFolder\Microsoft.Office.OneNote_8wekyb3d8bbwe!microsoft.onenoteim","","OneNote for Windows 10","ApplicationFrameWindow","ApplicationFrameHost.exe",3)
 
 return
 

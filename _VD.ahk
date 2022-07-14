@@ -669,18 +669,41 @@ class VD {
 
         ; this.map_title_class:={"":{"":{"Hourglass.exe":func("VD.callback").bind(this, 2)}}}
         this.map_title_class:={}
+        this.runningApp:=false
+        this.runningQueue:=[]
     }
 
     Run(Target, WorkingDir, this_titleName, this_class, this_processName, desktopNum) {
         this.addToWaitNewWindow(this_titleName, this_class, this_processName, func("VD.callback_MoveWindow").bind(this, desktopNum))
 
-        Run % Target, % WorkingDir
+        if (this.runningApp) {
+            this.runningQueue.Push([Target, WorkingDir])
+        } else {
+            this.runningApp:=true
+            Run % Target, % WorkingDir
+        }
     }
 
     Run_lock_VD(Target, WorkingDir, this_titleName, this_class, this_processName, window_desktopNum, your_desktopNum) {
         this.addToWaitNewWindow(this_titleName, this_class, this_processName, func("VD.callback_MoveWindow_lockVD").bind(this, [window_desktopNum, your_desktopNum]))
 
-        Run % Target, % WorkingDir
+        if (this.runningApp) {
+            this.runningQueue.Push([Target, WorkingDir])
+        } else {
+            this.runningApp:=true
+            Run % Target, % WorkingDir
+        }
+    }
+
+    checkRunningQueue() {
+        if (this.runningQueue.Length()) {
+            tuple:=this.runningQueue.RemoveAt(1)
+            Target:=tuple[1]
+            WorkingDir:=tuple[2]
+            Run % Target, % WorkingDir
+        } else {
+            this.runningApp:=false
+        }
     }
 
     addToWaitNewWindow(this_titleName, this_class, this_processName, callback) {
@@ -698,17 +721,27 @@ class VD {
     callback_MoveWindow_lockVD(tuple, hwnd) {
         window_desktopNum:=tuple[1]
         your_desktopNum:=tuple[2]
+        WinActivate % "ahk_id " hwnd
         this.goToDesktopNum(your_desktopNum)
+        WinActivate % "ahk_id " hwnd
         this.MoveWindowToDesktopNum("ahk_id " hwnd,window_desktopNum)
+        WinActivate % "ahk_id " hwnd
     }
 
     ShellMessage(nCode, wParam, lParam) {
         Critical ;this is what makes many callbacks AT THE SAME TIME possible
+        Sleep 100 ;necessary
+
+        if (nCode < 0) {
+            MsgBox % nCode " oh no"
+        }
 
         hwnd:=false
         switch nCode {
             case 1:
                 hwnd:=wParam
+            case 12:
+                MsgBox % "HSHELL_APPCOMMAND 12 oh no"
         }
 
         if (hwnd) { ; HSHELL_WINDOWCREATED := 1, HSHELL_MONITORCHANGED := 16
@@ -718,17 +751,23 @@ class VD {
             arrOfCallback:=false
 
             WinGetTitle, this_title, % "ahk_id " hwnd
-            used_title:=this.map_title_class.HasKey(this_title) ? this_title : ""
-            map_class_processName:=this.map_title_class[used_title]
-            if (map_class_processName) {
-                WinGetClass, this_class, % "ahk_id " hwnd
-                used_class:=map_class_processName.HasKey(this_class) ? this_class : ""
-                map_processName_data:=map_class_processName[used_class]
-                if (map_processName_data) {
-                    WinGet, this_processName, ProcessName, % "ahk_id " hwnd
-
-                    used_processName:=map_processName_data.HasKey(this_processName) ? this_processName : ""
-                    arrOfCallback:=map_processName_data[used_processName]
+            for subString_title, map_class_processName in this.map_title_class {
+                if (InStr(this_title, subString_title, true)) {
+                    WinGetClass, this_class, % "ahk_id " hwnd
+                    for subString_class, map_processName_data in map_class_processName {
+                        if (InStr(this_class, subString_class, true)) {
+                            WinGet, this_processName, ProcessName, % "ahk_id " hwnd
+                            ToolTip % this_title " class " this_class " processName " this_processName
+                            for subString_processName, possibly_arrOfCallback in map_processName_data {
+                                if (InStr(this_processName, subString_processName, true)) {
+                                    arrOfCallback:=possibly_arrOfCallback
+                                    break
+                                }
+                            }
+                            break
+                        }
+                    }
+                    break
                 }
             }
 
@@ -741,12 +780,15 @@ class VD {
                 if (arrOfCallback.Length() > 1) {
                     arrOfCallback.RemoveAt(1)
                 } else if (map_processName_data.Count() > 1) {
-                    map_processName_data.Delete(used_processName)
+                    map_processName_data.Delete(subString_processName)
                 } else if (map_class_processName.Count() > 1) {
-                    map_class_processName.Delete(used_class)
+                    map_class_processName.Delete(subString_class)
                 } else {
-                    this.map_title_class.Delete(used_title)
+                    this.map_title_class.Delete(subString_title)
                 }
+
+                ; Sleep 2000
+                this.checkRunningQueue()
             }
         }
     }
