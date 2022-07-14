@@ -669,41 +669,18 @@ class VD {
 
         ; this.map_title_class:={"":{"":{"Hourglass.exe":func("VD.callback").bind(this, 2)}}}
         this.map_title_class:={}
-        this.runningApp:=false
-        this.runningQueue:=[]
     }
 
     Run(Target, WorkingDir, this_titleName, this_class, this_processName, desktopNum) {
         this.addToWaitNewWindow(this_titleName, this_class, this_processName, func("VD.callback_MoveWindow").bind(this, desktopNum))
 
-        if (this.runningApp) {
-            this.runningQueue.Push([Target, WorkingDir])
-        } else {
-            this.runningApp:=true
-            Run % Target, % WorkingDir
-        }
+        Run % Target, % WorkingDir
     }
 
     Run_lock_VD(Target, WorkingDir, this_titleName, this_class, this_processName, window_desktopNum, your_desktopNum) {
         this.addToWaitNewWindow(this_titleName, this_class, this_processName, func("VD.callback_MoveWindow_lockVD").bind(this, [window_desktopNum, your_desktopNum]))
 
-        if (this.runningApp) {
-            this.runningQueue.Push([Target, WorkingDir])
-        } else {
-            this.runningApp:=true
-            Run % Target, % WorkingDir
-        }
-    }
-
-    checkRunningQueue() {
-        if (this.runningQueue.Length()) {
-            tuple:=this.runningQueue.RemoveAt(1)
-            Target:=tuple[1]
-            WorkingDir:=tuple[2]
-            Run % Target, % WorkingDir
-        } else {
-            this.runningApp:=false
-        }
+        Run % Target, % WorkingDir
     }
 
     addToWaitNewWindow(this_titleName, this_class, this_processName, callback) {
@@ -757,7 +734,6 @@ class VD {
                     for subString_class, map_processName_data in map_class_processName {
                         if (InStr(this_class, subString_class, true)) {
                             WinGet, this_processName, ProcessName, % "ahk_id " hwnd
-                            ToolTip % this_title " class " this_class " processName " this_processName
                             for subString_processName, possibly_arrOfCallback in map_processName_data {
                                 if (InStr(this_processName, subString_processName, true)) {
                                     arrOfCallback:=possibly_arrOfCallback
@@ -787,8 +763,6 @@ class VD {
                     this.map_title_class.Delete(subString_title)
                 }
 
-                ; Sleep 2000
-                this.checkRunningQueue()
             }
         }
     }
