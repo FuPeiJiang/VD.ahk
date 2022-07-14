@@ -660,6 +660,97 @@ class VD {
     CurrentVirtualDesktopChanged(desktopNum_Old, desktopNum_New) {
     }
 
+    ; start in VD.ahk
+    startShellMessage() {
+        ; https://www.autohotkey.com/boards/viewtopic.php?t=63424#p271528
+        DllCall("RegisterShellHookWindow", "Ptr", A_ScriptHwnd)
+        MsgNum := DllCall("RegisterWindowMessage", "Str", "SHELLHOOK")
+        OnMessage(MsgNum, func("VD.ShellMessage").bind(this))
+
+        ; this.map_title_class:={"":{"":{"Hourglass.exe":func("VD.callback").bind(this, 2)}}}
+        this.map_title_class:={}
+    }
+
+    Run(Target, WorkingDir, this_titleName, this_class, this_processName, desktopNum) {
+        this.addToWaitNewWindow(this_titleName, this_class, this_processName, func("VD.callback_MoveWindow").bind(this, desktopNum))
+
+        Run % Target, % WorkingDir
+    }
+
+    Run_lock_VD(Target, WorkingDir, this_titleName, this_class, this_processName, window_desktopNum, your_desktopNum) {
+        this.addToWaitNewWindow(this_titleName, this_class, this_processName, func("VD.callback_MoveWindow_lockVD").bind(this, [window_desktopNum, your_desktopNum]))
+
+        Run % Target, % WorkingDir
+    }
+
+    addToWaitNewWindow(this_titleName, this_class, this_processName, callback) {
+        map_class_processName:=this.map_title_class.HasKey(this_titleName) ? this.map_title_class[this_titleName] : this.map_title_class[this_titleName]:={}
+        map_processName_data:=map_class_processName.HasKey(this_class) ? map_class_processName[this_class] : map_class_processName[this_class]:={}
+        arrOfCallback:=map_processName_data.HasKey(this_processName) ? map_processName_data[this_processName] : map_processName_data[this_processName]:=[]
+        arrOfCallback.Push(callback)
+    }
+
+    callback_MoveWindow(desktopNum, hwnd) {
+        WinActivate % "ahk_id " hwnd
+        this.MoveWindowToDesktopNum("ahk_id " hwnd,desktopNum)
+    }
+
+    callback_MoveWindow_lockVD(tuple, hwnd) {
+        window_desktopNum:=tuple[1]
+        your_desktopNum:=tuple[2]
+        this.goToDesktopNum(your_desktopNum)
+        this.MoveWindowToDesktopNum("ahk_id " hwnd,window_desktopNum)
+    }
+
+    ShellMessage(nCode, wParam, lParam) {
+        Critical ;this is what makes many callbacks AT THE SAME TIME possible
+
+        hwnd:=false
+        switch nCode {
+            case 1:
+                hwnd:=wParam
+        }
+
+        if (hwnd) { ; HSHELL_WINDOWCREATED := 1, HSHELL_MONITORCHANGED := 16
+            bak_DetectHiddenWindows := A_DetectHiddenWindows
+            DetectHiddenWindows, ON ;very important
+
+            arrOfCallback:=false
+
+            WinGetTitle, this_title, % "ahk_id " hwnd
+            used_title:=this.map_title_class.HasKey(this_title) ? this_title : ""
+            map_class_processName:=this.map_title_class[used_title]
+            if (map_class_processName) {
+                WinGetClass, this_class, % "ahk_id " hwnd
+                used_class:=map_class_processName.HasKey(this_class) ? this_class : ""
+                map_processName_data:=map_class_processName[used_class]
+                if (map_processName_data) {
+                    WinGet, this_processName, ProcessName, % "ahk_id " hwnd
+
+                    used_processName:=map_processName_data.HasKey(this_processName) ? this_processName : ""
+                    arrOfCallback:=map_processName_data[used_processName]
+                }
+            }
+
+            DetectHiddenWindows % bak_DetectHiddenWindows
+
+            if (arrOfCallback) {
+                callback:=arrOfCallback[1]
+                callback.Call(hwnd)
+
+                if (arrOfCallback.Length() > 1) {
+                    arrOfCallback.RemoveAt(1)
+                } else if (map_processName_data.Count() > 1) {
+                    map_processName_data.Delete(used_processName)
+                } else if (map_class_processName.Count() > 1) {
+                    map_class_processName.Delete(used_class)
+                } else {
+                    this.map_title_class.Delete(used_title)
+                }
+            }
+        }
+    }
+
     ;actual methods end
 
     ;internal methods start
