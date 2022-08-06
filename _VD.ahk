@@ -660,7 +660,7 @@ class VD {
     CurrentVirtualDesktopChanged(desktopNum_Old, desktopNum_New) {
     }
 
-    ; start in VD.ahk
+    ; <Run in VD
     startShellMessage() {
         ; https://www.autohotkey.com/boards/viewtopic.php?t=63424#p271528
         DllCall("RegisterShellHookWindow", "Ptr", A_ScriptHwnd)
@@ -766,6 +766,7 @@ class VD {
             }
         }
     }
+    ; Run in VD>
 
     ;actual methods end
 
