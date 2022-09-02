@@ -952,24 +952,15 @@ class VD {
         ; DetectHiddenWindows, off ;this is needed, but for optimization the caller will do it
         return returnValue
     }
-    _IsViewActive(Ptr_View) {
-        found:=this._getFirstValidWindow(wintitle)
-        if (!found) {
-            return false
-        }
-        thePView:=found[2]
-
-        return thePView == Ptr_View
-    }
     ;-------------------
     _vtable(ppv, index) {
         Return NumGet(NumGet(0+ppv)+A_PtrSize*index)
     }
-    _string_from_GUID(Byref byref_GUID) {
-        VarSetCapacity(strGUID, 38 * 2) ;38 is StrLen("{FF72FFDD-BE7E-43FC-9C03-AD81681E88E4}")
-        DllCall("Ole32.dll\StringFromGUID2", "UPtr", &byref_GUID, "UPtr", &strGUID, "Int", 38 + 1)
-        return StrGet(&strGUID, "UTF-16")
-    }
+    ; _string_from_GUID(Byref byref_GUID) {
+        ; VarSetCapacity(strGUID, 38 * 2) ;38 is StrLen("{FF72FFDD-BE7E-43FC-9C03-AD81681E88E4}")
+        ; DllCall("Ole32.dll\StringFromGUID2", "UPtr", &byref_GUID, "UPtr", &strGUID, "Int", 38 + 1)
+        ; return StrGet(&strGUID, "UTF-16")
+    ; }
 
     class IObjectArray_Wrapper {
         __New(IObjectArray, Ptr_IID_Interface) {
