@@ -2,23 +2,23 @@
 ;Ctrl + F: jump to #useful stuff
 
 ;#SETUP START
-#NoEnv ; Recommended for performance and compatibility with future AutoHotkey releases.
 #SingleInstance force
-ListLines Off
-SetBatchLines -1
-SendMode Input ; Recommended for new scripts due to its superior speed and reliability.
-SetWorkingDir %A_ScriptDir% ; Ensures a consistent starting directory.
-#KeyHistory 0
+ListLines 0
+SendMode "Input"
+SetWorkingDir A_ScriptDir
+KeyHistory 0
 #WinActivateForce
 
-Process, Priority,, H
+ProcessSetPriority "H"
 
 SetWinDelay -1
 SetControlDelay -1
 
+
 ;START of gui stuff
-Gui,Font, s12, Segoe UI
-explanation=
+myGui:=Gui()
+myGui.SetFont("s12", "Segoe UI")
+explanation:="
 (
 Numpad0 to pin this Window on all desktops
 you can spam (Numpad2,Numpad1,Numpad2,Numpad1) for fun
@@ -52,15 +52,16 @@ at the start of this tutorial, to make sure we have at least 3 VD
 ^+NumpadSub (Ctrl ALt + Numpad-) to delete the 3rd desktop
 
 more below, look at the hotkeys in code.
-)
-gui, add, Edit, -vscroll -E0x200 +hwndHWndExplanation_Edit, % explanation ; https://www.autohotkey.com/boards/viewtopic.php?t=3956#p21359
+)"
+Explanation_Edit:=myGui.add("Edit", "-vscroll -E0x200", explanation) ; https://www.autohotkey.com/boards/viewtopic.php?t=3956#p21359
 ;deselect edit text BY moving caret to start
-Postmessage,0xB1,0,0,, % "ahk_id " HWndExplanation_Edit
-gui, show,, VD.ahk examples WinTitle
+Postmessage 0xB1,0,0,, "ahk_id " Explanation_Edit.hwnd
+myGui.title:="VD.ahk examples WinTitle"
+myGui.show()
 ;END of gui stuff
 
 ;include the library
-#Include VD.ahk
+#Include %A_LineFile%\..\VD.ah2
 ; or
 ; #Include _VD.ahk
 ; ...{startup code}
@@ -69,9 +70,8 @@ gui, show,, VD.ahk examples WinTitle
 ; VD.ahk : calls `VD.init()` on #Include
 ; _VD.ahk : `VD.init()` when you want, like after a GUI has rendered, for startup performance reasons
 
-
 ;you should WinHide invisible programs that have a window.
-WinHide, % "Malwarebytes Tray Application"
+try WinHide "Malwarebytes Tray Application"
 ;#SETUP END
 
 VD.createUntil(3) ;create until we have at least 3 VD
@@ -99,22 +99,18 @@ numpad9::VD.MoveWindowToDesktopNum("A",3)
 #!right::VD.goToDesktopNum(VD.MoveWindowToRelativeDesktopNum("A", 1))
 
 ;to come back to this window
-#NumpadMult:: ;#*
+#NumpadMult::{ ;#*
     VD.goToDesktopOfWindow("VD.ahk examples WinTitle")
     ; VD.goToDesktopOfWindow("ahk_exe code.exe")
-return
+}
 
 ;getters and stuff
-f6::
-    msgbox % VD.getDesktopNumOfWindow("VD.ahk examples WinTitle")
-    ; msgbox % VD.getDesktopNumOfWindow("ahk_exe GitHubDesktop.exe")
-return
-f1::
-    msgbox % VD.getCurrentDesktopNum()
-return
-f2::
-    msgbox % VD.getCount()
-return
+f6::{
+    Msgbox VD.getDesktopNumOfWindow("VD.ahk examples WinTitle")
+    ; Msgbox VD.getDesktopNumOfWindow("ahk_exe GitHubDesktop.exe")
+}
+f1::Msgbox VD.getCurrentDesktopNum()
+f2::Msgbox VD.getCount()
 
 ;Create/Remove Desktop
 !NumpadAdd::VD.createDesktop()
@@ -123,43 +119,25 @@ return
 !NumpadSub::VD.removeDesktop(VD.getCurrentDesktopNum())
 #!NumpadSub::VD.removeDesktop(VD.getCount()) ;removes 3rd desktop if there are 3 desktops
 
-^+NumpadAdd::
-VD.createUntil(3) ;create until we have at least 3 VD
-return
+^+NumpadAdd::VD.createUntil(3) ;create until we have at least 3 VD
 
-^+NumpadSub::
-VD.createUntil(3) ;create until we have at least 3 VD
-sleep 1000
-;FALLBACK IS ONLY USED IF YOU ARE CURRENTLY ON THAT VD
-VD.removeDesktop(3, 1)
-return
+^+NumpadSub::{
+    VD.createUntil(3) ;create until we have at least 3 VD
+    sleep 1000
+    ;FALLBACK IS ONLY USED IF YOU ARE CURRENTLY ON THAT VD
+    VD.removeDesktop(3, 1)
+}
 
 ;Pin Window
-numpad0::
-    VD.TogglePinWindow("A")
-return
-^numpad0::
-    VD.PinWindow("A")
-return
-!numpad0::
-    VD.UnPinWindow("A")
-return
-#numpad0::
-    MsgBox % VD.IsWindowPinned("A")
-return
+numpad0::VD.TogglePinWindow("A")
+^numpad0::VD.PinWindow("A")
+!numpad0::VD.UnPinWindow("A")
+#numpad0::MsgBox VD.IsWindowPinned("A")
 
 ;Pin App
-numpadDot::
-    VD.TogglePinApp("A")
-return
-^numpadDot::
-    VD.PinApp("A")
-return
-!numpadDot::
-    VD.UnPinApp("A")
-return
-#numpadDot::
-    MsgBox % VD.IsAppPinned("A")
-return
+numpadDot::VD.TogglePinApp("A")
+^numpadDot::VD.PinApp("A")
+!numpadDot::VD.UnPinApp("A")
+#numpadDot::MsgBox VD.IsAppPinned("A")
 
 f3::Exitapp
