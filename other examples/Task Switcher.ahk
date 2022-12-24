@@ -9,7 +9,7 @@ ListLines Off
 SetWinDelay, -1
 SetControlDelay, -1
 
-#Include ..\_VD.ahk
+#Include %A_LineFile%\..\..\_VD.ahk
 VD.init()
 
 activeWindowTitle:=""

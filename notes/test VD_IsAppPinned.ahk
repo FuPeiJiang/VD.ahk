@@ -6,7 +6,7 @@ SetWorkingDir %A_ScriptDir% ; Ensures a consistent starting directory.
 SetBatchLines, -1
 #KeyHistory 0
 
-#Include ..\VD.ahk
+#Include %A_LineFile%\..\..\VD.ahk
 
 VD_Init()
 ; VD_AppIdFromHwnd(WinExist("A"))

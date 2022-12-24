@@ -63,7 +63,7 @@ myGui.show()
 ;include the library
 #Include %A_LineFile%\..\VD.ah2
 ; or
-; #Include _VD.ahk
+; #Include %A_LineFile%\..\_VD.ahk
 ; ...{startup code}
 ; VD.init()
 
