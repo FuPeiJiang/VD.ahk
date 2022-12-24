@@ -56,7 +56,7 @@ also has:
 
 here's quick nice example: "get desktopNum of all windows"
 ```autohotkey
-#Include ..\VD.ahk
+#Include %A_LineFile%\..\..\VD.ahk
 
 foundProcesses := ""
 ; Make sure to get all windows from all virtual desktops

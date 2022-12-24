@@ -12,7 +12,7 @@ Process, Priority,, H
 SetWinDelay -1
 SetControlDelay -1
 
-#Include ..\VD.ahk
+#Include %A_LineFile%\..\..\VD.ahk
 VD_init()
 
 arrayOfWindowsInfo:=[] ;to store {desktopNum:number, str:INFO}

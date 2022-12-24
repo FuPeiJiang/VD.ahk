@@ -1,4 +1,4 @@
-#Include ..\VD.ahk
+#Include %A_LineFile%\..\..\VD.ahk
 
 foundProcesses := ""
 ; Make sure to get all windows from all virtual desktops

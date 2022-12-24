@@ -3,9 +3,9 @@ dummyFunction1() {
     static dummyStatic1 := VD.init()
 }
 ; in YOUR app
-; #Include VD.ahk
+; #Include %A_LineFile%\..\VD.ahk
 ; or
-; #Include _VD.ahk
+; #Include %A_LineFile%\..\_VD.ahk
 ; ...{startup code}
 ; VD.init()
 

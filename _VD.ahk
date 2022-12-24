@@ -40,9 +40,9 @@
 
 class VD {
 
-    ; #Include VD.ahk
+    ; #Include %A_LineFile%\..\VD.ahk
     ; or
-    ; #Include _VD.ahk
+    ; #Include %A_LineFile%\..\_VD.ahk
     ; ...{startup code}
     ; VD.init()
 
