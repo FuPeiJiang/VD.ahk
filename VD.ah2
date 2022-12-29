@@ -26,6 +26,7 @@ class VD {
         this._dll_GetCurrentDesktop := this._dll_GetCurrentDesktop_Win11
         this._dll_GetDesktops := this._dll_GetDesktops_Win11
         this._dll_SwitchDesktop := this._dll_SwitchDesktop_Win11
+        this._dll_CreateDesktop := this._dll_CreateDesktop_Win11
         this._dll_GetName := this._dll_GetName_Win11
         this.RegisterDesktopNotifications := this.RegisterDesktopNotifications_Win11
       }
