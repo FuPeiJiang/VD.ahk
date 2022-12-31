@@ -81,6 +81,7 @@ class VD {
         ;----------------------
         this.IVirtualDesktopManager := ComObjCreate("{AA509086-5CA9-4C25-8F95-589D3C07B48A}", "{A5CD92FF-29BE-454C-8D04-D82879FB3F1B}")
         this.GetWindowDesktopId := this._vtable(this.IVirtualDesktopManager, 4)
+        this.MoveWindowToDesktop := this._vtable(this.IVirtualDesktopManager, 5)
 
         this.IServiceProvider := ComObjCreate("{C2F03A33-21F5-47FA-B4BB-156362A2F239}", "{6D5140C1-7436-11CE-8034-00AA006009FA}")
 
@@ -248,6 +249,17 @@ class VD {
             SetTimer % timerFunc, -50
         }
 
+    }
+    animationToDesktopNum(desktopNum) { ; Lej77 https://github.com/Grabacr07/VirtualDesktop/pull/23#issuecomment-334918711
+      Gui VD_animation_gui:New, % "-Border -SysMenu +Owner -Caption +HwndVD_animation_gui_hwnd"
+      IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
+      GetId:=this._vtable(IVirtualDesktop, 4)
+      VarSetCapacity(GUID_Desktop, 16)
+      DllCall(GetId, "Ptr", IVirtualDesktop, "Ptr", &GUID_Desktop)
+      DllCall(this.MoveWindowToDesktop, "Ptr", this.IVirtualDesktopManager, "Ptr", VD_animation_gui_hwnd, "Ptr", &GUID_Desktop)
+      Gui VD_animation_gui:Show
+      Sleep 100
+      Gui VD_animation_gui:Destroy
     }
 
     getNameFromDesktopNum(desktopNum) {
