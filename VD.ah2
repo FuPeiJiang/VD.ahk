@@ -32,6 +32,7 @@ class VD {
       }
       this.IVirtualDesktopManager := ComObject("{AA509086-5CA9-4C25-8F95-589D3C07B48A}", "{A5CD92FF-29BE-454C-8D04-D82879FB3F1B}")
       this.GetWindowDesktopId := this._vtable(this.IVirtualDesktopManager.Ptr, 4)
+      this.MoveWindowToDesktop := this._vtable(this.IVirtualDesktopManager.Ptr, 5)
       this.IServiceProvider := ComObject("{C2F03A33-21F5-47FA-B4BB-156362A2F239}", "{6D5140C1-7436-11CE-8034-00AA006009FA}")
       this.IVirtualDesktopManagerInternal := ComObjQuery(this.IServiceProvider, "{C5E0CDCA-7B6E-41B2-9FC4-D93975CC467B}", IID_IVirtualDesktopManagerInternal_)
       this.MoveViewToDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, 4)
@@ -139,6 +140,17 @@ class VD {
         timerFunc := ObjBindMethod(this, "_pleaseSwitchDesktop", desktopNum)
         SetTimer timerFunc, "-50"
       }
+    }
+    static animationToDesktopNum(desktopNum) {
+      VD_animation_gui:=Gui("-Border -SysMenu +Owner -Caption")
+      IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
+      GetId := this._vtable(IVirtualDesktop, 4)
+      GUID_Desktop := Buffer(16)
+      DllCall(GetId, "Ptr", IVirtualDesktop, "Ptr", GUID_Desktop)
+      DllCall(this.MoveWindowToDesktop, "Ptr", this.IVirtualDesktopManager, "Ptr", VD_animation_gui.Hwnd, "Ptr", GUID_Desktop)
+      VD_animation_gui.Show()
+      Sleep 100
+      VD_animation_gui.Destroy()
     }
     static getNameFromDesktopNum(desktopNum) {
       IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
