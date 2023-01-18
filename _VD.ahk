@@ -3,13 +3,15 @@
 ; VD.getDesktopNumOfWindow(wintitle) ;returns 0 for "Show on all desktops"
 
 ; VD.getCount() ;how many virtual desktops you now have
+; VD.getRelativeDesktopNum(anchor_desktopNum, relative_count)
 
 ; VD.goToDesktopNum(desktopNum)
 ; VD.goToDesktopOfWindow(wintitle, activateYourWindow:=true)
+; VD.gotoRelativeDesktopNum(relative_count)
 
 ; VD.MoveWindowToDesktopNum(wintitle, desktopNum)
 ; VD.MoveWindowToCurrentDesktop(wintitle, activateYourWindow:=true)
-; VD.MoveWindowToRelativeDesktopNum(wintitle, relative_desktopNum)
+; VD.MoveWindowToRelativeDesktopNum(wintitle, relative_count)
 
 ; VD.createDesktop(goThere:=true) ; VD.createUntil(howMany, goToLastlyCreated:=true)
 ; VD.removeDesktop(desktopNum, fallback_desktopNum:=false)
@@ -311,21 +313,12 @@ class VD {
         this._MoveView_to_IVirtualDesktop(thePView, IVirtualDesktop)
     }
 
-    MoveWindowToRelativeDesktopNum(wintitle, relative_desktopNum)
+    getRelativeDesktopNum(anchor_desktopNum, relative_count)
     {
-        found:=this._getFirstValidWindow(wintitle)
-        if (!found) {
-            return -1 ;for false
-        }
-        theHwnd:=found[1]
-        thePView:=found[2]
-
-        desktopNum_ofWindow:=this._desktopNum_from_Hwnd(theHwnd)
-
         Desktops_Obj:=this._GetDesktops_Obj()
         count_Desktops:=Desktops_Obj.GetCount()
 
-        absolute_desktopNum:=desktopNum_ofWindow + relative_desktopNum
+        absolute_desktopNum:=anchor_desktopNum + relative_count
         ;// The 1-based indices wrap around on the first and last desktop.
         ;// say count_Desktops:=3
         absolute_desktopNum:=Mod(absolute_desktopNum, count_Desktops)
@@ -335,10 +328,21 @@ class VD {
             absolute_desktopNum:=absolute_desktopNum + count_Desktops
         }
 
-        IVirtualDesktop:=Desktops_Obj.GetAt(absolute_desktopNum)
-
-        this._MoveView_to_IVirtualDesktop(thePView, IVirtualDesktop)
         return absolute_desktopNum
+    }
+
+    MoveWindowToRelativeDesktopNum(wintitle, relative_count) {
+
+        desktopNum_ofWindow := this.getDesktopNumOfWindow(wintitle)
+        absolute_desktopNum := this.getRelativeDesktopNum(desktopNum_ofWindow, relative_count)
+
+        this.MoveWindowToDesktopNum(wintitle, absolute_desktopNum)
+
+        return absolute_desktopNum
+    }
+
+    gotoRelativeDesktopNum(relative_count) {
+        this.goToDesktopNum(this.getRelativeDesktopNum(this.getCurrentDesktopNum(), relative_count))
     }
 
     MoveWindowToCurrentDesktop(wintitle, activateYourWindow:=true)

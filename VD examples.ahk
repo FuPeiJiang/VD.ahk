@@ -93,6 +93,10 @@ numpad7::VD.MoveWindowToDesktopNum("A",1)
 numpad8::VD.MoveWindowToDesktopNum("A",2)
 numpad9::VD.MoveWindowToDesktopNum("A",3)
 
+; wrapping / cycle back to first desktop when at the last
+^#left::VD.goToRelativeDesktopNum(-1)
+^#right::VD.goToRelativeDesktopNum(+1)
+
 ; move window to left and follow it
 #!left::VD.goToDesktopNum(VD.MoveWindowToRelativeDesktopNum("A", -1))
 ; move window to right and follow it
