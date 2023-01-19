@@ -188,24 +188,24 @@ class VD {
     IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
     this._MoveView_to_IVirtualDesktop(thePView, IVirtualDesktop)
   }
-  static MoveWindowToRelativeDesktopNum(wintitle, relative_desktopNum) {
-    found := this._getFirstValidWindow(wintitle)
-    if (!found) {
-      return -1
-    }
-    theHwnd := found[1]
-    thePView := found[2]
-    desktopNum_ofWindow := this._desktopNum_from_Hwnd(theHwnd)
+  static getRelativeDesktopNum(anchor_desktopNum, relative_count) {
     Desktops_Obj := this._GetDesktops_Obj()
     count_Desktops := Desktops_Obj.GetCount()
-    absolute_desktopNum := desktopNum_ofWindow + relative_desktopNum
+    absolute_desktopNum := anchor_desktopNum + relative_count
     absolute_desktopNum := Mod(absolute_desktopNum, count_Desktops)
     if (absolute_desktopNum <= 0) {
       absolute_desktopNum := absolute_desktopNum + count_Desktops
     }
-    IVirtualDesktop := Desktops_Obj.GetAt(absolute_desktopNum)
-    this._MoveView_to_IVirtualDesktop(thePView, IVirtualDesktop)
     return absolute_desktopNum
+  }
+  static MoveWindowToRelativeDesktopNum(wintitle, relative_count) {
+    desktopNum_ofWindow := this.getDesktopNumOfWindow(wintitle)
+    absolute_desktopNum := this.getRelativeDesktopNum(desktopNum_ofWindow, relative_count)
+    this.MoveWindowToDesktopNum(wintitle, absolute_desktopNum)
+    return absolute_desktopNum
+  }
+  static gotoRelativeDesktopNum(relative_count) {
+    this.goToDesktopNum(this.getRelativeDesktopNum(this.getCurrentDesktopNum(), relative_count))
   }
   static MoveWindowToCurrentDesktop(wintitle, activateYourWindow := true) {
     found := this._getFirstValidWindow(wintitle)
