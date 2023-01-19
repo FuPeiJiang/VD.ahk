@@ -34,7 +34,7 @@ class VD {
       this.GetWindowDesktopId := this._vtable(this.IVirtualDesktopManager.Ptr, 4)
       this.MoveWindowToDesktop := this._vtable(this.IVirtualDesktopManager.Ptr, 5)
       this.IServiceProvider := ComObject("{C2F03A33-21F5-47FA-B4BB-156362A2F239}", "{6D5140C1-7436-11CE-8034-00AA006009FA}")
-      this.IVirtualDesktopManagerInternal := ComObjQuery(this.IServiceProvider, "{C5E0CDCA-7B6E-41B2-9FC4-D93975CC467B}", IID_IVirtualDesktopManagerInternal_)
+      this.IVirtualDesktopManagerInternal := ComObjQuery(this.IServiceProvider.Ptr, "{C5E0CDCA-7B6E-41B2-9FC4-D93975CC467B}", IID_IVirtualDesktopManagerInternal_)
       this.MoveViewToDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, 4)
       this.CanViewMoveDesktops := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, 5)
       this.GetCurrentDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, 6)
@@ -57,13 +57,13 @@ class VD {
         this.Ptr_RemoveDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, 13)
         this.FindDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, 14)
       }
-      this.IVirtualDesktopPinnedApps := ComObjQuery(this.IServiceProvider, "{B5A399E7-1C87-46B8-88E9-FC5747B171BD}", "{4CE81583-1E4C-4632-A621-07A53543148F}")
+      this.IVirtualDesktopPinnedApps := ComObjQuery(this.IServiceProvider.Ptr, "{B5A399E7-1C87-46B8-88E9-FC5747B171BD}", "{4CE81583-1E4C-4632-A621-07A53543148F}")
       this.IsViewPinned := this._vtable(this.IVirtualDesktopPinnedApps.Ptr, 6)
       this.PinView := this._vtable(this.IVirtualDesktopPinnedApps.Ptr, 7)
       this.UnpinView := this._vtable(this.IVirtualDesktopPinnedApps.Ptr, 8)
       ImmersiveShell := ComObject("{C2F03A33-21F5-47FA-B4BB-156362A2F239}", "{00000000-0000-0000-C000-000000000046}")
-      this.IApplicationViewCollection := ComObjQuery(ImmersiveShell, "{1841C6D7-4F9D-42C0-AF41-8747538F10E5}", "{1841C6D7-4F9D-42C0-AF41-8747538F10E5}")
-      if (!this.IApplicationViewCollection) {
+      this.IApplicationViewCollection := ComObjQuery(ImmersiveShell.Ptr, "{1841C6D7-4F9D-42C0-AF41-8747538F10E5}", "{1841C6D7-4F9D-42C0-AF41-8747538F10E5}")
+      if (!this.IApplicationViewCollection.Ptr) {
         MsgBox "IApplicationViewCollection interface not supported."
       }
       this.GetViewForHwnd := this._vtable(this.IApplicationViewCollection.Ptr, 6)
@@ -72,61 +72,61 @@ class VD {
     }
     static _dll_GetCurrentDesktop_Win10() {
       IVirtualDesktop_ofCurrentDesktop := 0
-      DllCall(this.GetCurrentDesktop, "Ptr", this.IVirtualDesktopManagerInternal, "Ptr*", &IVirtualDesktop_ofCurrentDesktop)
+      DllCall(this.GetCurrentDesktop, "UPtr", this.IVirtualDesktopManagerInternal.Ptr, "Ptr*", &IVirtualDesktop_ofCurrentDesktop := 0)
       return IVirtualDesktop_ofCurrentDesktop
     }
     static _dll_GetCurrentDesktop_Win11() {
       IVirtualDesktop_ofCurrentDesktop := 0
-      DllCall(this.GetCurrentDesktop, "Ptr", this.IVirtualDesktopManagerInternal, "Ptr", 0, "Ptr*", &IVirtualDesktop_ofCurrentDesktop)
+      DllCall(this.GetCurrentDesktop, "UPtr", this.IVirtualDesktopManagerInternal.Ptr, "Ptr", 0, "Ptr*", &IVirtualDesktop_ofCurrentDesktop := 0)
       return IVirtualDesktop_ofCurrentDesktop
     }
     static _dll_GetDesktops_Win10() {
       IObjectArray := 0
-      DllCall(this.GetDesktops, "Ptr", this.IVirtualDesktopManagerInternal, "Ptr*", &IObjectArray)
+      DllCall(this.GetDesktops, "UPtr", this.IVirtualDesktopManagerInternal.Ptr, "Ptr*", &IObjectArray := 0)
       return IObjectArray
     }
     static _dll_GetDesktops_Win11() {
       IObjectArray := 0
-      DllCall(this.GetDesktops, "Ptr", this.IVirtualDesktopManagerInternal, "Ptr", 0, "Ptr*", &IObjectArray)
+      DllCall(this.GetDesktops, "UPtr", this.IVirtualDesktopManagerInternal.Ptr, "Ptr", 0, "UPtr*", &IObjectArray := 0)
       return IObjectArray
     }
     static _dll_SwitchDesktop_Win10(IVirtualDesktop) {
-      DllCall(this.SwitchDesktop, "ptr", this.IVirtualDesktopManagerInternal, "Ptr", IVirtualDesktop)
+      DllCall(this.SwitchDesktop, "ptr", this.IVirtualDesktopManagerInternal.Ptr, "UPtr", IVirtualDesktop)
     }
     static _dll_SwitchDesktop_Win11(IVirtualDesktop) {
-      DllCall(this.SwitchDesktop, "ptr", this.IVirtualDesktopManagerInternal, "Ptr", 0, "Ptr", IVirtualDesktop)
+      DllCall(this.SwitchDesktop, "ptr", this.IVirtualDesktopManagerInternal.Ptr, "Ptr", 0, "UPtr", IVirtualDesktop)
     }
     static _dll_CreateDesktop_Win10() {
       IVirtualDesktop_ofNewDesktop := 0
-      DllCall(this.Ptr_CreateDesktop, "Ptr", this.IVirtualDesktopManagerInternal, "Ptr*", &IVirtualDesktop_ofNewDesktop)
+      DllCall(this.Ptr_CreateDesktop, "UPtr", this.IVirtualDesktopManagerInternal.Ptr, "Ptr*", &IVirtualDesktop_ofNewDesktop := 0)
       return IVirtualDesktop_ofNewDesktop
     }
     static _dll_CreateDesktop_Win11() {
       IVirtualDesktop_ofNewDesktop := 0
-      DllCall(this.Ptr_CreateDesktop, "Ptr", this.IVirtualDesktopManagerInternal, "Ptr", 0, "Ptr*", &IVirtualDesktop_ofNewDesktop)
+      DllCall(this.Ptr_CreateDesktop, "UPtr", this.IVirtualDesktopManagerInternal.Ptr, "Ptr", 0, "Ptr*", &IVirtualDesktop_ofNewDesktop := 0)
       return IVirtualDesktop_ofNewDesktop
     }
     static _dll_GetName_Win10(IVirtualDesktop) {
       QueryInterface := this._vtable(IVirtualDesktop, 0)
       CLSID := Buffer(16)
       DllCall("Ole32.dll\CLSIDFromString", "Str", "{31EBDE3F-6EC3-4CBD-B9FB-0EF6D09B41F4}", "Ptr", CLSID)
-      DllCall(QueryInterface, "Ptr", IVirtualDesktop, "Ptr", CLSID, "Ptr*", &IVirtualDesktop2)
+      DllCall(QueryInterface, "UPtr", IVirtualDesktop, "Ptr", CLSID, "Ptr*", &IVirtualDesktop2 := 0)
       GetName := this._vtable(IVirtualDesktop2, 5)
-      DllCall(GetName, "Ptr", IVirtualDesktop2, "Ptr*", &Handle_DesktopName)
+      DllCall(GetName, "UPtr", IVirtualDesktop2, "Ptr*", &Handle_DesktopName := 0)
       if (Handle_DesktopName == 0) {
         return ""
       }
-      Ptr_DesktopName := DllCall("combase\WindowsGetStringRawBuffer", "Ptr", Handle_DesktopName, "UInt*", &length, "Ptr")
+      Ptr_DesktopName := DllCall("combase\WindowsGetStringRawBuffer", "Ptr", Handle_DesktopName, "UInt*", &length := 0, "Ptr")
       desktopName := StrGet(Ptr_DesktopName + 0, "UTF-16")
       return desktopName
     }
     static _dll_GetName_Win11(IVirtualDesktop) {
       GetName := this._vtable(IVirtualDesktop, 6)
-      DllCall(GetName, "Ptr", IVirtualDesktop, "Ptr*", &Handle_DesktopName)
+      DllCall(GetName, "UPtr", IVirtualDesktop, "Ptr*", &Handle_DesktopName := 0)
       if (Handle_DesktopName == 0) {
         return ""
       }
-      Ptr_DesktopName := DllCall("combase\WindowsGetStringRawBuffer", "Ptr", Handle_DesktopName, "UInt*", &length, "Ptr")
+      Ptr_DesktopName := DllCall("combase\WindowsGetStringRawBuffer", "Ptr", Handle_DesktopName, "UInt*", &length := 0, "Ptr")
       desktopName := StrGet(Ptr_DesktopName + 0, "UTF-16")
       return desktopName
     }
@@ -142,12 +142,12 @@ class VD {
       }
     }
     static animationToDesktopNum(desktopNum) {
-      VD_animation_gui:=Gui("-Border -SysMenu +Owner -Caption")
+      VD_animation_gui := Gui("-Border -SysMenu +Owner -Caption")
       IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
       GetId := this._vtable(IVirtualDesktop, 4)
       GUID_Desktop := Buffer(16)
       DllCall(GetId, "Ptr", IVirtualDesktop, "Ptr", GUID_Desktop)
-      DllCall(this.MoveWindowToDesktop, "Ptr", this.IVirtualDesktopManager, "Ptr", VD_animation_gui.Hwnd, "Ptr", GUID_Desktop)
+      DllCall(this.MoveWindowToDesktop, "Ptr", this.IVirtualDesktopManager.Ptr, "Ptr", VD_animation_gui.Hwnd, "Ptr", GUID_Desktop)
       VD_animation_gui.Show()
       Sleep 100
       VD_animation_gui.Destroy()
@@ -256,7 +256,7 @@ class VD {
       }
       IVirtualDesktop := Desktops_Obj.GetAt(desktopNum)
       IVirtualDesktop_fallback := Desktops_Obj.GetAt(fallback_desktopNum)
-      DllCall(this.Ptr_RemoveDesktop, "Ptr", this.IVirtualDesktopManagerInternal, "Ptr", IVirtualDesktop, "Ptr", IVirtualDesktop_fallback)
+      DllCall(this.Ptr_RemoveDesktop, "UPtr", this.IVirtualDesktopManagerInternal.Ptr, "Ptr", IVirtualDesktop, "Ptr", IVirtualDesktop_fallback)
     }
     static IsWindowPinned(wintitle) {
       found := this._getFirstValidWindow(wintitle)
@@ -275,9 +275,9 @@ class VD {
       thePView := found[2]
       viewIsPinned := this._IsViewPinned(thePView)
       if (viewIsPinned) {
-        DllCall(this.UnPinView, "Ptr", this.IVirtualDesktopPinnedApps, "Ptr", thePView)
+        DllCall(this.UnPinView, "UPtr", this.IVirtualDesktopPinnedApps.Ptr, "Ptr", thePView)
       } else {
-        DllCall(this.PinView, "Ptr", this.IVirtualDesktopPinnedApps, "Ptr", thePView)
+        DllCall(this.PinView, "UPtr", this.IVirtualDesktopPinnedApps.Ptr, "Ptr", thePView)
       }
     }
     static PinWindow(wintitle) {
@@ -286,7 +286,7 @@ class VD {
         return -1
       }
       thePView := found[2]
-      DllCall(this.PinView, "Ptr", this.IVirtualDesktopPinnedApps, "Ptr", thePView)
+      DllCall(this.PinView, "UPtr", this.IVirtualDesktopPinnedApps.Ptr, "Ptr", thePView)
     }
     static UnPinWindow(wintitle) {
       found := this._getFirstValidWindow(wintitle)
@@ -294,7 +294,7 @@ class VD {
         return -1
       }
       thePView := found[2]
-      DllCall(this.UnPinView, "Ptr", this.IVirtualDesktopPinnedApps, "Ptr", thePView)
+      DllCall(this.UnPinView, "UPtr", this.IVirtualDesktopPinnedApps.Ptr, "Ptr", thePView)
     }
     static _QueryInterface_Win10(riid, ppvObject) {
       if (!ppvObject) {
@@ -426,9 +426,9 @@ class VD {
       obj := DllCall("GlobalAlloc", "Uint", 0x00, "Uint", A_PtrSize + 4)
       NumPut("Ptr", methods, obj + 0, 0)
       NumPut("UInt", 0, obj + 0, A_PtrSize)
-      pDesktopNotificationService := ComObjQuery(this.IServiceProvider, "{A501FDEC-4A09-464C-AE4E-1B9C21B84918}", "{0CD45E71-D927-4F15-8B0A-8FEF525337BF}")
-      Register := this._vtable(pDesktopNotificationService, 3)
-      HRESULT := DllCall(Register, "Ptr", pDesktopNotificationService, "Ptr", obj, "Uint*", &pdwCookie := 0)
+      pDesktopNotificationService := ComObjQuery(this.IServiceProvider.Ptr, "{A501FDEC-4A09-464C-AE4E-1B9C21B84918}", "{0CD45E71-D927-4F15-8B0A-8FEF525337BF}")
+      Register := this._vtable(pDesktopNotificationService.Ptr, 3)
+      HRESULT := DllCall(Register, "UPtr", pDesktopNotificationService.Ptr, "Ptr", obj, "Uint*", &pdwCookie := 0)
     }
     static VirtualDesktopCreated(desktopNum) {
     }
@@ -515,7 +515,7 @@ class VD {
         if (arrOfCallback) {
           callback := arrOfCallback[1]
           callback.Call(hwnd)
-          if (arrOfCallback.Length() > 1) {
+          if (arrOfCallback.Length > 1) {
             arrOfCallback.RemoveAt(1)
           } else if (map_processName_data.Count() > 1) {
             map_processName_data.Delete(subString_processName)
@@ -528,8 +528,8 @@ class VD {
       }
     }
     static _MoveView_to_IVirtualDesktop(thePView, IVirtualDesktop) {
-      DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal, "Ptr", thePView, "Ptr", IVirtualDesktop)
-      DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal, "Ptr", thePView, "Ptr", IVirtualDesktop)
+      DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal.Ptr, "Ptr", thePView, "Ptr", IVirtualDesktop)
+      DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal.Ptr, "Ptr", thePView, "Ptr", IVirtualDesktop)
       this._activateWindowUnder()
     }
     static _SwitchIVirtualDesktop(IVirtualDesktop) {
@@ -584,17 +584,17 @@ class VD {
     }
     static _view_from_Hwnd(theHwnd) {
       pView := 0
-      DllCall(this.GetViewForHwnd, "Ptr", this.IApplicationViewCollection, "Ptr", theHwnd, "Ptr*", &pView)
+      DllCall(this.GetViewForHwnd, "UPtr", this.IApplicationViewCollection.Ptr, "Ptr", theHwnd, "Ptr*", &pView := 0)
       return pView
     }
     static _IVirtualDesktop_from_Hwnd(theHwnd) {
       GUID_Desktop := Buffer(16)
-      HRESULT := DllCall(this.GetWindowDesktopId, "Ptr", this.IVirtualDesktopManager, "Ptr", theHwnd, "Ptr", GUID_Desktop)
+      HRESULT := DllCall(this.GetWindowDesktopId, "UPtr", this.IVirtualDesktopManager.Ptr, "Ptr", theHwnd, "Ptr", GUID_Desktop)
       if (!(HRESULT == 0)) {
         return false
       }
       IVirtualDesktop_ofWindow := 0
-      DllCall(this.FindDesktop, "Ptr", this.IVirtualDesktopManagerInternal, "Ptr", GUID_Desktop, "Ptr*", &IVirtualDesktop_ofWindow)
+      DllCall(this.FindDesktop, "UPtr", this.IVirtualDesktopManagerInternal.Ptr, "Ptr", GUID_Desktop, "Ptr*", &IVirtualDesktop_ofWindow := 0)
       return IVirtualDesktop_ofWindow
     }
     static _desktopNum_from_IVirtualDesktop(IVirtualDesktop) {
@@ -618,7 +618,7 @@ class VD {
     }
     static _IsViewPinned(thePView) {
       viewIsPinned := 0
-      DllCall(this.IsViewPinned, "Ptr", this.IVirtualDesktopPinnedApps, "Ptr", thePView, "Int*", &viewIsPinned)
+      DllCall(this.IsViewPinned, "UPtr", this.IVirtualDesktopPinnedApps.Ptr, "Ptr", thePView, "Int*", &viewIsPinned := 0)
       return viewIsPinned
     }
     static _isWindowFullScreen(winTitle) {
@@ -654,7 +654,7 @@ class VD {
           break breakToReturnFalse
         }
         pfCanViewMoveDesktops := 0
-        DllCall(this.CanViewMoveDesktops, "Ptr", this.IVirtualDesktopManagerInternal, "Ptr", pView, "int*", &pfCanViewMoveDesktops)
+        DllCall(this.CanViewMoveDesktops, "UPtr", this.IVirtualDesktopManagerInternal.Ptr, "Ptr", pView, "int*", &pfCanViewMoveDesktops := 0)
         if (!pfCanViewMoveDesktops) {
           break breakToReturnFalse
         }
@@ -673,18 +673,18 @@ class VD {
       }
       __Delete() {
         Ptr_Release := VD._vtable(this.IObjectArray, 2)
-        DllCall(Ptr_Release, "Ptr", this.IObjectArray)
+        DllCall(Ptr_Release, "UPtr", this.IObjectArray)
       }
       GetAt(oneBasedIndex) {
         Ptr_Interface := 0
-        DllCall(this.Ptr_GetAt, "Ptr", this.IObjectArray, "UInt", oneBasedIndex - 1, "Ptr", this.Ptr_IID_Interface, "Ptr*", &Ptr_Interface)
+        DllCall(this.Ptr_GetAt, "UPtr", this.IObjectArray, "UInt", oneBasedIndex - 1, "Ptr", this.Ptr_IID_Interface, "Ptr*", &Ptr_Interface := 0)
         return Ptr_Interface
       }
       GetCount() {
         Ptr_GetCount := VD._vtable(this.IObjectArray, 3)
         Count := 0
-        DllCall(Ptr_GetCount, "Ptr", this.IObjectArray, "UInt*", &Count)
+        DllCall(Ptr_GetCount, "UPtr", this.IObjectArray, "UInt*", &Count := 0)
         return Count
       }
     }
-  }
+}
