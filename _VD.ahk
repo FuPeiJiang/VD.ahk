@@ -828,6 +828,8 @@ class VD {
     }
 
     _getFirstWindowUnder() {
+        bak_DetectHiddenWindows:=A_DetectHiddenWindows
+        DetectHiddenWindows, off
         returnValue:=false
         WinGet, outHwndList, List
         loop % outHwndList {
@@ -836,6 +838,7 @@ class VD {
                 break
             }
         }
+        DetectHiddenWindows % bak_DetectHiddenWindows
         return returnValue
     }
 
