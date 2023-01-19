@@ -555,6 +555,8 @@ class VD {
     }
   }
   static _getFirstWindowUnder() {
+    bak_DetectHiddenWindows := A_DetectHiddenWindows
+    DetectHiddenWindows "off"
     returnValue := false
     outHwndList := WinGetList()
     loop outHwndList.Length {
@@ -563,6 +565,7 @@ class VD {
         break
       }
     }
+    DetectHiddenWindows bak_DetectHiddenWindows
     return returnValue
   }
   static _getFirstValidWindow(wintitle) {
