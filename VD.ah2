@@ -549,6 +549,9 @@ class VD {
       return -1
     }
     theHwnd := found[1]
+    if (!WinExist("ahk_id " theHwnd)) {
+      Return
+    }
     OutputVar_MinMax := WinGetMinMax("ahk_id " theHwnd)
     if (!(OutputVar_MinMax == -1)) {
       WinActivate "ahk_id " theHwnd
