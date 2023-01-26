@@ -490,7 +490,7 @@ class VD {
     }
     if (hwnd) {
       bak_DetectHiddenWindows := A_DetectHiddenWindows
-      DetectHiddenWindows "ON"
+      DetectHiddenWindows true
       arrOfCallback := false
       this_title := WinGetTitle("ahk_id " hwnd)
       for subString_title, map_class_processName in this.map_title_class {
@@ -556,7 +556,7 @@ class VD {
   }
   static _getFirstWindowUnder() {
     bak_DetectHiddenWindows := A_DetectHiddenWindows
-    DetectHiddenWindows "off"
+    DetectHiddenWindows false
     returnValue := false
     outHwndList := WinGetList()
     loop outHwndList.Length {
@@ -571,7 +571,7 @@ class VD {
   static _getFirstValidWindow(wintitle) {
     bak_DetectHiddenWindows := A_DetectHiddenWindows
     bak_TitleMatchMode := A_TitleMatchMode
-    DetectHiddenWindows "on"
+    DetectHiddenWindows true
     SetTitleMatchMode "2"
     outHwndList := WinGetList(wintitle)
     returnValue := false
