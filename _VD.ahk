@@ -743,6 +743,9 @@ class VD {
             DetectHiddenWindows, ON ;very important
 
             arrOfCallback:=false
+            outside_map_processName_data:=false
+            outside_map_class_processName:=false
+            outside_subString_title:=false
 
             WinGetTitle, this_title, % "ahk_id " hwnd
             for subString_title, map_class_processName in this.map_title_class {
@@ -754,6 +757,9 @@ class VD {
                             for subString_processName, possibly_arrOfCallback in map_processName_data {
                                 if (InStr(this_processName, subString_processName, true)) {
                                     arrOfCallback:=possibly_arrOfCallback
+                                    outside_map_processName_data:=map_processName_data
+                                    outside_map_class_processName:=map_class_processName
+                                    outside_subString_title:=subString_title
                                     break
                                 }
                             }
@@ -772,12 +778,12 @@ class VD {
 
                 if (arrOfCallback.Length() > 1) {
                     arrOfCallback.RemoveAt(1)
-                } else if (map_processName_data.Count() > 1) {
-                    map_processName_data.Delete(subString_processName)
-                } else if (map_class_processName.Count() > 1) {
-                    map_class_processName.Delete(subString_class)
+                } else if (outside_map_processName_data.Count() > 1) {
+                    outside_map_processName_data.Delete(subString_processName)
+                } else if (outside_map_class_processName.Count() > 1) {
+                    outside_map_class_processName.Delete(subString_class)
                 } else {
-                    this.map_title_class.Delete(subString_title)
+                    this.map_title_class.Delete(outside_subString_title)
                 }
 
             }
