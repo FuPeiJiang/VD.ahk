@@ -722,23 +722,13 @@ class VD {
         WinActivate % "ahk_id " hwnd
     }
 
-    ShellMessage(nCode, wParam, lParam) {
+    ShellMessage(wParam, lParam, msg, hwnd) {
         Critical ;this is what makes many callbacks AT THE SAME TIME possible
         Sleep 100 ;necessary
 
-        if (nCode < 0) {
-            MsgBox % nCode " oh no"
-        }
+        if (wParam == 1) { ; HSHELL_WINDOWCREATED := 1, HSHELL_MONITORCHANGED := 16
+            theHwnd:=lParam
 
-        hwnd:=false
-        switch nCode {
-            case 1:
-                hwnd:=wParam
-            case 12:
-                MsgBox % "HSHELL_APPCOMMAND 12 oh no"
-        }
-
-        if (hwnd) { ; HSHELL_WINDOWCREATED := 1, HSHELL_MONITORCHANGED := 16
             bak_DetectHiddenWindows := A_DetectHiddenWindows
             DetectHiddenWindows, ON ;very important
 
@@ -747,13 +737,13 @@ class VD {
             outside_map_class_processName:=false
             outside_subString_title:=false
 
-            WinGetTitle, this_title, % "ahk_id " hwnd
+            WinGetTitle, this_title, % "ahk_id " theHwnd
             for subString_title, map_class_processName in this.map_title_class {
                 if (InStr(this_title, subString_title, true)) {
-                    WinGetClass, this_class, % "ahk_id " hwnd
+                    WinGetClass, this_class, % "ahk_id " theHwnd
                     for subString_class, map_processName_data in map_class_processName {
                         if (InStr(this_class, subString_class, true)) {
-                            WinGet, this_processName, ProcessName, % "ahk_id " hwnd
+                            WinGet, this_processName, ProcessName, % "ahk_id " theHwnd
                             for subString_processName, possibly_arrOfCallback in map_processName_data {
                                 if (InStr(this_processName, subString_processName, true)) {
                                     arrOfCallback:=possibly_arrOfCallback
@@ -774,7 +764,7 @@ class VD {
 
             if (arrOfCallback) {
                 callback:=arrOfCallback[1]
-                callback.Call(hwnd)
+                callback.Call(theHwnd)
 
                 if (arrOfCallback.Length() > 1) {
                     arrOfCallback.RemoveAt(1)
