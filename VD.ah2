@@ -445,21 +445,21 @@ class VD {
   static startShellMessage() {
     DllCall("RegisterShellHookWindow", "Ptr", A_ScriptHwnd)
     MsgNum := DllCall("RegisterWindowMessage", "Str", "SHELLHOOK")
-    OnMessage(MsgNum, %VD.ShellMessage%.bind(this))
-    this.map_title_class := {}
+    OnMessage(MsgNum, VD.ShellMessage.bind(this))
+    this.map_title_class := Map()
   }
   static Run(Target, WorkingDir, this_titleName, this_class, this_processName, desktopNum) {
-    this.addToWaitNewWindow(this_titleName, this_class, this_processName, %VD.callback_MoveWindow%.bind(this, desktopNum))
+    this.addToWaitNewWindow(this_titleName, this_class, this_processName, VD.callback_MoveWindow.bind(this, desktopNum))
     Run Target, WorkingDir
   }
   static Run_lock_VD(Target, WorkingDir, this_titleName, this_class, this_processName, window_desktopNum, your_desktopNum) {
-    this.addToWaitNewWindow(this_titleName, this_class, this_processName, %VD.callback_MoveWindow_lockVD%.bind(this, [window_desktopNum, your_desktopNum]))
+    this.addToWaitNewWindow(this_titleName, this_class, this_processName, VD.callback_MoveWindow_lockVD.bind(this, [window_desktopNum, your_desktopNum]))
     Run Target, WorkingDir
   }
   static addToWaitNewWindow(this_titleName, this_class, this_processName, callback) {
-    map_class_processName := this.map_title_class.HasKey(this_titleName) ? this.map_title_class[this_titleName] : this.map_title_class[this_titleName] := {}
-    map_processName_data := map_class_processName.HasKey(this_class) ? map_class_processName[this_class] : map_class_processName[this_class] := {}
-    arrOfCallback := map_processName_data.HasKey(this_processName) ? map_processName_data[this_processName] : map_processName_data[this_processName] := []
+    map_class_processName := this.map_title_class.Has(this_titleName) ? this.map_title_class[this_titleName] : this.map_title_class[this_titleName] := Map()
+    map_processName_data := map_class_processName.Has(this_class) ? map_class_processName[this_class] : map_class_processName[this_class] := Map()
+    arrOfCallback := map_processName_data.Has(this_processName) ? map_processName_data[this_processName] : map_processName_data[this_processName] := []
     arrOfCallback.Push(callback)
   }
   static callback_MoveWindow(desktopNum, hwnd) {
@@ -475,33 +475,30 @@ class VD {
     this.MoveWindowToDesktopNum("ahk_id " hwnd, window_desktopNum)
     WinActivate "ahk_id " hwnd
   }
-  static ShellMessage(nCode, wParam, lParam) {
+  static ShellMessage(wParam, lParam, msg, hwnd) {
     Critical
     Sleep 100
-    if (nCode < 0) {
-      MsgBox nCode " oh no"
-    }
-    hwnd := false
-    switch (nCode) {
-      case 1:
-        hwnd := wParam
-      case 12:
-        MsgBox "HSHELL_APPCOMMAND 12 oh no"
-    }
-    if (hwnd) {
+    if (wParam == 1) {
+      theHwnd := lParam
       bak_DetectHiddenWindows := A_DetectHiddenWindows
       DetectHiddenWindows true
       arrOfCallback := false
-      this_title := WinGetTitle("ahk_id " hwnd)
+      outside_map_processName_data := false
+      outside_map_class_processName := false
+      outside_subString_title := false
+      this_title := WinGetTitle("ahk_id " theHwnd)
       for subString_title, map_class_processName in this.map_title_class {
-        if (InStr(this_title, subString_title, true)) {
-          this_class := WinGetClass("ahk_id " hwnd)
+        if ((subString_title == "" || InStr(this_title, subString_title, true))) {
+          this_class := WinGetClass("ahk_id " theHwnd)
           for subString_class, map_processName_data in map_class_processName {
-            if (InStr(this_class, subString_class, true)) {
-              this_processName := WinGetProcessName("ahk_id " hwnd)
+            if ((subString_class == "" || InStr(this_class, subString_class, true))) {
+              this_processName := WinGetProcessName("ahk_id " theHwnd)
               for subString_processName, possibly_arrOfCallback in map_processName_data {
-                if (InStr(this_processName, subString_processName, true)) {
+                if ((subString_processName == "" || InStr(this_processName, subString_processName, true))) {
                   arrOfCallback := possibly_arrOfCallback
+                  outside_map_processName_data := map_processName_data
+                  outside_map_class_processName := map_class_processName
+                  outside_subString_title := subString_title
                   break
                 }
               }
@@ -514,15 +511,15 @@ class VD {
       DetectHiddenWindows bak_DetectHiddenWindows
       if (arrOfCallback) {
         callback := arrOfCallback[1]
-        callback.Call(hwnd)
+        callback.Call(theHwnd)
         if (arrOfCallback.Length > 1) {
           arrOfCallback.RemoveAt(1)
-        } else if (map_processName_data.Count() > 1) {
-          map_processName_data.Delete(subString_processName)
-        } else if (map_class_processName.Count() > 1) {
-          map_class_processName.Delete(subString_class)
+        } else if (outside_map_processName_data.Count > 1) {
+          outside_map_processName_data.Delete(subString_processName)
+        } else if (outside_map_class_processName.Count > 1) {
+          outside_map_class_processName.Delete(subString_class)
         } else {
-          this.map_title_class.Delete(subString_title)
+          this.map_title_class.Delete(outside_subString_title)
         }
       }
     }
