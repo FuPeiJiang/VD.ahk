@@ -911,7 +911,10 @@ class VD {
 
         WinGet, OutputVar_MinMax, MinMax, % "ahk_id " theHwnd
         if (!(OutputVar_MinMax==-1)) {
-            WinActivate, ahk_id %theHwnd%
+            WinGet, OutputVar_Process, ProcessName, % "ahk_id " theHwnd
+            if ( OutputVar_Process != "Tim.exe" ) {
+                WinActivate, ahk_id %theHwnd%
+            }
         }
     }
 
