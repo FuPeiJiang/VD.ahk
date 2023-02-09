@@ -888,7 +888,6 @@ class VD {
         WinWaitActive, ahk_class Shell_TrayWnd
 
         this._dll_SwitchDesktop(IVirtualDesktop)
-        this._dll_SwitchDesktop(IVirtualDesktop)
         this._activateWindowUnder()
     }
 
