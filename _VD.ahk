@@ -478,7 +478,7 @@ class VD {
         str_IID_IUnknown:="{00000000-0000-0000-C000-000000000046}"
         str_IID_IVirtualDesktopNotification:="{C179334C-4295-40D3-BEA1-C654D965605A}"
 
-        VarSetCapacity(someStr, 40)
+        VarSetCapacity(someStr, 40*2)
         DllCall("Ole32\StringFromGUID2", "Ptr", riid, "Ptr",&someStr, "Ptr",40)
         str_riid:=StrGet(&someStr)
 
@@ -578,7 +578,7 @@ class VD {
         str_IID_IUnknown:="{00000000-0000-0000-C000-000000000046}"
         str_IID_IVirtualDesktopNotification:="{CD403E52-DEED-4C13-B437-B98380F2B1E8}"
 
-        VarSetCapacity(someStr, 40)
+        VarSetCapacity(someStr, 40*2)
         DllCall("Ole32\StringFromGUID2", "Ptr", riid, "Ptr",&someStr, "Ptr",40)
         str_riid:=StrGet(&someStr)
 
