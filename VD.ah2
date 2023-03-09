@@ -302,7 +302,7 @@ class VD {
     }
     str_IID_IUnknown := "{00000000-0000-0000-C000-000000000046}"
     str_IID_IVirtualDesktopNotification := "{C179334C-4295-40D3-BEA1-C654D965605A}"
-    someStr := Buffer(40)
+    someStr := Buffer(40 * 2)
     DllCall("Ole32\StringFromGUID2", "Ptr", riid, "Ptr", someStr, "Ptr", 40)
     str_riid := StrGet(someStr)
     if (str_riid == str_IID_IUnknown || str_riid == str_IID_IVirtualDesktopNotification) {
@@ -368,7 +368,7 @@ class VD {
     }
     str_IID_IUnknown := "{00000000-0000-0000-C000-000000000046}"
     str_IID_IVirtualDesktopNotification := "{CD403E52-DEED-4C13-B437-B98380F2B1E8}"
-    someStr := Buffer(40)
+    someStr := Buffer(40 * 2)
     DllCall("Ole32\StringFromGUID2", "Ptr", riid, "Ptr", someStr, "Ptr", 40)
     str_riid := StrGet(someStr)
     if (str_riid == str_IID_IUnknown || str_riid == str_IID_IVirtualDesktopNotification) {
@@ -430,17 +430,17 @@ class VD {
     Register := this._vtable(pDesktopNotificationService.Ptr, 3)
     HRESULT := DllCall(Register, "UPtr", pDesktopNotificationService.Ptr, "Ptr", obj, "Uint*", &pdwCookie := 0)
   }
-  static VirtualDesktopCreated(desktopNum) {
+  static VirtualDesktopCreated(desktopNum := 0) {
   }
-  static VirtualDesktopDestroyBegin(desktopNum_Destroyed, desktopNum_Fallback) {
+  static VirtualDesktopDestroyBegin(desktopNum_Destroyed := 0, desktopNum_Fallback := 0) {
   }
-  static VirtualDesktopDestroyFailed(desktopNum_Destroyed, desktopNum_Fallback) {
+  static VirtualDesktopDestroyFailed(desktopNum_Destroyed := 0, desktopNum_Fallback := 0) {
   }
-  static VirtualDesktopDestroyed(desktopNum_Destroyed, desktopNum_Fallback) {
+  static VirtualDesktopDestroyed(desktopNum_Destroyed := 0, desktopNum_Fallback := 0) {
   }
-  static ViewVirtualDesktopChanged(pView) {
+  static ViewVirtualDesktopChanged(pView := 0) {
   }
-  static CurrentVirtualDesktopChanged(desktopNum_Old, desktopNum_New) {
+  static CurrentVirtualDesktopChanged(desktopNum_Old := 0, desktopNum_New := 0) {
   }
   static startShellMessage() {
     DllCall("RegisterShellHookWindow", "Ptr", A_ScriptHwnd)
