@@ -664,17 +664,17 @@ class VD {
 		; (PVOID*)&pDesktopNotificationService);
     }
 
-    VirtualDesktopCreated(desktopNum) {
+    VirtualDesktopCreated(desktopNum:=0) {
     }
-    VirtualDesktopDestroyBegin(desktopNum_Destroyed, desktopNum_Fallback) {
+    VirtualDesktopDestroyBegin(desktopNum_Destroyed:=0, desktopNum_Fallback:=0) {
     }
-    VirtualDesktopDestroyFailed(desktopNum_Destroyed, desktopNum_Fallback) {
+    VirtualDesktopDestroyFailed(desktopNum_Destroyed:=0, desktopNum_Fallback:=0) {
     }
-    VirtualDesktopDestroyed(desktopNum_Destroyed, desktopNum_Fallback) {
+    VirtualDesktopDestroyed(desktopNum_Destroyed:=0, desktopNum_Fallback:=0) {
     }
-    ViewVirtualDesktopChanged(pView) {
+    ViewVirtualDesktopChanged(pView:=0) {
     }
-    CurrentVirtualDesktopChanged(desktopNum_Old, desktopNum_New) {
+    CurrentVirtualDesktopChanged(desktopNum_Old:=0, desktopNum_New:=0) {
     }
 
     ; <Run in VD
