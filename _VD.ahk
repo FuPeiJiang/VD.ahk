@@ -571,7 +571,7 @@ class VD {
         str_IID_IUnknown:="{00000000-0000-0000-C000-000000000046}"
         str_IID_IVirtualDesktopNotification:="{C179334C-4295-40D3-BEA1-C654D965605A}"
 
-        VarSetCapacity(someStr, 40)
+        VarSetCapacity(someStr, 40*2)
         DllCall("Ole32\StringFromGUID2", "Ptr", riid, "Ptr",&someStr, "Ptr",40)
         str_riid:=StrGet(&someStr)
 
@@ -671,7 +671,7 @@ class VD {
         str_IID_IUnknown:="{00000000-0000-0000-C000-000000000046}"
         str_IID_IVirtualDesktopNotification:="{CD403E52-DEED-4C13-B437-B98380F2B1E8}"
 
-        VarSetCapacity(someStr, 40)
+        VarSetCapacity(someStr, 40*2)
         DllCall("Ole32\StringFromGUID2", "Ptr", riid, "Ptr",&someStr, "Ptr",40)
         str_riid:=StrGet(&someStr)
 
@@ -757,17 +757,17 @@ class VD {
 		; (PVOID*)&pDesktopNotificationService);
     }
 
-    VirtualDesktopCreated(desktopNum) {
+    VirtualDesktopCreated(desktopNum:=0) {
     }
-    VirtualDesktopDestroyBegin(desktopNum_Destroyed, desktopNum_Fallback) {
+    VirtualDesktopDestroyBegin(desktopNum_Destroyed:=0, desktopNum_Fallback:=0) {
     }
-    VirtualDesktopDestroyFailed(desktopNum_Destroyed, desktopNum_Fallback) {
+    VirtualDesktopDestroyFailed(desktopNum_Destroyed:=0, desktopNum_Fallback:=0) {
     }
-    VirtualDesktopDestroyed(desktopNum_Destroyed, desktopNum_Fallback) {
+    VirtualDesktopDestroyed(desktopNum_Destroyed:=0, desktopNum_Fallback:=0) {
     }
-    ViewVirtualDesktopChanged(pView) {
+    ViewVirtualDesktopChanged(pView:=0) {
     }
-    CurrentVirtualDesktopChanged(desktopNum_Old, desktopNum_New) {
+    CurrentVirtualDesktopChanged(desktopNum_Old:=0, desktopNum_New:=0) {
     }
 
     ; <Run in VD
