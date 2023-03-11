@@ -159,6 +159,8 @@ class VD {
 
         ;----------------------
 
+        this.savedLocalizedWord_Desktop:=false
+
     }
     ;dll methods start
     _dll_GetCurrentDesktop_Win10() {
@@ -264,13 +266,45 @@ class VD {
       Gui VD_animation_gui:Destroy
     }
 
+    _getLocalizedWord_Desktop() {
+        if (this.savedLocalizedWord_Desktop) {
+            return this.savedLocalizedWord_Desktop
+        }
+
+        ; _FindStringResourceEx(hModule, uId, langId) {
+        ;https://stackoverflow.com/questions/2502375/find-localized-windows-strings#2588937
+
+        hModule := DllCall("GetModuleHandle", "Str", "twinui.pcshell.dll", "Ptr")
+        (!hModule) && (hModule:=DllCall("LoadLibrary", "Str", "twinui.pcshell.dll", "Ptr"))
+        ; localizedString := this._FindStringResourceEx(hModule, 13502, DllCall("GetUserDefaultUILanguage", "UShort")) ;"Desktop"=13502
+        uId:=13502, langId:=DllCall("GetUserDefaultUILanguage", "UShort") ;"Desktop"=13502
+
+        debugThis := uId // 16 + 1
+        hrsrc := DllCall("FindResourceExW", "Ptr",hModule, "Ptr",6, "Ptr",debugThis, "UShort",langId, "UPtr") ;RT_STRING=6
+        pwsz:=0
+        if (hrsrc) {
+            hglob := DllCall("LoadResource", "Ptr",hModule, "Ptr",hrsrc, "Ptr")
+            if (hglob) {
+                pwsz := DllCall("LockResource", "Ptr",hglob, "Ptr")
+                if (pwsz) {
+                    lolWhat := uId & 15
+                    j:=0
+                    while (j < lolWhat) {
+                        pwsz += 2 + 2*NumGet(pwsz+0, 0, "UShort")
+                        ++j
+                    }
+                    pwsz+=2
+                }
+            }
+        }
+        this.savedLocalizedWord_Desktop := pwsz ? StrGet(pwsz, "UTF-16") : 0
+        return this.savedLocalizedWord_Desktop
+    }
     getNameFromDesktopNum(desktopNum) {
         IVirtualDesktop:=this._GetDesktops_Obj().GetAt(desktopNum)
         _name:=this._dll_GetName(IVirtualDesktop)
+        (!_name) && (_name:=this._getLocalizedWord_Desktop() " " desktopNum)
         return _name
-        ; if (_name=="") {
-            ; return "Desktop " _name
-        ; }
     }
 
     getDesktopNumOfWindow(wintitle) {
