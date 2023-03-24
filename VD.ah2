@@ -160,34 +160,17 @@ class VD {
     if (this.savedLocalizedWord_Desktop) {
       return this.savedLocalizedWord_Desktop
     }
-    hModule := DllCall("GetModuleHandle", "Str", "twinui.pcshell.dll", "Ptr")
-    (!hModule) && (hModule := DllCall("LoadLibrary", "Str", "twinui.pcshell.dll", "Ptr"))
-    uId := 13502, langId := DllCall("GetUserDefaultUILanguage", "UShort")
-    debugThis := uId // 16 + 1
-    hrsrc := DllCall("FindResourceExW", "Ptr", hModule, "Ptr", 6, "Ptr", debugThis, "UShort", langId, "UPtr")
-    pwsz := 0
-    if (hrsrc) {
-      hglob := DllCall("LoadResource", "Ptr", hModule, "Ptr", hrsrc, "Ptr")
-      if (hglob) {
-        pwsz := DllCall("LockResource", "Ptr", hglob, "Ptr")
-        if (pwsz) {
-          lolWhat := uId & 15
-          j := 0
-          while (j < lolWhat) {
-            pwsz += 2 + 2 * NumGet(pwsz + 0, 0, "UShort")
-            ++j
-          }
-          pwsz += 2
-        }
-      }
-    }
-    this.savedLocalizedWord_Desktop := pwsz ? StrGet(pwsz, "UTF-16") : 0
+    hModule := DllCall("GetModuleHandle", "Str", "shell32.dll", "Ptr")
+    length := DllCall("LoadString", "Uint", hModule, "Uint", 21769, "Ptr*", &lpBuffer := 0, "Int", 0)
+    this.savedLocalizedWord_Desktop := StrGet(lpBuffer, length, "UTF-16")
     return this.savedLocalizedWord_Desktop
   }
   static getNameFromDesktopNum(desktopNum) {
     IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
     _name := this._dll_GetName(IVirtualDesktop)
-    (!_name) && (_name := this._getLocalizedWord_Desktop() " " desktopNum)
+    if (!_name) {
+      _name := this._getLocalizedWord_Desktop() " " desktopNum
+    }
     return _name
   }
   static getDesktopNumOfWindow(wintitle) {
