@@ -62,7 +62,6 @@ class VD {
             ;conditionally assign method to method
             this._dll_GetCurrentDesktop:=this._dll_GetCurrentDesktop_Win10
             this._dll_GetDesktops:=this._dll_GetDesktops_Win10
-            this._dll_SwitchDesktop:=this._dll_SwitchDesktop_Win10
             this._dll_CreateDesktop:=this._dll_CreateDesktop_Win10
             this._dll_GetName:=this._dll_GetName_Win10
             this.RegisterDesktopNotifications:=this.RegisterDesktopNotifications_Win10
@@ -75,7 +74,6 @@ class VD {
             ;conditionally assign method to method
             this._dll_GetCurrentDesktop:=this._dll_GetCurrentDesktop_Win11
             this._dll_GetDesktops:=this._dll_GetDesktops_Win11
-            this._dll_SwitchDesktop:=this._dll_SwitchDesktop_Win11
             this._dll_CreateDesktop:=this._dll_CreateDesktop_Win11
             this._dll_GetName:=this._dll_GetName_Win11
             this.RegisterDesktopNotifications:=this.RegisterDesktopNotifications_Win11
@@ -98,7 +96,7 @@ class VD {
 
             this.GetDesktops := this._vtable(this.IVirtualDesktopManagerInternal, 7) ; void GetDesktops(out IObjectArray desktops);
             ; this.GetAdjacentDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 8) ; int GetAdjacentDesktop(IVirtualDesktop from, int direction, out IVirtualDesktop desktop);
-            this.SwitchDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 9) ; void SwitchDesktop(IVirtualDesktop desktop);
+            ; this.SwitchDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 9) ; void SwitchDesktop(IVirtualDesktop desktop);
             this.Ptr_CreateDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 10) ; IVirtualDesktop CreateDesktop();
             this.Ptr_RemoveDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 11) ; void RemoveDesktop(IVirtualDesktop desktop, IVirtualDesktop fallback);
             this.FindDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 12) ; IVirtualDesktop FindDesktop(ref Guid desktopid);
@@ -107,7 +105,7 @@ class VD {
 
             this.GetDesktops := this._vtable(this.IVirtualDesktopManagerInternal, 7) ; void GetDesktops(IntPtr hWndOrMon, out IObjectArray desktops);
             ; this.GetAdjacentDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 8) ; int GetAdjacentDesktop(IVirtualDesktop from, int direction, out IVirtualDesktop desktop);
-            this.SwitchDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 9) ; void SwitchDesktop(IntPtr hWndOrMon, IVirtualDesktop desktop);
+            ; this.SwitchDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 9) ; void SwitchDesktop(IntPtr hWndOrMon, IVirtualDesktop desktop);
             this.Ptr_CreateDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 10) ; IVirtualDesktop CreateDesktop(IntPtr hWndOrMon);
             ; this.MoveDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 11) ; void MoveDesktop(IVirtualDesktop desktop, IntPtr hWndOrMon, int nIndex);
             this.Ptr_RemoveDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 12) ; void RemoveDesktop(IVirtualDesktop desktop, IVirtualDesktop fallback);
@@ -118,7 +116,7 @@ class VD {
             ; this.GetAllCurrentDesktops := this._vtable(this.IVirtualDesktopManagerInternal, 7) ; IObjectArray GetAllCurrentDesktops();
             this.GetDesktops := this._vtable(this.IVirtualDesktopManagerInternal, 8) ; void GetDesktops(IntPtr hWndOrMon, out IObjectArray desktops);
             ; this.GetAdjacentDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 9) ; int GetAdjacentDesktop(IVirtualDesktop from, int direction, out IVirtualDesktop desktop);
-            this.SwitchDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 10) ; void SwitchDesktop(IntPtr hWndOrMon, IVirtualDesktop desktop);
+            ; this.SwitchDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 10) ; void SwitchDesktop(IntPtr hWndOrMon, IVirtualDesktop desktop);
             this.Ptr_CreateDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 11) ; IVirtualDesktop CreateDesktop(IntPtr hWndOrMon);
             ; this.MoveDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 12) ; void MoveDesktop(IVirtualDesktop desktop, IntPtr hWndOrMon, int nIndex);
             this.Ptr_RemoveDesktop := this._vtable(this.IVirtualDesktopManagerInternal, 13) ; void RemoveDesktop(IVirtualDesktop desktop, IVirtualDesktop fallback);
@@ -183,12 +181,6 @@ class VD {
         DllCall(this.GetDesktops, "UPtr", this.IVirtualDesktopManagerInternal, "Ptr", 0, "UPtr*", IObjectArray)
         return IObjectArray
     }
-    _dll_SwitchDesktop_Win10(IVirtualDesktop) {
-        DllCall(this.SwitchDesktop, "ptr", this.IVirtualDesktopManagerInternal, "UPtr", IVirtualDesktop)
-    }
-    _dll_SwitchDesktop_Win11(IVirtualDesktop) {
-        DllCall(this.SwitchDesktop, "ptr", this.IVirtualDesktopManagerInternal, "Ptr", 0, "UPtr", IVirtualDesktop)
-    }
     _dll_CreateDesktop_Win10() {
         IVirtualDesktop_ofNewDesktop:=0
         DllCall(this.Ptr_CreateDesktop, "UPtr", this.IVirtualDesktopManagerInternal, "Ptr*", IVirtualDesktop_ofNewDesktop)
@@ -244,26 +236,30 @@ class VD {
         return this._GetDesktops_Obj().GetCount()
     }
 
-    goToDesktopNum(desktopNum) {
-        IVirtualDesktop:=this._GetDesktops_Obj().GetAt(desktopNum)
-        this._SwitchIVirtualDesktop(IVirtualDesktop)
+    goToDesktopNum(desktopNum) { ; Lej77 https://github.com/Grabacr07/VirtualDesktop/pull/23#issuecomment-334918711
+        Gui VD_animation_gui:New, % "-Border -SysMenu +Owner -Caption +HwndVD_animation_gui_hwnd"
+        IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
+        GetId:=this._vtable(IVirtualDesktop, 4)
+        VarSetCapacity(GUID_Desktop, 16)
+        DllCall(GetId, "Ptr", IVirtualDesktop, "Ptr", &GUID_Desktop)
+        DllCall(this.MoveWindowToDesktop, "Ptr", this.IVirtualDesktopManager, "Ptr", VD_animation_gui_hwnd, "Ptr", &GUID_Desktop)
+        Gui VD_animation_gui:Show
+        Sleep 100
+        Gui VD_animation_gui:Destroy
+        ; "ahk_class TPUtilWindow ahk_exe HxD.exe" instead of "ahk_class WorkerW ahk_exe explorer.exe"
+        Sleep 50
+        if (activeHwnd:=WinExist("A")) {
+            if (!this._isValidWindow(activeHwnd)) {
+                if (this._activateWindowUnder()==-1) {
+                    WinActivate % "ahk_class WorkerW ahk_exe explorer.exe"
+                }
+            }
 
-        if (this._isWindowFullScreen("A")) {
-            timerFunc := ObjBindMethod(this, "_pleaseSwitchDesktop", desktopNum) ;https://www.autohotkey.com/docs/commands/SetTimer.htm#ExampleClass
-            SetTimer % timerFunc, -50
+        } else {
+            if (this._activateWindowUnder()==-1) {
+                WinActivate % "ahk_class WorkerW ahk_exe explorer.exe"
+            }
         }
-
-    }
-    animationToDesktopNum(desktopNum) { ; Lej77 https://github.com/Grabacr07/VirtualDesktop/pull/23#issuecomment-334918711
-      Gui VD_animation_gui:New, % "-Border -SysMenu +Owner -Caption +HwndVD_animation_gui_hwnd"
-      IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
-      GetId:=this._vtable(IVirtualDesktop, 4)
-      VarSetCapacity(GUID_Desktop, 16)
-      DllCall(GetId, "Ptr", IVirtualDesktop, "Ptr", &GUID_Desktop)
-      DllCall(this.MoveWindowToDesktop, "Ptr", this.IVirtualDesktopManager, "Ptr", VD_animation_gui_hwnd, "Ptr", &GUID_Desktop)
-      Gui VD_animation_gui:Show
-      Sleep 100
-      Gui VD_animation_gui:Destroy
     }
 
     _getLocalizedWord_Desktop() {
@@ -311,8 +307,7 @@ class VD {
         }
     }
 
-    MoveWindowToDesktopNum(wintitle, desktopNum)
-    {
+    MoveWindowToDesktopNum(wintitle, desktopNum) {
         found:=this._getFirstValidWindow(wintitle)
         if (!found) {
             return -1 ;for false
@@ -320,9 +315,19 @@ class VD {
         theHwnd:=found[1]
         thePView:=found[2]
 
-        IVirtualDesktop:=this._GetDesktops_Obj().GetAt(desktopNum)
+        needActivateWindowUnder:=False
+        if (activeHwnd:=WinExist("A")) {
+            if (activeHwnd==theHwnd) {
+                needActivateWindowUnder:=true
+            }
+        }
 
-        this._MoveView_to_IVirtualDesktop(thePView, IVirtualDesktop)
+        IVirtualDesktop:=this._GetDesktops_Obj().GetAt(desktopNum)
+        DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal, "Ptr", thePView, "Ptr", IVirtualDesktop)
+
+        if (needActivateWindowUnder) {
+            this._activateWindowUnder()
+        }
     }
 
     getRelativeDesktopNum(anchor_desktopNum, relative_count)
@@ -357,8 +362,7 @@ class VD {
         this.goToDesktopNum(this.getRelativeDesktopNum(this.getCurrentDesktopNum(), relative_count))
     }
 
-    MoveWindowToCurrentDesktop(wintitle, activateYourWindow:=true)
-    {
+    MoveWindowToCurrentDesktop(wintitle, activateYourWindow:=true) {
         found:=this._getFirstValidWindow(wintitle)
         if (!found) {
             return -1 ;for false
@@ -369,7 +373,7 @@ class VD {
         currentDesktopNum:=this.getCurrentDesktopNum()
         IVirtualDesktop:=this._GetDesktops_Obj().GetAt(currentDesktopNum)
 
-        this._MoveView_to_IVirtualDesktop(thePView, IVirtualDesktop)
+        DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal, "Ptr", thePView, "Ptr", IVirtualDesktop)
 
         if (activateYourWindow) {
             WinActivate % "ahk_id " theHwnd
@@ -796,28 +800,6 @@ class VD {
     ;actual methods end
 
     ;internal methods start
-    _MoveView_to_IVirtualDesktop(thePView, IVirtualDesktop) {
-        DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal, "Ptr", thePView, "Ptr", IVirtualDesktop)
-        DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal, "Ptr", thePView, "Ptr", IVirtualDesktop)
-        this._activateWindowUnder()
-    }
-    _SwitchIVirtualDesktop(IVirtualDesktop) {
-        ;activate taskbar before ;https://github.com/mzomparelli/zVirtualDesktop/issues/59#issuecomment-317613971
-        WinActivate, ahk_class Shell_TrayWnd
-        WinWaitActive, ahk_class Shell_TrayWnd
-
-        this._dll_SwitchDesktop(IVirtualDesktop)
-        this._dll_SwitchDesktop(IVirtualDesktop)
-        this._activateWindowUnder()
-    }
-
-    _pleaseSwitchDesktop(desktopNum) {
-        ;IVirtualDesktop should be calculated again because IVirtualDesktop could have changed
-        ;what we want is the same desktopNum
-        IVirtualDesktop:=this._GetDesktops_Obj().GetAt(desktopNum)
-        this._SwitchIVirtualDesktop(IVirtualDesktop)
-        ;this method is goToDesktopNum(), but without the recursion, to prevent recursion
-    }
 
     _activateWindowUnder() {
         ; if this doesn't work
