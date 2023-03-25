@@ -16,7 +16,6 @@ class VD {
       IID_IVirtualDesktop_ := "{FF72FFDD-BE7E-43FC-9C03-AD81681E88E4}"
       this._dll_GetCurrentDesktop := this._dll_GetCurrentDesktop_Win10
       this._dll_GetDesktops := this._dll_GetDesktops_Win10
-      this._dll_SwitchDesktop := this._dll_SwitchDesktop_Win10
       this._dll_CreateDesktop := this._dll_CreateDesktop_Win10
       this._dll_GetName := this._dll_GetName_Win10
       this.RegisterDesktopNotifications := this.RegisterDesktopNotifications_Win10
@@ -25,7 +24,6 @@ class VD {
       IID_IVirtualDesktop_ := "{536D3495-B208-4CC9-AE26-DE8111275BF8}"
       this._dll_GetCurrentDesktop := this._dll_GetCurrentDesktop_Win11
       this._dll_GetDesktops := this._dll_GetDesktops_Win11
-      this._dll_SwitchDesktop := this._dll_SwitchDesktop_Win11
       this._dll_CreateDesktop := this._dll_CreateDesktop_Win11
       this._dll_GetName := this._dll_GetName_Win11
       this.RegisterDesktopNotifications := this.RegisterDesktopNotifications_Win11
@@ -40,19 +38,16 @@ class VD {
     this.GetCurrentDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, 6)
     if (buildNumber < 22000) {
       this.GetDesktops := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, 7)
-      this.SwitchDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, 9)
       this.Ptr_CreateDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, 10)
       this.Ptr_RemoveDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, 11)
       this.FindDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, 12)
     } else if (buildNumber < 22489) {
       this.GetDesktops := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, 7)
-      this.SwitchDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, 9)
       this.Ptr_CreateDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, 10)
       this.Ptr_RemoveDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, 12)
       this.FindDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, 13)
     } else {
       this.GetDesktops := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, 8)
-      this.SwitchDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, 10)
       this.Ptr_CreateDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, 11)
       this.Ptr_RemoveDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, 13)
       this.FindDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, 14)
@@ -90,12 +85,6 @@ class VD {
     IObjectArray := 0
     DllCall(this.GetDesktops, "UPtr", this.IVirtualDesktopManagerInternal.Ptr, "Ptr", 0, "UPtr*", &IObjectArray := 0)
     return IObjectArray
-  }
-  static _dll_SwitchDesktop_Win10(IVirtualDesktop) {
-    DllCall(this.SwitchDesktop, "ptr", this.IVirtualDesktopManagerInternal.Ptr, "UPtr", IVirtualDesktop)
-  }
-  static _dll_SwitchDesktop_Win11(IVirtualDesktop) {
-    DllCall(this.SwitchDesktop, "ptr", this.IVirtualDesktopManagerInternal.Ptr, "Ptr", 0, "UPtr", IVirtualDesktop)
   }
   static _dll_CreateDesktop_Win10() {
     IVirtualDesktop_ofNewDesktop := 0
@@ -135,14 +124,6 @@ class VD {
     return this._GetDesktops_Obj().GetCount()
   }
   static goToDesktopNum(desktopNum) {
-    IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
-    this._SwitchIVirtualDesktop(IVirtualDesktop)
-    if (this._isWindowFullScreen("A")) {
-      timerFunc := ObjBindMethod(this, "_pleaseSwitchDesktop", desktopNum)
-      SetTimer timerFunc, "-50"
-    }
-  }
-  static animationToDesktopNum(desktopNum) {
     VD_animation_gui := Gui("-Border -SysMenu +Owner -Caption")
     IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
     GetId := this._vtable(IVirtualDesktop, 4)
@@ -152,6 +133,18 @@ class VD {
     VD_animation_gui.Show()
     Sleep 100
     VD_animation_gui.Destroy()
+    Sleep 50
+    if (activeHwnd := WinExist("A")) {
+      if (!this._isValidWindow(activeHwnd)) {
+        if (this._activateWindowUnder() == -1) {
+          WinActivate "ahk_class WorkerW ahk_exe explorer.exe"
+        }
+      }
+    } else {
+      if (this._activateWindowUnder() == -1) {
+        WinActivate "ahk_class WorkerW ahk_exe explorer.exe"
+      }
+    }
   }
   static _getLocalizedWord_Desktop() {
     if (this.savedLocalizedWord_Desktop) {
@@ -198,8 +191,17 @@ class VD {
     }
     theHwnd := found[1]
     thePView := found[2]
+    needActivateWindowUnder := False
+    if (activeHwnd := WinExist("A")) {
+      if (activeHwnd == theHwnd) {
+        needActivateWindowUnder := true
+      }
+    }
     IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
-    this._MoveView_to_IVirtualDesktop(thePView, IVirtualDesktop)
+    DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal.Ptr, "Ptr", thePView, "Ptr", IVirtualDesktop)
+    if (needActivateWindowUnder) {
+      this._activateWindowUnder()
+    }
   }
   static getRelativeDesktopNum(anchor_desktopNum, relative_count) {
     Desktops_Obj := this._GetDesktops_Obj()
@@ -229,7 +231,7 @@ class VD {
     thePView := found[2]
     currentDesktopNum := this.getCurrentDesktopNum()
     IVirtualDesktop := this._GetDesktops_Obj().GetAt(currentDesktopNum)
-    this._MoveView_to_IVirtualDesktop(thePView, IVirtualDesktop)
+    DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal.Ptr, "Ptr", thePView, "Ptr", IVirtualDesktop)
     if (activateYourWindow) {
       WinActivate "ahk_id " theHwnd
     }
@@ -536,22 +538,6 @@ class VD {
         }
       }
     }
-  }
-  static _MoveView_to_IVirtualDesktop(thePView, IVirtualDesktop) {
-    DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal.Ptr, "Ptr", thePView, "Ptr", IVirtualDesktop)
-    DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal.Ptr, "Ptr", thePView, "Ptr", IVirtualDesktop)
-    this._activateWindowUnder()
-  }
-  static _SwitchIVirtualDesktop(IVirtualDesktop) {
-    WinActivate "ahk_class Shell_TrayWnd"
-    WinWaitActive "ahk_class Shell_TrayWnd"
-    this._dll_SwitchDesktop(IVirtualDesktop)
-    this._dll_SwitchDesktop(IVirtualDesktop)
-    this._activateWindowUnder()
-  }
-  static _pleaseSwitchDesktop(desktopNum) {
-    IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
-    this._SwitchIVirtualDesktop(IVirtualDesktop)
   }
   static _activateWindowUnder() {
     found := this._getFirstWindowUnder()
