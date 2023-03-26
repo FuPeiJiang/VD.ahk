@@ -57,6 +57,7 @@ class VD {
         if (buildNumber < 22000)
         {
             ; Windows 10
+            this.explorerDesktopWintitle:="ahk_class WorkerW ahk_exe explorer.exe"
             IID_IVirtualDesktopManagerInternal_:="{F31574D6-B682-4CDC-BD56-1827860ABEC6}" ;https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop.cs#L177-L191
             IID_IVirtualDesktop_:="{FF72FFDD-BE7E-43FC-9C03-AD81681E88E4}" ;https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop.cs#L149-L150
             ;conditionally assign method to method
@@ -69,6 +70,7 @@ class VD {
         else
         {
             ; Windows 11
+            this.explorerDesktopWintitle:="ahk_class Progman ahk_exe explorer.exe"
             IID_IVirtualDesktopManagerInternal_:="{B2F925B9-5A0F-4D2E-9F4D-2B1507593C10}" ;https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop11.cs#L163-L185
             IID_IVirtualDesktop_:="{536D3495-B208-4CC9-AE26-DE8111275BF8}" ;https://github.com/MScholtes/VirtualDesktop/blob/812c321e286b82a10f8050755c94d21c4b69812f/VirtualDesktop11.cs#L149-L150
             ;conditionally assign method to method
@@ -251,13 +253,13 @@ class VD {
         if (activeHwnd:=WinExist("A")) {
             if (!this._isValidWindow(activeHwnd)) {
                 if (this._activateWindowUnder()==-1) {
-                    WinActivate % "ahk_class WorkerW ahk_exe explorer.exe"
+                    WinActivate % this.explorerDesktopWintitle
                 }
             }
 
         } else {
             if (this._activateWindowUnder()==-1) {
-                WinActivate % "ahk_class WorkerW ahk_exe explorer.exe"
+                WinActivate % this.explorerDesktopWintitle
             }
         }
     }
