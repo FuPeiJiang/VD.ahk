@@ -1,0 +1,6 @@
+vscode active
+window with "Show this window on all desktops" below active
+^+Right
+
+does NOT switch, window with "Show this window on all desktops" is activated
+so I think this is how windows switches desktops, by activating a window on the chosen desktop, though idk about when there is no window, so maybe that's when to use _SwitchIVirtualDesktop, needs further investigation but unwilling until I come back, reading this
