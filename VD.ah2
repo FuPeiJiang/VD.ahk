@@ -12,7 +12,6 @@ class VD {
     splitByDot := StrSplit(A_OSVersion, ".")
     buildNumber := splitByDot[3]
     if (buildNumber < 22000) {
-      this.explorerDesktopWintitle := "ahk_class WorkerW ahk_exe explorer.exe"
       IID_IVirtualDesktopManagerInternal_ := "{F31574D6-B682-4CDC-BD56-1827860ABEC6}"
       IID_IVirtualDesktop_ := "{FF72FFDD-BE7E-43FC-9C03-AD81681E88E4}"
       this._dll_GetCurrentDesktop := this._dll_GetCurrentDesktop_Win10
@@ -21,7 +20,6 @@ class VD {
       this._dll_GetName := this._dll_GetName_Win10
       this.RegisterDesktopNotifications := this.RegisterDesktopNotifications_Win10
     } else {
-      this.explorerDesktopWintitle := "ahk_class Progman ahk_exe explorer.exe"
       IID_IVirtualDesktopManagerInternal_ := "{B2F925B9-5A0F-4D2E-9F4D-2B1507593C10}"
       IID_IVirtualDesktop_ := "{536D3495-B208-4CC9-AE26-DE8111275BF8}"
       this._dll_GetCurrentDesktop := this._dll_GetCurrentDesktop_Win11
@@ -142,12 +140,12 @@ class VD {
     if (activeHwnd := WinExist("A")) {
       if (!this._isValidWindow(activeHwnd)) {
         if (this._activateWindowUnder() == -1) {
-          WinActivate this.explorerDesktopWintitle
+          WinActivate "ahk_class Progman ahk_exe explorer.exe"
         }
       }
     } else {
       if (this._activateWindowUnder() == -1) {
-        WinActivate this.explorerDesktopWintitle
+        WinActivate "ahk_class Progman ahk_exe explorer.exe"
       }
     }
   }
