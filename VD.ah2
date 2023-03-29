@@ -135,9 +135,12 @@ class VD {
     GUID_Desktop := Buffer(16)
     DllCall(GetId, "Ptr", IVirtualDesktop, "Ptr", GUID_Desktop)
     DllCall(this.MoveWindowToDesktop, "Ptr", this.IVirtualDesktopManager.Ptr, "Ptr", VD_animation_gui.Hwnd, "Ptr", GUID_Desktop)
+    VD_active_gui := Gui("-Border -SysMenu +Owner -Caption")
+    VD_active_gui.Show()
     VD_animation_gui.Show()
     Sleep 100
     VD_animation_gui.Destroy()
+    VD_active_gui.Destroy()
     Sleep 50
     if (activeHwnd := WinExist("A")) {
       if (!this._isValidWindow(activeHwnd)) {
