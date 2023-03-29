@@ -245,9 +245,14 @@ class VD {
         VarSetCapacity(GUID_Desktop, 16)
         DllCall(GetId, "Ptr", IVirtualDesktop, "Ptr", &GUID_Desktop)
         DllCall(this.MoveWindowToDesktop, "Ptr", this.IVirtualDesktopManager, "Ptr", VD_animation_gui_hwnd, "Ptr", &GUID_Desktop)
-        Gui VD_animation_gui:Show
+
+        Gui VD_active_gui:New, % "-Border -SysMenu +Owner -Caption"
+        Gui VD_active_gui:Show ;you can only Show gui that's in another VD if a gui of same owned/process is already active
+        Gui VD_animation_gui:Show ;after gui on current desktop owned by current process became active window, Show gui on different desktop owned by current process
+
         Sleep 100
         Gui VD_animation_gui:Destroy
+        Gui VD_active_gui:Destroy
         ; "ahk_class TPUtilWindow ahk_exe HxD.exe" instead of "ahk_class WorkerW ahk_exe explorer.exe"
         Sleep 50
         if (activeHwnd:=WinExist("A")) {
