@@ -133,20 +133,16 @@ class VD {
     VD_active_gui := Gui("-Border -SysMenu +Owner -Caption")
     VD_active_gui.Show()
     VD_animation_gui.Show()
-    Sleep 100
-    VD_animation_gui.Destroy()
     VD_active_gui.Destroy()
-    Sleep 50
-    if (activeHwnd := WinExist("A")) {
-      if (!this._isValidWindow(activeHwnd)) {
-        if (this._activateWindowUnder() == -1) {
+    loop 20 {
+      if (this.getCurrentDesktopNum() == desktopNum) {
+        if (this._activateWindowUnder(VD_animation_gui.Hwnd) == -1) {
           WinActivate "ahk_class Progman ahk_exe explorer.exe"
         }
+        VD_animation_gui.Destroy()
+        break
       }
-    } else {
-      if (this._activateWindowUnder() == -1) {
-        WinActivate "ahk_class Progman ahk_exe explorer.exe"
-      }
+      Sleep 25
     }
   }
   static _getLocalizedWord_Desktop() {
@@ -203,7 +199,9 @@ class VD {
     IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
     DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal.Ptr, "Ptr", thePView, "Ptr", IVirtualDesktop)
     if (needActivateWindowUnder) {
-      this._activateWindowUnder()
+      if (this._activateWindowUnder() == -1) {
+        WinActivate "ahk_class Progman ahk_exe explorer.exe"
+      }
     }
   }
   static getRelativeDesktopNum(anchor_desktopNum, relative_count) {
@@ -542,26 +540,23 @@ class VD {
       }
     }
   }
-  static _activateWindowUnder() {
-    found := this._getFirstWindowUnder()
-    if (!found) {
-      return -1
-    }
-    theHwnd := found[1]
-    OutputVar_MinMax := WinGetMinMax("ahk_id " theHwnd)
-    if (!(OutputVar_MinMax == -1)) {
-      WinActivate "ahk_id " theHwnd
-    }
-  }
-  static _getFirstWindowUnder() {
+  static _activateWindowUnder(excludeHwnd := -1) {
     bak_DetectHiddenWindows := A_DetectHiddenWindows
     DetectHiddenWindows false
-    returnValue := false
+    returnValue := -1
     outHwndList := WinGetList()
     loop outHwndList.Length {
-      if (pView := this._isValidWindow(outHwndList[A_Index])) {
-        returnValue := [outHwndList[A_Index], pView]
-        break
+      theHwnd := outHwndList[A_Index]
+      if (theHwnd == excludeHwnd) {
+        continue
+      }
+      if (pView := this._isValidWindow(theHwnd)) {
+        OutputVar_MinMax := WinGetMinMax("ahk_id " theHwnd)
+        if (!(OutputVar_MinMax == -1)) {
+          WinActivate "ahk_id " theHwnd
+          returnValue := theHwnd
+          break
+        }
       }
     }
     DetectHiddenWindows bak_DetectHiddenWindows
