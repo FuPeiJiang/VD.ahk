@@ -12,7 +12,6 @@ class VD {
     splitByDot := StrSplit(A_OSVersion, ".")
     buildNumber := splitByDot[3]
     if (buildNumber < 22000) {
-      this.explorerDesktopWintitle := "ahk_class WorkerW ahk_exe explorer.exe"
       IID_IVirtualDesktopManagerInternal_ := "{F31574D6-B682-4CDC-BD56-1827860ABEC6}"
       IID_IVirtualDesktop_ := "{FF72FFDD-BE7E-43FC-9C03-AD81681E88E4}"
       this._dll_GetCurrentDesktop := this._dll_GetCurrentDesktop_Win10
@@ -21,7 +20,6 @@ class VD {
       this._dll_GetName := this._dll_GetName_Win10
       this.RegisterDesktopNotifications := this.RegisterDesktopNotifications_Win10
     } else {
-      this.explorerDesktopWintitle := "ahk_class Progman ahk_exe explorer.exe"
       IID_IVirtualDesktopManagerInternal_ := "{B2F925B9-5A0F-4D2E-9F4D-2B1507593C10}"
       IID_IVirtualDesktop_ := "{536D3495-B208-4CC9-AE26-DE8111275BF8}"
       this._dll_GetCurrentDesktop := this._dll_GetCurrentDesktop_Win11
@@ -138,20 +136,16 @@ class VD {
     VD_active_gui := Gui("-Border -SysMenu +Owner -Caption")
     VD_active_gui.Show()
     VD_animation_gui.Show()
-    Sleep 100
-    VD_animation_gui.Destroy()
     VD_active_gui.Destroy()
-    Sleep 50
-    if (activeHwnd := WinExist("A")) {
-      if (!this._isValidWindow(activeHwnd)) {
-        if (this._activateWindowUnder() == -1) {
-          WinActivate this.explorerDesktopWintitle
+    loop 20 {
+      if (this.getCurrentDesktopNum() == desktopNum) {
+        if (this._activateWindowUnder(VD_animation_gui.Hwnd) == -1) {
+          WinActivate "ahk_class Progman ahk_exe explorer.exe"
         }
+        VD_animation_gui.Destroy()
+        break
       }
-    } else {
-      if (this._activateWindowUnder() == -1) {
-        WinActivate this.explorerDesktopWintitle
-      }
+      Sleep 25
     }
   }
   static _getLocalizedWord_Desktop() {
@@ -208,7 +202,9 @@ class VD {
     IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
     DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal.Ptr, "Ptr", thePView, "Ptr", IVirtualDesktop)
     if (needActivateWindowUnder) {
-      this._activateWindowUnder()
+      if (this._activateWindowUnder() == -1) {
+        WinActivate "ahk_class Progman ahk_exe explorer.exe"
+      }
     }
   }
   static getRelativeDesktopNum(anchor_desktopNum, relative_count) {
@@ -639,26 +635,23 @@ class VD {
       }
     }
   }
-  static _activateWindowUnder() {
-    found := this._getFirstWindowUnder()
-    if (!found) {
-      return -1
-    }
-    theHwnd := found[1]
-    OutputVar_MinMax := WinGetMinMax("ahk_id " theHwnd)
-    if (!(OutputVar_MinMax == -1)) {
-      WinActivate "ahk_id " theHwnd
-    }
-  }
-  static _getFirstWindowUnder() {
+  static _activateWindowUnder(excludeHwnd := -1) {
     bak_DetectHiddenWindows := A_DetectHiddenWindows
     DetectHiddenWindows false
-    returnValue := false
+    returnValue := -1
     outHwndList := WinGetList()
     loop outHwndList.Length {
-      if (pView := this._isValidWindow(outHwndList[A_Index])) {
-        returnValue := [outHwndList[A_Index], pView]
-        break
+      theHwnd := outHwndList[A_Index]
+      if (theHwnd == excludeHwnd) {
+        continue
+      }
+      if (pView := this._isValidWindow(theHwnd)) {
+        OutputVar_MinMax := WinGetMinMax("ahk_id " theHwnd)
+        if (!(OutputVar_MinMax == -1)) {
+          WinActivate "ahk_id " theHwnd
+          returnValue := theHwnd
+          break
+        }
       }
     }
     DetectHiddenWindows bak_DetectHiddenWindows
