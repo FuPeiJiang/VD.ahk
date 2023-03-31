@@ -247,24 +247,22 @@ class VD {
         Gui VD_active_gui:New, % "-Border -SysMenu +Owner -Caption"
         Gui VD_active_gui:Show ;you can only Show gui that's in another VD if a gui of same owned/process is already active
         Gui VD_animation_gui:Show ;after gui on current desktop owned by current process became active window, Show gui on different desktop owned by current process
-
-        Sleep 100
-        Gui VD_animation_gui:Destroy
         Gui VD_active_gui:Destroy
-        ; "ahk_class TPUtilWindow ahk_exe HxD.exe" instead of "ahk_class WorkerW ahk_exe explorer.exe"
-        Sleep 50
-        if (activeHwnd:=WinExist("A")) {
-            if (!this._isValidWindow(activeHwnd)) {
-                if (this._activateWindowUnder()==-1) {
+        loop 20 {
+            if (this.getCurrentDesktopNum()==desktopNum) { ; wildest hack ever..
+
+                ; "ahk_class TPUtilWindow ahk_exe HxD.exe" instead of "ahk_class WorkerW ahk_exe explorer.exe"
+                if (this._activateWindowUnder(VD_animation_gui_hwnd)==-1) {
                     WinActivate % "ahk_class Progman ahk_exe explorer.exe"
                 }
-            }
 
-        } else {
-            if (this._activateWindowUnder()==-1) {
-                WinActivate % "ahk_class Progman ahk_exe explorer.exe"
+                Gui VD_animation_gui:Destroy
+
+                break
             }
+            Sleep 25
         }
+
     }
 
     _getLocalizedWord_Desktop() {
@@ -331,7 +329,9 @@ class VD {
         DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal, "Ptr", thePView, "Ptr", IVirtualDesktop)
 
         if (needActivateWindowUnder) {
-            this._activateWindowUnder()
+            if (this._activateWindowUnder()==-1) {
+                WinActivate % "ahk_class Progman ahk_exe explorer.exe"
+            }
         }
     }
 
@@ -899,31 +899,23 @@ class VD {
 
     ;internal methods start
 
-    _activateWindowUnder() {
-        ; if this doesn't work
-        ;try https://www.autohotkey.com/boards/viewtopic.php?t=28760#p326541
-        found:=this._getFirstWindowUnder()
-        if (!found) {
-            return -1 ;for false
-        }
-        theHwnd:=found[1]
-        ; MsgBox % theHwnd
-
-        WinGet, OutputVar_MinMax, MinMax, % "ahk_id " theHwnd
-        if (!(OutputVar_MinMax==-1)) {
-            WinActivate, ahk_id %theHwnd%
-        }
-    }
-
-    _getFirstWindowUnder() {
+    _activateWindowUnder(excludeHwnd:=-1) {
         bak_DetectHiddenWindows:=A_DetectHiddenWindows
         DetectHiddenWindows, off
-        returnValue:=false
+        returnValue:=-1
         WinGet, outHwndList, List
         loop % outHwndList {
-            if (pView:=this._isValidWindow(outHwndList%A_Index%)) {
-                returnValue:=[outHwndList%A_Index%, pView]
-                break
+            theHwnd:=outHwndList%A_Index%
+            if (theHwnd == excludeHwnd) {
+                continue
+            }
+            if (pView:=this._isValidWindow(theHwnd)) {
+                WinGet, OutputVar_MinMax, MinMax, % "ahk_id " theHwnd
+                if (!(OutputVar_MinMax==-1)) { ;not Minimized
+                    WinActivate % "ahk_id " theHwnd
+                    returnValue:=theHwnd
+                    break
+                }
             }
         }
         DetectHiddenWindows % bak_DetectHiddenWindows
