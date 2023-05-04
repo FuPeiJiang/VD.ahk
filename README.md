@@ -1,6 +1,6 @@
-# VD.ahk: Virtual Desktop
+# VD.ahk: Virtual Desktop 
 
-no dependencies no **virtual-desktop-accessor.dll**, Windows 11 support
+no dependencies no **virtual-desktop-accessor.dll**, Windows 11 support, [ahkv2: v2_port](https://github.com/FuPeiJiang/VD.ahk/tree/v2_port#readme)<br>
 
 ### Just run the examples, everything explained inside
 
