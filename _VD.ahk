@@ -925,23 +925,25 @@ class VD {
         returnValue:=false
         breakToReturnFalse:
         loop 1 {
-            ; WinGetTitle, title, ahk_id %hWnd%
             WinGetTitle, title, % "ahk_id " hwnd
             if (!title) {
                 break breakToReturnFalse
             }
 
             WinGet, dwStyle, Style, ahk_id %hWnd%
-            if ((dwStyle&0x08000000) || !(dwStyle&0x10000000)) {
+            if ((dwStyle&0x08000000) || !(dwStyle&0x10000000)) { ;0x08000000=WS_DISABLED, 0x10000000=WS_VISIBLE
                 break breakToReturnFalse
             }
             WinGet, dwExStyle, ExStyle, ahk_id %hWnd%
-            if (dwExStyle & 0x00000080) {
-                break breakToReturnFalse
-            }
-            WinGetClass, szClass, ahk_id %hWnd%
-            if (szClass = "TApplication") {
-                break breakToReturnFalse
+            if (!(dwExStyle&0x00040000)) { ;0x00040000=WS_EX_APPWINDOW
+                if (dwExStyle&0x00000080 || dwExStyle&0x08000000) { ;0x00000080=WS_EX_TOOLWINDOW, 0x08000000=WS_EX_NOACTIVATE
+                    break breakToReturnFalse
+                }
+                owner_hWnd:=DllCall("GetWindow","Ptr",hWnd,"Uint",4) ;4=GW_OWNER
+                desktop_hWnd:=DllCall("GetDesktopWindow","Ptr") ;also known as:className:#32769
+                if (owner_hWnd==desktop_hWnd) {
+                    break breakToReturnFalse
+                }
             }
 
             pView:=this._view_from_Hwnd(hWnd)
