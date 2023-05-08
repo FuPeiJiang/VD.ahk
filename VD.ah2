@@ -734,12 +734,15 @@ class VD {
         break breakToReturnFalse
       }
       dwExStyle := WinGetExStyle("ahk_id " hWnd)
-      if (dwExStyle & 0x00000080) {
-        break breakToReturnFalse
-      }
-      szClass := WinGetClass("ahk_id " hWnd)
-      if (szClass = "TApplication") {
-        break breakToReturnFalse
+      if (!(dwExStyle & 0x00040000)) {
+        if (dwExStyle & 0x00000080 || dwExStyle & 0x08000000) {
+          break breakToReturnFalse
+        }
+        owner_hWnd := DllCall("GetWindow", "Ptr", hWnd, "Uint", 4)
+        desktop_hWnd := DllCall("GetDesktopWindow", "Ptr")
+        if (owner_hWnd == desktop_hWnd) {
+          break breakToReturnFalse
+        }
       }
       pView := this._view_from_Hwnd(hWnd)
       if (!pView) {
