@@ -253,7 +253,7 @@ class VD {
 
                 ; "ahk_class TPUtilWindow ahk_exe HxD.exe" instead of "ahk_class WorkerW ahk_exe explorer.exe"
                 if (this._activateWindowUnder(VD_animation_gui_hwnd)==-1) {
-                    WinActivate % "ahk_class Progman ahk_exe explorer.exe"
+                    this._activateDesktopBackground()
                 }
 
                 Gui VD_animation_gui:Destroy
@@ -330,7 +330,7 @@ class VD {
 
         if (needActivateWindowUnder) {
             if (this._activateWindowUnder()==-1) {
-                WinActivate % "ahk_class Progman ahk_exe explorer.exe"
+                this._activateDesktopBackground()
             }
         }
     }
@@ -805,6 +805,31 @@ class VD {
     ;actual methods end
 
     ;internal methods start
+
+    _activateDesktopBackground() { ;this is really copying extremely long comments for short code like in AHK source code
+        ; Win10:
+        ; "FolderView ahk_class SysListView32 ahk_exe explorer.exe"
+        ; "ahk_class SHELLDLL_DefView ahk_exe explorer.exe"
+        ; "Program Manager ahk_class Progman ahk_exe explorer.exe" is the top level parent
+
+        ; the parent parent of FolderView BECOMES "ahk_class WorkerW ahk_exe explorer.exe" after you press Win+Tab
+        ; WorkerW doesn't exist before you press Win+Tab
+        ; it's the same for Win11, Progman gets replaced by WorkerW, Progman still exists but isn't the parent of FolderView or top-level window that gets activated
+
+        ; Q: if WinActivate Progman activates WorkerW(we want that) then what's the problem ?
+        ; A: WinActivate will send {Alt down}{Alt up}{Alt down}{Alt up} if Progman is not activated : AHK source code: ((VK_MENU | 0x12 | ALT key)) https://github.com/AutoHotkey/AutoHotkey/blob/df84a3e902b522db0756a7366bd9884c80fa17b6/source/window.cpp#L260-L261
+        ; the desktop background is correctly activated, we just don't want the extra Alt keys:
+        ; if the hotkey is Ctrl+Shift+Win, and you add an Alt in there, Office 365 hotkey is triggered:
+        ; https://github.com/FuPeiJiang/VD.ahk/issues/40#issuecomment-1548252485
+        ; https://answers.microsoft.com/en-us/msoffice/forum/all/help-disabling-office-hotkey-of-ctrl-win-alt-shift/040ef6e5-8152-449b-849a-7494323101bb
+        ; https://superuser.com/questions/1457073/how-do-i-disable-specific-windows-10-office-keyboard-shortcut-ctrlshiftwinal
+        ; this is also bad because it prevents subsequent uses of the hotkey #!Right:: because {Alt up} releases Alt
+        if (WinExist("ahk_class WorkerW ahk_exe explorer.exe")) {
+            WinActivate % "ahk_class WorkerW ahk_exe explorer.exe"
+        } else {
+            WinActivate % "ahk_class Progman ahk_exe explorer.exe"
+        }
+    }
 
     _activateWindowUnder(excludeHwnd:=-1) {
         bak_DetectHiddenWindows:=A_DetectHiddenWindows
