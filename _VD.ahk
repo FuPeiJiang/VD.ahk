@@ -237,6 +237,7 @@ class VD {
     }
 
     goToDesktopNum(desktopNum) { ; Lej77 https://github.com/Grabacr07/VirtualDesktop/pull/23#issuecomment-334918711
+        this._activateDesktopBackground() ;before switching, the active window must be "shared on all desktops" #39
         Gui VD_animation_gui:New, % "-Border -SysMenu +Owner -Caption +HwndVD_animation_gui_hwnd"
         IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
         GetId:=this._vtable(IVirtualDesktop, 4)
