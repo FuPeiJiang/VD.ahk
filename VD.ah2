@@ -124,6 +124,7 @@ class VD {
     return this._GetDesktops_Obj().GetCount()
   }
   static goToDesktopNum(desktopNum) {
+    this._activateDesktopBackground()
     VD_animation_gui := Gui("-Border -SysMenu +Owner -Caption")
     IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
     GetId := this._vtable(IVirtualDesktop, 4)
