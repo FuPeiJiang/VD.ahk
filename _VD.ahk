@@ -237,7 +237,6 @@ class VD {
     }
 
     goToDesktopNum(desktopNum) { ; Lej77 https://github.com/Grabacr07/VirtualDesktop/pull/23#issuecomment-334918711
-        this._activateDesktopBackground() ;before switching, the active window must be "shared on all desktops" #39
         Gui VD_animation_gui:New, % "-Border -SysMenu +Owner -Caption +HwndVD_animation_gui_hwnd"
         IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
         GetId:=this._vtable(IVirtualDesktop, 4)
@@ -826,8 +825,10 @@ class VD {
         ; https://superuser.com/questions/1457073/how-do-i-disable-specific-windows-10-office-keyboard-shortcut-ctrlshiftwinal
         ; this is also bad because it prevents subsequent uses of the hotkey #!Right:: because {Alt up} releases Alt
         if (WinExist("ahk_class WorkerW ahk_exe explorer.exe")) {
+            ToolTip % "WinActivate % ""ahk_class WorkerW ahk_exe explorer.exe"""
             WinActivate % "ahk_class WorkerW ahk_exe explorer.exe"
         } else {
+            ToolTip % "WinActivate % ""ahk_class Progman ahk_exe explorer.exe"""
             WinActivate % "ahk_class Progman ahk_exe explorer.exe"
         }
     }
@@ -845,6 +846,15 @@ class VD {
             if (pView:=this._isValidWindow(theHwnd)) {
                 WinGet, OutputVar_MinMax, MinMax, % "ahk_id " theHwnd
                 if (!(OutputVar_MinMax==-1)) { ;not Minimized
+                    WinGetTitle winTitle, % "ahk_id " theHwnd
+                    WinGetClass className, % "ahk_id " theHwnd
+                    WinGet processName, ProcessName, % "ahk_id " theHwnd
+                    WinGet winStyle, Style, % "ahk_id " theHwnd
+                    WinGet winExStyle, ExStyle, % "ahk_id " theHwnd
+                    clipText:=winTitle "`n" className "`n" processName "`n" winStyle "`n" winExStyle
+                    Clipboard:=clipText
+                    ToolTip % clipText
+
                     WinActivate % "ahk_id " theHwnd
                     returnValue:=theHwnd
                     break
