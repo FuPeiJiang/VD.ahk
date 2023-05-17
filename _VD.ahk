@@ -845,7 +845,8 @@ class VD {
             if (pView:=this._isValidWindow(theHwnd)) {
                 WinGet, OutputVar_MinMax, MinMax, % "ahk_id " theHwnd
                 if (!(OutputVar_MinMax==-1)) { ;not Minimized
-                    WinActivate % "ahk_id " theHwnd
+                    ; WinActivate % "ahk_id " theHwnd
+                    DllCall("SetForegroundWindow","Ptr",theHwnd)
                     returnValue:=theHwnd
                     break
                 }
