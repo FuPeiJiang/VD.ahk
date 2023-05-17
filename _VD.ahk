@@ -237,7 +237,6 @@ class VD {
     }
 
     goToDesktopNum(desktopNum) { ; Lej77 https://github.com/Grabacr07/VirtualDesktop/pull/23#issuecomment-334918711
-        this._activateDesktopBackground() ;before switching, the active window must be "shared on all desktops" #39
         Gui VD_animation_gui:New, % "-Border -SysMenu +Owner -Caption +HwndVD_animation_gui_hwnd"
         IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
         GetId:=this._vtable(IVirtualDesktop, 4)
@@ -825,11 +824,12 @@ class VD {
         ; https://answers.microsoft.com/en-us/msoffice/forum/all/help-disabling-office-hotkey-of-ctrl-win-alt-shift/040ef6e5-8152-449b-849a-7494323101bb
         ; https://superuser.com/questions/1457073/how-do-i-disable-specific-windows-10-office-keyboard-shortcut-ctrlshiftwinal
         ; this is also bad because it prevents subsequent uses of the hotkey #!Right:: because {Alt up} releases Alt
-        if (WinExist("ahk_class WorkerW ahk_exe explorer.exe")) {
-            WinActivate % "ahk_class WorkerW ahk_exe explorer.exe"
-        } else {
-            WinActivate % "ahk_class Progman ahk_exe explorer.exe"
-        }
+        ; if (WinExist("ahk_class WorkerW ahk_exe explorer.exe")) {
+        ;     WinActivate % "ahk_class WorkerW ahk_exe explorer.exe"
+        ; } else {
+        ;     WinActivate % "ahk_class Progman ahk_exe explorer.exe"
+        ; }
+        DllCall("SetForegroundWindow","Ptr",WinExist("ahk_class Progman ahk_exe explorer.exe"))
     }
 
     _activateWindowUnder(excludeHwnd:=-1) {
