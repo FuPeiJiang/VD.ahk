@@ -244,10 +244,11 @@ class VD {
         DllCall(GetId, "Ptr", IVirtualDesktop, "Ptr", &GUID_Desktop)
         DllCall(this.MoveWindowToDesktop, "Ptr", this.IVirtualDesktopManager, "Ptr", VD_animation_gui_hwnd, "Ptr", &GUID_Desktop)
 
-        Gui VD_active_gui:New, % "-Border -SysMenu +Owner -Caption"
+        Gui VD_active_gui:New, % "-Border -SysMenu +Owner -Caption +HwndVD_active_gui_hwnd"
+        this.PinWindow("ahk_id " VD_active_gui_hwnd)
         Gui VD_active_gui:Show ;you can only Show gui that's in another VD if a gui of same owned/process is already active
+        WinActivate % "ahk_id " VD_active_gui_hwnd
         Gui VD_animation_gui:Show ;after gui on current desktop owned by current process became active window, Show gui on different desktop owned by current process
-        Gui VD_active_gui:Destroy
         loop 20 {
             if (this.getCurrentDesktopNum()==desktopNum) { ; wildest hack ever..
 
@@ -257,6 +258,7 @@ class VD {
                 }
 
                 Gui VD_animation_gui:Destroy
+                Gui VD_active_gui:Destroy
 
                 break
             }
