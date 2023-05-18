@@ -285,7 +285,7 @@ class VD {
     }
 
     getDesktopNumOfWindow(wintitle) {
-        found:=this._getFirstValidWindow(wintitle)
+        found:=this._tryGetValidWindow(wintitle)
         if (!found) {
             return -1 ;for false
         }
@@ -296,7 +296,7 @@ class VD {
     }
 
     goToDesktopOfWindow(wintitle, activateYourWindow:=true) {
-        found:=this._getFirstValidWindow(wintitle)
+        found:=this._tryGetValidWindow(wintitle)
         if (!found) {
             return -1 ;for false
         }
@@ -311,7 +311,7 @@ class VD {
     }
 
     MoveWindowToDesktopNum(wintitle, desktopNum) {
-        found:=this._getFirstValidWindow(wintitle)
+        found:=this._tryGetValidWindow(wintitle)
         if (!found) {
             return -1 ;for false
         }
@@ -368,7 +368,7 @@ class VD {
     }
 
     MoveWindowToCurrentDesktop(wintitle, activateYourWindow:=true) {
-        found:=this._getFirstValidWindow(wintitle)
+        found:=this._tryGetValidWindow(wintitle)
         if (!found) {
             return -1 ;for false
         }
@@ -447,7 +447,7 @@ class VD {
     }
 
     IsWindowPinned(wintitle) {
-        found:=this._getFirstValidWindow(wintitle)
+        found:=this._tryGetValidWindow(wintitle)
         if (!found) {
             return -1 ;for false
         }
@@ -457,7 +457,7 @@ class VD {
         return viewIsPinned
     }
     TogglePinWindow(wintitle) {
-        found:=this._getFirstValidWindow(wintitle)
+        found:=this._tryGetValidWindow(wintitle)
         if (!found) {
             return -1 ;for false
         }
@@ -472,7 +472,7 @@ class VD {
 
     }
     PinWindow(wintitle) {
-        found:=this._getFirstValidWindow(wintitle)
+        found:=this._tryGetValidWindow(wintitle)
         if (!found) {
             return -1 ;for false
         }
@@ -481,7 +481,7 @@ class VD {
         DllCall(this.PinView, "UPtr", this.IVirtualDesktopPinnedApps, "Ptr", thePView)
     }
     UnPinWindow(wintitle) {
-        found:=this._getFirstValidWindow(wintitle)
+        found:=this._tryGetValidWindow(wintitle)
         if (!found) {
             return -1 ;for false
         }
@@ -856,20 +856,21 @@ class VD {
         return returnValue
     }
 
-    _getFirstValidWindow(wintitle) {
+    _tryGetValidWindow(wintitle) {
 
         bak_DetectHiddenWindows:=A_DetectHiddenWindows
         bak_TitleMatchMode:=A_TitleMatchMode
         DetectHiddenWindows, on
         SetTitleMatchMode, 2
-        WinGet, outHwndList, List, % wintitle
+        WinGet, someID, ID, % wintitle
+
+        while ((tempID:=DllCall("GetWindow","Ptr",someID,"Uint",4))) { ;4=GW_OWNER
+            someID:=tempID
+        }
 
         returnValue:=false
-        loop % outHwndList {
-            if (pView:=this._isValidWindow(outHwndList%A_Index%)) {
-                returnValue:=[outHwndList%A_Index%, pView]
-                break
-            }
+        if (pView:=this._isValidWindow(someID)) {
+            returnValue:=[someID, pView]
         }
 
         SetTitleMatchMode % bak_TitleMatchMode
@@ -956,19 +957,13 @@ class VD {
             if (!title) {
                 break breakToReturnFalse
             }
-
-            WinGet, dwStyle, Style, ahk_id %hWnd%
-            if ((dwStyle&0x08000000) || !(dwStyle&0x10000000)) { ;0x08000000=WS_DISABLED, 0x10000000=WS_VISIBLE
-                break breakToReturnFalse
-            }
             WinGet, dwExStyle, ExStyle, ahk_id %hWnd%
             if (!(dwExStyle&0x00040000)) { ;0x00040000=WS_EX_APPWINDOW
                 if (dwExStyle&0x00000080 || dwExStyle&0x08000000) { ;0x00000080=WS_EX_TOOLWINDOW, 0x08000000=WS_EX_NOACTIVATE
                     break breakToReturnFalse
                 }
                 owner_hWnd:=DllCall("GetWindow","Ptr",hWnd,"Uint",4) ;4=GW_OWNER
-                desktop_hWnd:=DllCall("GetDesktopWindow","Ptr") ;also known as:className:#32769
-                if (owner_hWnd==desktop_hWnd) {
+                if (owner_hWnd) {
                     break breakToReturnFalse
                 }
             }
