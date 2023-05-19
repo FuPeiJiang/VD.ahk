@@ -127,6 +127,7 @@ class VD {
     return this._GetDesktops_Obj().GetCount()
   }
   static goToDesktopNum(desktopNum) {
+    this._activateDesktopBackground()
     VD_animation_gui := Gui("-Border -SysMenu +Owner -Caption")
     IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
     GetId := this._vtable(IVirtualDesktop, 4)
@@ -140,7 +141,7 @@ class VD {
     loop 20 {
       if (this.getCurrentDesktopNum() == desktopNum) {
         if (this._activateWindowUnder(VD_animation_gui.Hwnd) == -1) {
-          WinActivate "ahk_class Progman ahk_exe explorer.exe"
+          this._activateDesktopBackground()
         }
         VD_animation_gui.Destroy()
         break
@@ -203,7 +204,7 @@ class VD {
     DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal.Ptr, "Ptr", thePView, "Ptr", IVirtualDesktop)
     if (needActivateWindowUnder) {
       if (this._activateWindowUnder() == -1) {
-        WinActivate "ahk_class Progman ahk_exe explorer.exe"
+        this._activateDesktopBackground()
       }
     }
   }
@@ -633,6 +634,13 @@ class VD {
           this.map_title_class.Delete(outside_subString_title)
         }
       }
+    }
+  }
+  static _activateDesktopBackground() {
+    if (WinExist("ahk_class WorkerW ahk_exe explorer.exe")) {
+      WinActivate "ahk_class WorkerW ahk_exe explorer.exe"
+    } else {
+      WinActivate "ahk_class Progman ahk_exe explorer.exe"
     }
   }
   static _activateWindowUnder(excludeHwnd := -1) {
