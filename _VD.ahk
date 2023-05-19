@@ -244,19 +244,23 @@ class VD {
         DllCall(GetId, "Ptr", IVirtualDesktop, "Ptr", &GUID_Desktop)
         DllCall(this.MoveWindowToDesktop, "Ptr", this.IVirtualDesktopManager, "Ptr", VD_animation_gui_hwnd, "Ptr", &GUID_Desktop)
 
-        Gui VD_active_gui:New, % "-Border -SysMenu +Owner -Caption"
-        Gui VD_active_gui:Show ;you can only Show gui that's in another VD if a gui of same owned/process is already active
-        Gui VD_animation_gui:Show ;after gui on current desktop owned by current process became active window, Show gui on different desktop owned by current process
-        Gui VD_active_gui:Destroy
+        Gui VD_active_gui:New, % "-Border -SysMenu +Owner -Caption +HwndVD_active_gui_hwnd"
+        DllCall("ShowWindow","Ptr",VD_active_gui_hwnd,"Int",1) ;you can only Show gui that's in another VD if a gui of same owned/process is already active
+
+
+        this._WinActivateForceForceForce(VD_active_gui_hwnd) ;specifically for Teams.exe
+
+        DllCall("ShowWindow","Ptr",VD_animation_gui_hwnd,"Int",1) ;after gui on current desktop owned by current process became active window, Show gui on different desktop owned by current process
         loop 20 {
             if (this.getCurrentDesktopNum()==desktopNum) { ; wildest hack ever..
 
                 ; "ahk_class TPUtilWindow ahk_exe HxD.exe" instead of "ahk_class WorkerW ahk_exe explorer.exe"
                 if (this._activateWindowUnder(VD_animation_gui_hwnd)==-1) {
-                    WinActivate % "ahk_class Progman ahk_exe explorer.exe"
+                    this._activateDesktopBackground()
                 }
 
                 Gui VD_animation_gui:Destroy
+                Gui VD_active_gui:Destroy
 
                 break
             }
@@ -285,7 +289,7 @@ class VD {
     }
 
     getDesktopNumOfWindow(wintitle) {
-        found:=this._getFirstValidWindow(wintitle)
+        found:=this._tryGetValidWindow(wintitle)
         if (!found) {
             return -1 ;for false
         }
@@ -296,7 +300,7 @@ class VD {
     }
 
     goToDesktopOfWindow(wintitle, activateYourWindow:=true) {
-        found:=this._getFirstValidWindow(wintitle)
+        found:=this._tryGetValidWindow(wintitle)
         if (!found) {
             return -1 ;for false
         }
@@ -311,7 +315,7 @@ class VD {
     }
 
     MoveWindowToDesktopNum(wintitle, desktopNum) {
-        found:=this._getFirstValidWindow(wintitle)
+        found:=this._tryGetValidWindow(wintitle)
         if (!found) {
             return -1 ;for false
         }
@@ -330,7 +334,7 @@ class VD {
 
         if (needActivateWindowUnder) {
             if (this._activateWindowUnder()==-1) {
-                WinActivate % "ahk_class Progman ahk_exe explorer.exe"
+                this._activateDesktopBackground()
             }
         }
     }
@@ -368,7 +372,7 @@ class VD {
     }
 
     MoveWindowToCurrentDesktop(wintitle, activateYourWindow:=true) {
-        found:=this._getFirstValidWindow(wintitle)
+        found:=this._tryGetValidWindow(wintitle)
         if (!found) {
             return -1 ;for false
         }
@@ -447,7 +451,7 @@ class VD {
     }
 
     IsWindowPinned(wintitle) {
-        found:=this._getFirstValidWindow(wintitle)
+        found:=this._tryGetValidWindow(wintitle)
         if (!found) {
             return -1 ;for false
         }
@@ -457,7 +461,7 @@ class VD {
         return viewIsPinned
     }
     TogglePinWindow(wintitle) {
-        found:=this._getFirstValidWindow(wintitle)
+        found:=this._tryGetValidWindow(wintitle)
         if (!found) {
             return -1 ;for false
         }
@@ -472,7 +476,7 @@ class VD {
 
     }
     PinWindow(wintitle) {
-        found:=this._getFirstValidWindow(wintitle)
+        found:=this._tryGetValidWindow(wintitle)
         if (!found) {
             return -1 ;for false
         }
@@ -481,7 +485,7 @@ class VD {
         DllCall(this.PinView, "UPtr", this.IVirtualDesktopPinnedApps, "Ptr", thePView)
     }
     UnPinWindow(wintitle) {
-        found:=this._getFirstValidWindow(wintitle)
+        found:=this._tryGetValidWindow(wintitle)
         if (!found) {
             return -1 ;for false
         }
@@ -899,6 +903,89 @@ class VD {
 
     ;internal methods start
 
+    _WinActivateForceForceForce(hwnd) { ;specifically for Teams.exe
+        DllCall("GetWindowThreadProcessId","Ptr",DllCall("GetForegroundWindow","Ptr"),"Uint*",PID)
+        currentPID:=DllCall("GetCurrentProcessId")
+        if (PID==currentPID) {
+            DllCall("SetForegroundWindow","Ptr",hwnd)
+        } else {
+            ; all ?dangers? at the same time
+            LShiftDown:=GetKeyState("LShift")
+            RShiftDown:=GetKeyState("RShift")
+            if (LShiftDown) {
+                DllCall("keybd_event","UChar",160,"UChar",42,"Uint",2,"Ptr",0)
+            }
+            if (RShiftDown) {
+                DllCall("keybd_event","UChar",161,"UChar",310,"Uint",2,"Ptr",0)
+            }
+
+
+            h:=DllCall("OpenProcess", "uInt", 0x1F0FFF, "Int", 0, "Int", pid)
+            DllCall("ntdll.dll\NtSuspendProcess", "Int", h)
+
+            ForegroundThreadId := DllCall("GetWindowThreadProcessId","Ptr",hwnd,"Ptr",0)
+            CurrentThreadId:=DllCall("GetCurrentThreadId")
+            DllCall("AttachThreadInput","Uint",ForegroundThreadId,"Uint",CurrentThreadId,"Int",1)
+
+            DllCall("keybd_event","UChar",0x12,"UChar",0,"Uint",1,"Ptr",0) ;0x12=ALT
+
+            DllCall("SetForegroundWindow","Ptr",hwnd)
+            DllCall("keybd_event","UChar",0x12,"UChar",0,"Uint",3,"Ptr",0)
+
+            loop % 10 {
+                if (DllCall("GetFocus","Ptr")==hwnd) {
+                    break
+                }
+                Sleep 25
+            }
+
+            ; sending ?keyboard focus? to vscode, or else Teams.exe will reactivate itself in 3000ms, or 10 000ms, doesn't matter
+            DllCall("keybd_event","UChar",0x12,"UChar",0,"Uint",1,"Ptr",0)
+            DllCall("keybd_event","UChar",0x12,"UChar",0,"Uint",3,"Ptr",0)
+            Sleep 10
+            DllCall("keybd_event","UChar",0x12,"UChar",0,"Uint",1,"Ptr",0)
+            DllCall("keybd_event","UChar",0x12,"UChar",0,"Uint",3,"Ptr",0)
+            DllCall("AttachThreadInput","Uint",ForegroundThreadId,"Uint",CurrentThreadId,"Int",0)
+            ; Sleep 1000
+
+            DllCall("ntdll.dll\NtResumeProcess", "Int", h)
+            DllCall("CloseHandle", "Int", h)
+
+            if (LShiftDown) {
+                Send "{LShift Down}"
+            }
+            if (RShiftDown) {
+                Send "{RShift Down}"
+            }
+        }
+    }
+
+    _activateDesktopBackground() { ;this is really copying extremely long comments for short code like in AHK source code
+        ; Win10:
+        ; "FolderView ahk_class SysListView32 ahk_exe explorer.exe"
+        ; "ahk_class SHELLDLL_DefView ahk_exe explorer.exe"
+        ; "Program Manager ahk_class Progman ahk_exe explorer.exe" is the top level parent
+
+        ; the parent parent of FolderView BECOMES "ahk_class WorkerW ahk_exe explorer.exe" after you press Win+Tab
+        ; WorkerW doesn't exist before you press Win+Tab
+        ; it's the same for Win11, Progman gets replaced by WorkerW, Progman still exists but isn't the parent of FolderView or top-level window that gets activated
+
+        ; Q: if WinActivate Progman activates WorkerW(we want that) then what's the problem ?
+        ; A: WinActivate will send {Alt down}{Alt up}{Alt down}{Alt up} if Progman is not activated : AHK source code: ((VK_MENU | 0x12 | ALT key)) https://github.com/AutoHotkey/AutoHotkey/blob/df84a3e902b522db0756a7366bd9884c80fa17b6/source/window.cpp#L260-L261
+        ; the desktop background is correctly activated, we just don't want the extra Alt keys:
+        ; if the hotkey is Ctrl+Shift+Win, and you add an Alt in there, Office 365 hotkey is triggered:
+        ; https://github.com/FuPeiJiang/VD.ahk/issues/40#issuecomment-1548252485
+        ; https://answers.microsoft.com/en-us/msoffice/forum/all/help-disabling-office-hotkey-of-ctrl-win-alt-shift/040ef6e5-8152-449b-849a-7494323101bb
+        ; https://superuser.com/questions/1457073/how-do-i-disable-specific-windows-10-office-keyboard-shortcut-ctrlshiftwinal
+        ; this is also bad because it prevents subsequent uses of the hotkey #!Right:: because {Alt up} releases Alt
+        ; if (WinExist("ahk_class WorkerW ahk_exe explorer.exe")) {
+        ;     WinActivate % "ahk_class WorkerW ahk_exe explorer.exe"
+        ; } else {
+        ;     WinActivate % "ahk_class Progman ahk_exe explorer.exe"
+        ; }
+        DllCall("SetForegroundWindow","Ptr",WinExist("ahk_class Progman ahk_exe explorer.exe"))
+    }
+
     _activateWindowUnder(excludeHwnd:=-1) {
         bak_DetectHiddenWindows:=A_DetectHiddenWindows
         DetectHiddenWindows, off
@@ -912,7 +999,8 @@ class VD {
             if (pView:=this._isValidWindow(theHwnd)) {
                 WinGet, OutputVar_MinMax, MinMax, % "ahk_id " theHwnd
                 if (!(OutputVar_MinMax==-1)) { ;not Minimized
-                    WinActivate % "ahk_id " theHwnd
+                    ; WinActivate % "ahk_id " theHwnd
+                    DllCall("SetForegroundWindow","Ptr",theHwnd)
                     returnValue:=theHwnd
                     break
                 }
@@ -922,20 +1010,21 @@ class VD {
         return returnValue
     }
 
-    _getFirstValidWindow(wintitle) {
+    _tryGetValidWindow(wintitle) {
 
         bak_DetectHiddenWindows:=A_DetectHiddenWindows
         bak_TitleMatchMode:=A_TitleMatchMode
         DetectHiddenWindows, on
         SetTitleMatchMode, 2
-        WinGet, outHwndList, List, % wintitle
+        WinGet, someID, ID, % wintitle
+
+        while ((tempID:=DllCall("GetWindow","Ptr",someID,"Uint",4))) { ;4=GW_OWNER
+            someID:=tempID
+        }
 
         returnValue:=false
-        loop % outHwndList {
-            if (pView:=this._isValidWindow(outHwndList%A_Index%)) {
-                returnValue:=[outHwndList%A_Index%, pView]
-                break
-            }
+        if (pView:=this._isValidWindow(someID)) {
+            returnValue:=[someID, pView]
         }
 
         SetTitleMatchMode % bak_TitleMatchMode
@@ -1022,19 +1111,13 @@ class VD {
             if (!title) {
                 break breakToReturnFalse
             }
-
-            WinGet, dwStyle, Style, ahk_id %hWnd%
-            if ((dwStyle&0x08000000) || !(dwStyle&0x10000000)) { ;0x08000000=WS_DISABLED, 0x10000000=WS_VISIBLE
-                break breakToReturnFalse
-            }
             WinGet, dwExStyle, ExStyle, ahk_id %hWnd%
             if (!(dwExStyle&0x00040000)) { ;0x00040000=WS_EX_APPWINDOW
                 if (dwExStyle&0x00000080 || dwExStyle&0x08000000) { ;0x00000080=WS_EX_TOOLWINDOW, 0x08000000=WS_EX_NOACTIVATE
                     break breakToReturnFalse
                 }
                 owner_hWnd:=DllCall("GetWindow","Ptr",hWnd,"Uint",4) ;4=GW_OWNER
-                desktop_hWnd:=DllCall("GetDesktopWindow","Ptr") ;also known as:className:#32769
-                if (owner_hWnd==desktop_hWnd) {
+                if (owner_hWnd) {
                     break breakToReturnFalse
                 }
             }
