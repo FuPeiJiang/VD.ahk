@@ -244,10 +244,13 @@ class VD {
         DllCall(GetId, "Ptr", IVirtualDesktop, "Ptr", &GUID_Desktop)
         DllCall(this.MoveWindowToDesktop, "Ptr", this.IVirtualDesktopManager, "Ptr", VD_animation_gui_hwnd, "Ptr", &GUID_Desktop)
 
-        Gui VD_active_gui:New, % "-Border -SysMenu +Owner -Caption"
+        Gui VD_active_gui:New, % "-Border -SysMenu +Owner -Caption +HwndVD_active_gui_hwnd"
         Gui VD_active_gui:Show ;you can only Show gui that's in another VD if a gui of same owned/process is already active
+
+
+        this._WinActivateForceForceForce(VD_active_gui_hwnd) ;specifically for Teams.exe
+
         Gui VD_animation_gui:Show ;after gui on current desktop owned by current process became active window, Show gui on different desktop owned by current process
-        Gui VD_active_gui:Destroy
         loop 20 {
             if (this.getCurrentDesktopNum()==desktopNum) { ; wildest hack ever..
 
@@ -257,6 +260,7 @@ class VD {
                 }
 
                 Gui VD_animation_gui:Destroy
+                Gui VD_active_gui:Destroy
 
                 break
             }
@@ -805,6 +809,63 @@ class VD {
     ;actual methods end
 
     ;internal methods start
+
+    _WinActivateForceForceForce(hwnd) { ;specifically for Teams.exe
+        DllCall("GetWindowThreadProcessId","Ptr",DllCall("GetForegroundWindow","Ptr"),"Uint*",PID)
+        currentPID:=DllCall("GetCurrentProcessId")
+        if (PID==currentPID) {
+            DllCall("SetForegroundWindow","Ptr",hwnd)
+        } else {
+            ; all ?dangers? at the same time
+            LShiftDown:=GetKeyState("LShift")
+            RShiftDown:=GetKeyState("RShift")
+            if (LShiftDown) {
+                DllCall("keybd_event","UChar",160,"UChar",42,"Uint",2,"Ptr",0)
+            }
+            if (RShiftDown) {
+                DllCall("keybd_event","UChar",161,"UChar",310,"Uint",2,"Ptr",0)
+            }
+
+
+            h:=DllCall("OpenProcess", "uInt", 0x1F0FFF, "Int", 0, "Int", pid)
+            DllCall("ntdll.dll\NtSuspendProcess", "Int", h)
+
+            ForegroundThreadId := DllCall("GetWindowThreadProcessId","Ptr",hwnd,"Ptr",0)
+            CurrentThreadId:=DllCall("GetCurrentThreadId")
+            DllCall("AttachThreadInput","Uint",ForegroundThreadId,"Uint",CurrentThreadId,"Int",1)
+
+            DllCall("keybd_event","UChar",0x12,"UChar",0,"Uint",1,"Ptr",0) ;0x12=ALT
+
+            DllCall("SetForegroundWindow","Ptr",hwnd)
+            DllCall("keybd_event","UChar",0x12,"UChar",0,"Uint",3,"Ptr",0)
+
+            loop % 10 {
+                if (DllCall("GetFocus","Ptr")==hwnd) {
+                    break
+                }
+                Sleep 25
+            }
+
+            ; sending ?keyboard focus? to vscode, or else Teams.exe will reactivate itself in 3000ms, or 10 000ms, doesn't matter
+            DllCall("keybd_event","UChar",0x12,"UChar",0,"Uint",1,"Ptr",0)
+            DllCall("keybd_event","UChar",0x12,"UChar",0,"Uint",3,"Ptr",0)
+            Sleep 10
+            DllCall("keybd_event","UChar",0x12,"UChar",0,"Uint",1,"Ptr",0)
+            DllCall("keybd_event","UChar",0x12,"UChar",0,"Uint",3,"Ptr",0)
+            DllCall("AttachThreadInput","Uint",ForegroundThreadId,"Uint",CurrentThreadId,"Int",0)
+            ; Sleep 1000
+
+            DllCall("ntdll.dll\NtResumeProcess", "Int", h)
+            DllCall("CloseHandle", "Int", h)
+
+            if (LShiftDown) {
+                Send "{LShift Down}"
+            }
+            if (RShiftDown) {
+                Send "{RShift Down}"
+            }
+        }
+    }
 
     _activateDesktopBackground() { ;this is really copying extremely long comments for short code like in AHK source code
         ; Win10:
