@@ -952,10 +952,10 @@ class VD {
             DllCall("CloseHandle", "Int", h)
 
             if (LShiftDown) {
-                Send "{LShift Down}"
+                DllCall("keybd_event","UChar",160,"UChar",42,"Uint",0,"Ptr",0)
             }
             if (RShiftDown) {
-                Send "{RShift Down}"
+                DllCall("keybd_event","UChar",161,"UChar",310,"Uint",0,"Ptr",0)
             }
         }
     }
