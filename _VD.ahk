@@ -243,17 +243,34 @@ class VD {
 
         this._WinActivateForceForceForce(VD_active_gui_hwnd) ;specifically for Teams.exe
 
-        if (this._activateWindowUnderFilterVD(desktopNum)==-1) {
-            Gui VD_animation_gui:New, % "-Border -SysMenu +Owner -Caption +HwndVD_animation_gui_hwnd"
-            IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
-            GetId:=this._vtable(IVirtualDesktop, 4)
-            VarSetCapacity(GUID_Desktop, 16)
-            DllCall(GetId, "Ptr", IVirtualDesktop, "Ptr", &GUID_Desktop)
-            DllCall(this.MoveWindowToDesktop, "Ptr", this.IVirtualDesktopManager, "Ptr", VD_animation_gui_hwnd, "Ptr", &GUID_Desktop)
-            DllCall("ShowWindow","Ptr",VD_animation_gui_hwnd,"Int",1) ;after gui on current desktop owned by current process became active window, Show gui on different desktop owned by current process
+        firstWindowId:=this._getFirstWindowInVD(desktopNum)
+
+        Gui VD_animation_gui:New, % "-Border -SysMenu +Owner -Caption +HwndVD_animation_gui_hwnd"
+        IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
+        GetId:=this._vtable(IVirtualDesktop, 4)
+        VarSetCapacity(GUID_Desktop, 16)
+        DllCall(GetId, "Ptr", IVirtualDesktop, "Ptr", &GUID_Desktop)
+        DllCall(this.MoveWindowToDesktop, "Ptr", this.IVirtualDesktopManager, "Ptr", VD_animation_gui_hwnd, "Ptr", &GUID_Desktop)
+        DllCall("ShowWindow","Ptr",VD_animation_gui_hwnd,"Int",1) ;after gui on current desktop owned by current process became active window, Show gui on different desktop owned by current process
+        ; loop 20 {
+        ;     if (this.getCurrentDesktopNum()==desktopNum) { ; wildest hack ever..
+        ;         if (firstWindowId) {
+        ;             DllCall("SetForegroundWindow","Ptr",firstWindowId)
+        ;         } else {
+        ;             this._activateDesktopBackground()
+        ;         }
+        ;         Gui VD_animation_gui:Destroy
+        ;         Gui VD_active_gui:Destroy
+        ;         break
+        ;     }
+        ;     Sleep 25
+        ; }
+        if (firstWindowId) {
+            DllCall("SetForegroundWindow","Ptr",firstWindowId)
+        } else {
             this._activateDesktopBackground()
-            Gui VD_animation_gui:Destroy
         }
+        Gui VD_animation_gui:Destroy
         Gui VD_active_gui:Destroy
 
     }
@@ -882,10 +899,10 @@ class VD {
         DllCall("SetForegroundWindow","Ptr",WinExist("ahk_class Progman ahk_exe explorer.exe"))
     }
 
-    _activateWindowUnderFilterVD(desktopNum) {
+    _getFirstWindowInVD(desktopNum) {
         bak_DetectHiddenWindows:=A_DetectHiddenWindows
         DetectHiddenWindows, on
-        returnValue:=-1
+        returnValue:=0
         WinGet, outHwndList, List
         VarSetCapacity(GUID_Desktop, 16)
         VarSetCapacity(someStr, 40*2)
@@ -913,7 +930,6 @@ class VD {
 
                     if (guid_to_desktopNum[someStr] == desktopNum) {
                         ; WinActivate % "ahk_id " theHwnd
-                        DllCall("SetForegroundWindow","Ptr",theHwnd)
                         returnValue:=theHwnd
                         break
                     }
