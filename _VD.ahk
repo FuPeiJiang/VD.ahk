@@ -243,9 +243,7 @@ class VD {
 
         this._WinActivateForceForceForce(VD_active_gui_hwnd) ;specifically for Teams.exe
 
-        targetEmpty:=false
         if (this._activateWindowUnderFilterVD(desktopNum)==-1) {
-            targetEmpty:=true
             Gui VD_animation_gui:New, % "-Border -SysMenu +Owner -Caption +HwndVD_animation_gui_hwnd"
             IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
             GetId:=this._vtable(IVirtualDesktop, 4)
@@ -253,18 +251,10 @@ class VD {
             DllCall(GetId, "Ptr", IVirtualDesktop, "Ptr", &GUID_Desktop)
             DllCall(this.MoveWindowToDesktop, "Ptr", this.IVirtualDesktopManager, "Ptr", VD_animation_gui_hwnd, "Ptr", &GUID_Desktop)
             DllCall("ShowWindow","Ptr",VD_animation_gui_hwnd,"Int",1) ;after gui on current desktop owned by current process became active window, Show gui on different desktop owned by current process
+            this._activateDesktopBackground()
+            Gui VD_animation_gui:Destroy
         }
-        loop 20 {
-            if (this.getCurrentDesktopNum()==desktopNum) { ; wildest hack ever..
-                if (targetEmpty) {
-                    this._activateDesktopBackground()
-                    Gui VD_animation_gui:Destroy
-                }
-                Gui VD_active_gui:Destroy
-                break
-            }
-            Sleep 25
-        }
+        Gui VD_active_gui:Destroy
 
     }
 
@@ -897,12 +887,31 @@ class VD {
         DetectHiddenWindows, on
         returnValue:=-1
         WinGet, outHwndList, List
+        VarSetCapacity(GUID_Desktop, 16)
+        VarSetCapacity(someStr, 40*2)
+        guid_to_desktopNum:={}
+        Desktops_Obj:=this._GetDesktops_Obj()
+        Loop % Desktops_Obj.GetCount()
+        {
+            IVirtualDesktop:=Desktops_Obj.GetAt(A_Index)
+            GetId:=this._vtable(IVirtualDesktop, 4)
+            DllCall(GetId, "Ptr", IVirtualDesktop, "Ptr", &GUID_Desktop)
+            DllCall("Ole32\StringFromGUID2", "Ptr", &GUID_Desktop, "Ptr",&someStr, "Ptr",40)
+            guid_to_desktopNum[someStr]:=A_Index
+        }
         loop % outHwndList {
             theHwnd:=outHwndList%A_Index%
             if (pView:=this._isValidWindow(theHwnd)) {
                 WinGet, OutputVar_MinMax, MinMax, % "ahk_id " theHwnd
                 if (!(OutputVar_MinMax==-1)) { ;not Minimized
-                    if (this._desktopNum_from_Hwnd(theHwnd) == desktopNum) {
+
+                    HRESULT := DllCall(this.GetWindowDesktopId, "UPtr", this.IVirtualDesktopManager, "Ptr", theHwnd, "Ptr", &GUID_Desktop)
+                    if (!(HRESULT==0)) {
+                        continue
+                    }
+                    DllCall("Ole32\StringFromGUID2", "Ptr", &GUID_Desktop, "Ptr",&someStr, "Ptr",40)
+
+                    if (guid_to_desktopNum[someStr] == desktopNum) {
                         ; WinActivate % "ahk_id " theHwnd
                         DllCall("SetForegroundWindow","Ptr",theHwnd)
                         returnValue:=theHwnd
