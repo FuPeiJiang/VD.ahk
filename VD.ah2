@@ -124,23 +124,26 @@ class VD {
     return this._GetDesktops_Obj().GetCount()
   }
   static goToDesktopNum(desktopNum) {
-    this._activateDesktopBackground()
+    firstWindowId := this._getFirstWindowInVD(desktopNum)
+    VD_active_gui := Gui("-Border -SysMenu +Owner -Caption")
+    DllCall("ShowWindow", "Ptr", VD_active_gui.Hwnd, "Int", 1)
+    this._WinActivateForceForceForce(VD_active_gui.Hwnd)
     VD_animation_gui := Gui("-Border -SysMenu +Owner -Caption")
     IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
     GetId := this._vtable(IVirtualDesktop, 4)
     GUID_Desktop := Buffer(16)
     DllCall(GetId, "Ptr", IVirtualDesktop, "Ptr", GUID_Desktop)
     DllCall(this.MoveWindowToDesktop, "Ptr", this.IVirtualDesktopManager.Ptr, "Ptr", VD_animation_gui.Hwnd, "Ptr", GUID_Desktop)
-    VD_active_gui := Gui("-Border -SysMenu +Owner -Caption")
-    VD_active_gui.Show()
-    VD_animation_gui.Show()
-    VD_active_gui.Destroy()
+    DllCall("ShowWindow", "Ptr", VD_animation_gui.Hwnd, "Int", 1)
     loop 20 {
       if (this.getCurrentDesktopNum() == desktopNum) {
-        if (this._activateWindowUnder(VD_animation_gui.Hwnd) == -1) {
+        if (firstWindowId) {
+          DllCall("SetForegroundWindow", "Ptr", firstWindowId)
+        } else {
           this._activateDesktopBackground()
         }
         VD_animation_gui.Destroy()
+        VD_active_gui.Destroy()
         break
       }
       Sleep 25
@@ -164,7 +167,7 @@ class VD {
     return _name
   }
   static getDesktopNumOfWindow(wintitle) {
-    found := this._getFirstValidWindow(wintitle)
+    found := this._tryGetValidWindow(wintitle)
     if (!found) {
       return -1
     }
@@ -173,7 +176,7 @@ class VD {
     return desktopNum_ofWindow
   }
   static goToDesktopOfWindow(wintitle, activateYourWindow := true) {
-    found := this._getFirstValidWindow(wintitle)
+    found := this._tryGetValidWindow(wintitle)
     if (!found) {
       return -1
     }
@@ -185,7 +188,7 @@ class VD {
     }
   }
   static MoveWindowToDesktopNum(wintitle, desktopNum) {
-    found := this._getFirstValidWindow(wintitle)
+    found := this._tryGetValidWindow(wintitle)
     if (!found) {
       return -1
     }
@@ -225,7 +228,7 @@ class VD {
     this.goToDesktopNum(this.getRelativeDesktopNum(this.getCurrentDesktopNum(), relative_count))
   }
   static MoveWindowToCurrentDesktop(wintitle, activateYourWindow := true) {
-    found := this._getFirstValidWindow(wintitle)
+    found := this._tryGetValidWindow(wintitle)
     if (!found) {
       return -1
     }
@@ -276,7 +279,7 @@ class VD {
     DllCall(this.Ptr_RemoveDesktop, "UPtr", this.IVirtualDesktopManagerInternal.Ptr, "Ptr", IVirtualDesktop, "Ptr", IVirtualDesktop_fallback)
   }
   static IsWindowPinned(wintitle) {
-    found := this._getFirstValidWindow(wintitle)
+    found := this._tryGetValidWindow(wintitle)
     if (!found) {
       return -1
     }
@@ -285,7 +288,7 @@ class VD {
     return viewIsPinned
   }
   static TogglePinWindow(wintitle) {
-    found := this._getFirstValidWindow(wintitle)
+    found := this._tryGetValidWindow(wintitle)
     if (!found) {
       return -1
     }
@@ -298,7 +301,7 @@ class VD {
     }
   }
   static PinWindow(wintitle) {
-    found := this._getFirstValidWindow(wintitle)
+    found := this._tryGetValidWindow(wintitle)
     if (!found) {
       return -1
     }
@@ -306,7 +309,7 @@ class VD {
     DllCall(this.PinView, "UPtr", this.IVirtualDesktopPinnedApps.Ptr, "Ptr", thePView)
   }
   static UnPinWindow(wintitle) {
-    found := this._getFirstValidWindow(wintitle)
+    found := this._tryGetValidWindow(wintitle)
     if (!found) {
       return -1
     }
@@ -541,12 +544,91 @@ class VD {
       }
     }
   }
-  static _activateDesktopBackground() {
-    if (WinExist("ahk_class WorkerW ahk_exe explorer.exe")) {
-      WinActivate "ahk_class WorkerW ahk_exe explorer.exe"
+  static _WinActivateForceForceForce(hwnd) {
+    DllCall("GetWindowThreadProcessId", "Ptr", DllCall("GetForegroundWindow", "Ptr"), "Uint*", &PID := 0)
+    currentPID := DllCall("GetCurrentProcessId")
+    if (PID == currentPID) {
+      DllCall("SetForegroundWindow", "Ptr", hwnd)
     } else {
-      WinActivate "ahk_class Progman ahk_exe explorer.exe"
+      LShiftDown := GetKeyState("LShift")
+      RShiftDown := GetKeyState("RShift")
+      if (LShiftDown) {
+        DllCall("keybd_event", "UChar", 160, "UChar", 42, "Uint", 2, "Ptr", 0)
+      }
+      if (RShiftDown) {
+        DllCall("keybd_event", "UChar", 161, "UChar", 310, "Uint", 2, "Ptr", 0)
+      }
+      h := DllCall("OpenProcess", "uInt", 0x1F0FFF, "Int", 0, "Int", pid)
+      DllCall("ntdll.dll\NtSuspendProcess", "Int", h)
+      ForegroundThreadId := DllCall("GetWindowThreadProcessId", "Ptr", hwnd, "Ptr", 0)
+      CurrentThreadId := DllCall("GetCurrentThreadId")
+      DllCall("AttachThreadInput", "Uint", ForegroundThreadId, "Uint", CurrentThreadId, "Int", 1)
+      DllCall("keybd_event", "UChar", 0x12, "UChar", 0, "Uint", 1, "Ptr", 0)
+      DllCall("SetForegroundWindow", "Ptr", hwnd)
+      DllCall("keybd_event", "UChar", 0x12, "UChar", 0, "Uint", 3, "Ptr", 0)
+      loop 10 {
+        if (DllCall("GetFocus", "Ptr") == hwnd) {
+          break
+        }
+        Sleep 25
+      }
+      DllCall("keybd_event", "UChar", 0x12, "UChar", 0, "Uint", 1, "Ptr", 0)
+      DllCall("keybd_event", "UChar", 0x12, "UChar", 0, "Uint", 3, "Ptr", 0)
+      Sleep 10
+      DllCall("keybd_event", "UChar", 0x12, "UChar", 0, "Uint", 1, "Ptr", 0)
+      DllCall("keybd_event", "UChar", 0x12, "UChar", 0, "Uint", 3, "Ptr", 0)
+      DllCall("AttachThreadInput", "Uint", ForegroundThreadId, "Uint", CurrentThreadId, "Int", 0)
+      DllCall("ntdll.dll\NtResumeProcess", "Int", h)
+      DllCall("CloseHandle", "Int", h)
+      if (LShiftDown) {
+        DllCall("keybd_event", "UChar", 160, "UChar", 42, "Uint", 0, "Ptr", 0)
+      }
+      if (RShiftDown) {
+        DllCall("keybd_event", "UChar", 161, "UChar", 310, "Uint", 0, "Ptr", 0)
+      }
     }
+  }
+  static _activateDesktopBackground() {
+    DllCall("SetForegroundWindow", "Ptr", WinExist("ahk_class Progman ahk_exe explorer.exe"))
+  }
+  static _getFirstWindowInVD(desktopNum) {
+    bak_DetectHiddenWindows := A_DetectHiddenWindows
+    DetectHiddenWindows true
+    returnValue := 0
+    outHwndList := WinGetList()
+    GUID_Desktop := Buffer(16)
+    someStr := Buffer(40 * 2)
+    guid_to_desktopNum := Map()
+    Desktops_Obj := this._GetDesktops_Obj()
+    loop Desktops_Obj.GetCount() {
+      IVirtualDesktop := Desktops_Obj.GetAt(A_Index)
+      GetId := this._vtable(IVirtualDesktop, 4)
+      DllCall(GetId, "Ptr", IVirtualDesktop, "Ptr", GUID_Desktop)
+      DllCall("Ole32\StringFromGUID2", "Ptr", GUID_Desktop, "Ptr", someStr, "Ptr", 40)
+      strGUID := StrGet(someStr, "UTF-16")
+      guid_to_desktopNum[strGUID] := A_Index
+    }
+    guid_to_desktopNum["{00000000-0000-0000-0000-000000000000}"] := 0
+    loop outHwndList.Length {
+      theHwnd := outHwndList[A_Index]
+      if (pView := this._isValidWindow(theHwnd)) {
+        OutputVar_MinMax := WinGetMinMax("ahk_id " theHwnd)
+        if (!(OutputVar_MinMax == -1)) {
+          HRESULT := DllCall(this.GetWindowDesktopId, "UPtr", this.IVirtualDesktopManager.Ptr, "Ptr", theHwnd, "Ptr", GUID_Desktop)
+          if (!(HRESULT == 0)) {
+            continue
+          }
+          DllCall("Ole32\StringFromGUID2", "Ptr", GUID_Desktop, "Ptr", someStr, "Ptr", 40)
+          strGUID := StrGet(someStr, "UTF-16")
+          if (guid_to_desktopNum[strGUID] == desktopNum) {
+            returnValue := theHwnd
+            break
+          }
+        }
+      }
+    }
+    DetectHiddenWindows bak_DetectHiddenWindows
+    return returnValue
   }
   static _activateWindowUnder(excludeHwnd := -1) {
     bak_DetectHiddenWindows := A_DetectHiddenWindows
@@ -561,7 +643,7 @@ class VD {
       if (pView := this._isValidWindow(theHwnd)) {
         OutputVar_MinMax := WinGetMinMax("ahk_id " theHwnd)
         if (!(OutputVar_MinMax == -1)) {
-          WinActivate "ahk_id " theHwnd
+          DllCall("SetForegroundWindow", "Ptr", theHwnd)
           returnValue := theHwnd
           break
         }
@@ -570,18 +652,18 @@ class VD {
     DetectHiddenWindows bak_DetectHiddenWindows
     return returnValue
   }
-  static _getFirstValidWindow(wintitle) {
+  static _tryGetValidWindow(wintitle) {
     bak_DetectHiddenWindows := A_DetectHiddenWindows
     bak_TitleMatchMode := A_TitleMatchMode
     DetectHiddenWindows true
     SetTitleMatchMode "2"
-    outHwndList := WinGetList(wintitle)
+    someID := WinGetID(wintitle)
+    while ((tempID := DllCall("GetWindow", "Ptr", someID, "Uint", 4))) {
+      someID := tempID
+    }
     returnValue := false
-    loop outHwndList.Length {
-      if (pView := this._isValidWindow(outHwndList[A_Index])) {
-        returnValue := [outHwndList[A_Index], pView]
-        break
-      }
+    if (pView := this._isValidWindow(someID)) {
+      returnValue := [someID, pView]
     }
     SetTitleMatchMode bak_TitleMatchMode
     DetectHiddenWindows bak_DetectHiddenWindows
@@ -642,18 +724,13 @@ class VD {
       if (!title) {
         break breakToReturnFalse
       }
-      dwStyle := WinGetStyle("ahk_id " hWnd)
-      if ((dwStyle & 0x08000000) || !(dwStyle & 0x10000000)) {
-        break breakToReturnFalse
-      }
       dwExStyle := WinGetExStyle("ahk_id " hWnd)
       if (!(dwExStyle & 0x00040000)) {
         if (dwExStyle & 0x00000080 || dwExStyle & 0x08000000) {
           break breakToReturnFalse
         }
         owner_hWnd := DllCall("GetWindow", "Ptr", hWnd, "Uint", 4)
-        desktop_hWnd := DllCall("GetDesktopWindow", "Ptr")
-        if (owner_hWnd == desktop_hWnd) {
+        if (owner_hWnd) {
           break breakToReturnFalse
         }
       }
