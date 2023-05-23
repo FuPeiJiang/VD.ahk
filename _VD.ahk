@@ -906,8 +906,10 @@ class VD {
             GetId:=this._vtable(IVirtualDesktop, 4)
             DllCall(GetId, "Ptr", IVirtualDesktop, "Ptr", &GUID_Desktop)
             DllCall("Ole32\StringFromGUID2", "Ptr", &GUID_Desktop, "Ptr",&someStr, "Ptr",40)
-            guid_to_desktopNum[someStr]:=A_Index
+            strGUID:=StrGet(&someStr,"UTF-16")
+            guid_to_desktopNum[strGUID]:=A_Index
         }
+        guid_to_desktopNum["{00000000-0000-0000-0000-000000000000}"]:=0
         loop % outHwndList {
             theHwnd:=outHwndList%A_Index%
             if (pView:=this._isValidWindow(theHwnd)) {
@@ -919,8 +921,9 @@ class VD {
                         continue
                     }
                     DllCall("Ole32\StringFromGUID2", "Ptr", &GUID_Desktop, "Ptr",&someStr, "Ptr",40)
+                    strGUID:=StrGet(&someStr,"UTF-16")
 
-                    if (guid_to_desktopNum[someStr] == desktopNum) {
+                    if (guid_to_desktopNum[strGUID] == desktopNum) {
                         ; WinActivate % "ahk_id " theHwnd
                         returnValue:=theHwnd
                         break
