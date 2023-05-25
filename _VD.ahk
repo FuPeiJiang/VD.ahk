@@ -885,7 +885,9 @@ class VD {
         guid_to_desktopNum["{00000000-0000-0000-0000-000000000000}"]:=0
         loop % outHwndList {
             theHwnd:=outHwndList%A_Index%
-            if (pView:=this._isValidWindow(theHwnd)) {
+            arr_success_pView_hWnd:=this._isValidWindow(theHwnd)
+            if (arr_success_pView_hWnd[1]==0) {
+                pView:=arr_success_pView_hWnd[2]
                 WinGet, OutputVar_MinMax, MinMax, % "ahk_id " theHwnd
                 if (!(OutputVar_MinMax==-1)) { ;not Minimized
 
@@ -918,7 +920,9 @@ class VD {
             if (theHwnd == excludeHwnd) {
                 continue
             }
-            if (pView:=this._isValidWindow(theHwnd)) {
+            arr_success_pView_hWnd:=this._isValidWindow(theHwnd)
+            if (arr_success_pView_hWnd[1]==0) {
+                pView:=arr_success_pView_hWnd[2]
                 WinGet, OutputVar_MinMax, MinMax, % "ahk_id " theHwnd
                 if (!(OutputVar_MinMax==-1)) { ;not Minimized
                     ; WinActivate % "ahk_id " theHwnd
@@ -933,20 +937,18 @@ class VD {
     }
 
     _tryGetValidWindow(wintitle) {
-
         bak_DetectHiddenWindows:=A_DetectHiddenWindows
         bak_TitleMatchMode:=A_TitleMatchMode
         DetectHiddenWindows, on
         SetTitleMatchMode, 2
         WinGet, someID, ID, % wintitle
 
-        while ((tempID:=DllCall("GetWindow","Ptr",someID,"Uint",4))) { ;4=GW_OWNER
-            someID:=tempID
-        }
-
         returnValue:=false
-        if (pView:=this._isValidWindow(someID)) {
-            returnValue:=[someID, pView]
+
+        arr_success_pView_hWnd:=this._isValidWindow(someID)
+        pView:=arr_success_pView_hWnd[2]
+        if (pView) {
+            returnValue:=[arr_success_pView_hWnd[3], pView]
         }
 
         SetTitleMatchMode % bak_TitleMatchMode
@@ -1022,25 +1024,39 @@ class VD {
         Return ((style & 0x20800000) or winH < A_ScreenHeight or winW < A_ScreenWidth) ? false : true
     }
 
-    _isValidWindow(hWnd) ;returns pView if succeeded
+    _isValidWindow(hWnd,checkUpper:=true) ;returns [0,pView,hWnd] if succeeded
     {
-        ; DetectHiddenWindows, on ;this is needed, but for optimization the caller will do it
-
-        returnValue:=false
+        returnValue:=[1,0,0]
         breakToReturnFalse:
         loop 1 {
-            WinGetTitle, title, % "ahk_id " hwnd
-            if (!title) {
+            dwStyle:=DllCall("GetWindowLongPtrW","Ptr",hWnd,"Int",-16,"Ptr")
+            if (!(dwStyle & 0x10000000)) { ;0x10000000=WS_VISIBLE
                 break breakToReturnFalse
             }
-            WinGet, dwExStyle, ExStyle, ahk_id %hWnd%
+            dwExStyle:=DllCall("GetWindowLongPtrW","Ptr",hWnd,"Int",-20,"Ptr")
             if (!(dwExStyle&0x00040000)) { ;0x00040000=WS_EX_APPWINDOW
                 if (dwExStyle&0x00000080 || dwExStyle&0x08000000) { ;0x00000080=WS_EX_TOOLWINDOW, 0x08000000=WS_EX_NOACTIVATE
                     break breakToReturnFalse
                 }
-                owner_hWnd:=DllCall("GetWindow","Ptr",hWnd,"Uint",4) ;4=GW_OWNER
-                if (owner_hWnd) {
-                    break breakToReturnFalse
+                ; if any of ancestor is valid window, can't be valid window
+                if (checkUpper) {
+                    toCheck:=[]
+                    upHwnd:=hWnd
+                    while (upHwnd := DllCall("GetWindow","Ptr",upHwnd,"Uint",4)) { ;4=GW_OWNER
+                        if (upHwnd==65552) {
+                            break breakToReturnFalse
+                        }
+                        toCheck.Push(upHwnd)
+                    }
+                    i:=toCheck.Length() + 1
+                    while (i-->1) { ;i goes to 1 (lmao)
+                        arr_success_pView_hWnd:=this._isValidWindow(toCheck[i],false)
+                        if (arr_success_pView_hWnd[1]==0) {
+                            arr_success_pView_hWnd[1]:=2
+                            returnValue:=arr_success_pView_hWnd
+                            break breakToReturnFalse
+                        }
+                    }
                 }
             }
 
@@ -1054,9 +1070,8 @@ class VD {
                 break breakToReturnFalse
             }
 
-            returnValue:=pView
+            returnValue:=[0,pView,hWnd]
         }
-        ; DetectHiddenWindows, off ;this is needed, but for optimization the caller will do it
         return returnValue
     }
     ;-------------------
