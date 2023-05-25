@@ -242,15 +242,7 @@ class VD {
         Gui VD_active_gui:New, % "-Border -SysMenu +Owner -Caption +HwndVD_active_gui_hwnd"
         DllCall("ShowWindow","Ptr",VD_active_gui_hwnd,"Int",1) ;you can only Show gui that's in another VD if a gui of same owned/process is already active
 
-        ForegroundThreadId := DllCall("GetWindowThreadProcessId","Ptr",DllCall("GetForegroundWindow","Ptr"),"Ptr",0)
-        CurrentThreadId:=DllCall("GetCurrentThreadId")
-        if (ForegroundThreadId!=CurrentThreadId) {
-            DllCall("AttachThreadInput","Uint",ForegroundThreadId,"Uint",CurrentThreadId,"Int",1)
-        }
-        DllCall("SetForegroundWindow","Ptr",VD_active_gui_hwnd)
-        if (ForegroundThreadId!=CurrentThreadId) {
-            DllCall("AttachThreadInput","Uint",ForegroundThreadId,"Uint",CurrentThreadId,"Int",0)
-        }
+        this._WinActivate_CreateRemoteThread(VD_active_gui_hwnd)
 
         Gui VD_animation_gui:New, % "-Border -SysMenu +Owner -Caption +HwndVD_animation_gui_hwnd"
         IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
@@ -815,6 +807,36 @@ class VD {
     ;actual methods end
 
     ;internal methods start
+
+    _WinActivate_CreateRemoteThread(hWnd) {
+        ; WinActivate of AHK will first try SetForegroundWindow(), it will work if the keyboard hook is not used
+        ; so it will work for
+        ; Numpad2::
+        ; it will not work for
+        ; ^#Right::
+        ; Right always uses the keyboard hook
+
+        ; AHK will then try AttachThreadInput(), it works reliably, but fails for Teams.exe for reasons I have yet to uncover
+        ; let's just say that either Teams.exe is resistant to AttachThreadInput, or the code inside Teams.exe has a weird defined behavior once AttachThreadInput is called
+
+        ; this ? there's only one way to find out how well it works, by testing in production
+        foregroundWindow:=DllCall("GetForegroundWindow","Ptr")
+        threadID:=DllCall("GetWindowThreadProcessId","Ptr",foregroundWindow,"Uint*",PID)
+        currentThreadID:=DllCall("GetCurrentThreadId")
+        if (threadID!=currentThreadID) {
+            hThread:=DllCall("OpenThread","Uint",0x0002,"Int",0,"Uint",threadID)
+            DllCall("SuspendThread","Ptr",hThread)
+            hProcess:=DllCall("OpenProcess","Uint",0x0002,"Int",0,"Uint",PID,"Ptr")
+            user32:=DllCall("GetModuleHandleA","AStr","user32","Ptr")
+            SetForegroundWindow:=DllCall("GetProcAddress","Ptr",user32,"AStr","SetForegroundWindow","Ptr")
+            DllCall("CreateRemoteThread","Ptr",hProcess,"Ptr",0,"Ptr",0,"Ptr",SetForegroundWindow,"Ptr",hWnd,"Uint",0,"Ptr",0)
+            Sleep 10
+            Send % "q" ;any key works
+            DllCall("ResumeThread","Ptr",hThread)
+            DllCall("CloseHandle","Ptr",hThread)
+            DllCall("CloseHandle","Ptr",hProcess)
+        }
+    }
 
     _activateDesktopBackground() { ;this is really copying extremely long comments for short code like in AHK source code
         ; Win10:
