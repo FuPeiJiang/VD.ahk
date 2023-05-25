@@ -127,7 +127,7 @@ class VD {
     firstWindowId := this._getFirstWindowInVD(desktopNum)
     VD_active_gui := Gui("-Border -SysMenu +Owner -Caption")
     DllCall("ShowWindow", "Ptr", VD_active_gui.Hwnd, "Int", 1)
-    this._WinActivateForceForceForce(VD_active_gui.Hwnd)
+    this._WinActivate_CreateRemoteThread(VD_active_gui.Hwnd)
     VD_animation_gui := Gui("-Border -SysMenu +Owner -Caption")
     IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
     GetId := this._vtable(IVirtualDesktop, 4)
@@ -544,48 +544,22 @@ class VD {
       }
     }
   }
-  static _WinActivateForceForceForce(hwnd) {
-    DllCall("GetWindowThreadProcessId", "Ptr", DllCall("GetForegroundWindow", "Ptr"), "Uint*", &PID := 0)
-    currentPID := DllCall("GetCurrentProcessId")
-    if (PID == currentPID) {
-      DllCall("SetForegroundWindow", "Ptr", hwnd)
-    } else {
-      LShiftDown := GetKeyState("LShift")
-      RShiftDown := GetKeyState("RShift")
-      if (LShiftDown) {
-        DllCall("keybd_event", "UChar", 160, "UChar", 42, "Uint", 2, "Ptr", 0)
-      }
-      if (RShiftDown) {
-        DllCall("keybd_event", "UChar", 161, "UChar", 310, "Uint", 2, "Ptr", 0)
-      }
-      h := DllCall("OpenProcess", "uInt", 0x1F0FFF, "Int", 0, "Int", pid)
-      DllCall("ntdll.dll\NtSuspendProcess", "Int", h)
-      ForegroundThreadId := DllCall("GetWindowThreadProcessId", "Ptr", hwnd, "Ptr", 0)
-      CurrentThreadId := DllCall("GetCurrentThreadId")
-      DllCall("AttachThreadInput", "Uint", ForegroundThreadId, "Uint", CurrentThreadId, "Int", 1)
-      DllCall("keybd_event", "UChar", 0x12, "UChar", 0, "Uint", 1, "Ptr", 0)
-      DllCall("SetForegroundWindow", "Ptr", hwnd)
-      DllCall("keybd_event", "UChar", 0x12, "UChar", 0, "Uint", 3, "Ptr", 0)
-      loop 10 {
-        if (DllCall("GetFocus", "Ptr") == hwnd) {
-          break
-        }
-        Sleep 25
-      }
-      DllCall("keybd_event", "UChar", 0x12, "UChar", 0, "Uint", 1, "Ptr", 0)
-      DllCall("keybd_event", "UChar", 0x12, "UChar", 0, "Uint", 3, "Ptr", 0)
+  static _WinActivate_CreateRemoteThread(hWnd) {
+    foregroundWindow := DllCall("GetForegroundWindow", "Ptr")
+    threadID := DllCall("GetWindowThreadProcessId", "Ptr", foregroundWindow, "Uint*", &PID := 0)
+    currentThreadID := DllCall("GetCurrentThreadId")
+    if (threadID != currentThreadID) {
+      hThread := DllCall("OpenThread", "Uint", 0x0002, "Int", 0, "Uint", threadID)
+      DllCall("SuspendThread", "Ptr", hThread)
+      hProcess := DllCall("OpenProcess", "Uint", 0x0002, "Int", 0, "Uint", PID, "Ptr")
+      user32 := DllCall("GetModuleHandleA", "AStr", "user32", "Ptr")
+      SetForegroundWindow := DllCall("GetProcAddress", "Ptr", user32, "AStr", "SetForegroundWindow", "Ptr")
+      DllCall("CreateRemoteThread", "Ptr", hProcess, "Ptr", 0, "Ptr", 0, "Ptr", SetForegroundWindow, "Ptr", hWnd, "Uint", 0, "Ptr", 0)
       Sleep 10
-      DllCall("keybd_event", "UChar", 0x12, "UChar", 0, "Uint", 1, "Ptr", 0)
-      DllCall("keybd_event", "UChar", 0x12, "UChar", 0, "Uint", 3, "Ptr", 0)
-      DllCall("AttachThreadInput", "Uint", ForegroundThreadId, "Uint", CurrentThreadId, "Int", 0)
-      DllCall("ntdll.dll\NtResumeProcess", "Int", h)
-      DllCall("CloseHandle", "Int", h)
-      if (LShiftDown) {
-        DllCall("keybd_event", "UChar", 160, "UChar", 42, "Uint", 0, "Ptr", 0)
-      }
-      if (RShiftDown) {
-        DllCall("keybd_event", "UChar", 161, "UChar", 310, "Uint", 0, "Ptr", 0)
-      }
+      Send "q"
+      DllCall("ResumeThread", "Ptr", hThread)
+      DllCall("CloseHandle", "Ptr", hThread)
+      DllCall("CloseHandle", "Ptr", hProcess)
     }
   }
   static _activateDesktopBackground() {
