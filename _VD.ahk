@@ -237,13 +237,12 @@ class VD {
     }
 
     goToDesktopNum(desktopNum) { ; Lej77 https://github.com/Grabacr07/VirtualDesktop/pull/23#issuecomment-334918711
+        firstWindowId:=this._getFirstWindowInVD(desktopNum)
 
         Gui VD_active_gui:New, % "-Border -SysMenu +Owner -Caption +HwndVD_active_gui_hwnd"
         DllCall("ShowWindow","Ptr",VD_active_gui_hwnd,"Int",1) ;you can only Show gui that's in another VD if a gui of same owned/process is already active
 
-        this._WinActivateForceForceForce(VD_active_gui_hwnd) ;specifically for Teams.exe
-
-        firstWindowId:=this._getFirstWindowInVD(desktopNum)
+        this._WinActivate_CreateRemoteThread(VD_active_gui_hwnd)
 
         Gui VD_animation_gui:New, % "-Border -SysMenu +Owner -Caption +HwndVD_animation_gui_hwnd"
         IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
@@ -252,26 +251,19 @@ class VD {
         DllCall(GetId, "Ptr", IVirtualDesktop, "Ptr", &GUID_Desktop)
         DllCall(this.MoveWindowToDesktop, "Ptr", this.IVirtualDesktopManager, "Ptr", VD_animation_gui_hwnd, "Ptr", &GUID_Desktop)
         DllCall("ShowWindow","Ptr",VD_animation_gui_hwnd,"Int",1) ;after gui on current desktop owned by current process became active window, Show gui on different desktop owned by current process
-        ; loop 20 {
-        ;     if (this.getCurrentDesktopNum()==desktopNum) { ; wildest hack ever..
-        ;         if (firstWindowId) {
-        ;             DllCall("SetForegroundWindow","Ptr",firstWindowId)
-        ;         } else {
-        ;             this._activateDesktopBackground()
-        ;         }
-        ;         Gui VD_animation_gui:Destroy
-        ;         Gui VD_active_gui:Destroy
-        ;         break
-        ;     }
-        ;     Sleep 25
-        ; }
-        if (firstWindowId) {
-            DllCall("SetForegroundWindow","Ptr",firstWindowId)
-        } else {
-            this._activateDesktopBackground()
+        loop 20 {
+            if (this.getCurrentDesktopNum()==desktopNum) { ; wildest hack ever..
+                if (firstWindowId) {
+                    DllCall("SetForegroundWindow","Ptr",firstWindowId)
+                } else {
+                    this._activateDesktopBackground()
+                }
+                Gui VD_animation_gui:Destroy
+                Gui VD_active_gui:Destroy
+                break
+            }
+            Sleep 25
         }
-        Gui VD_animation_gui:Destroy
-        Gui VD_active_gui:Destroy
 
     }
 
@@ -909,60 +901,33 @@ class VD {
 
     ;internal methods start
 
-    _WinActivateForceForceForce(hwnd) { ;specifically for Teams.exe
-        DllCall("GetWindowThreadProcessId","Ptr",DllCall("GetForegroundWindow","Ptr"),"Uint*",PID)
-        currentPID:=DllCall("GetCurrentProcessId")
-        if (PID==currentPID) {
-            DllCall("SetForegroundWindow","Ptr",hwnd)
-        } else {
-            ; all ?dangers? at the same time
-            LShiftDown:=GetKeyState("LShift")
-            RShiftDown:=GetKeyState("RShift")
-            if (LShiftDown) {
-                DllCall("keybd_event","UChar",160,"UChar",42,"Uint",2,"Ptr",0)
-            }
-            if (RShiftDown) {
-                DllCall("keybd_event","UChar",161,"UChar",310,"Uint",2,"Ptr",0)
-            }
+    _WinActivate_CreateRemoteThread(hWnd) {
+        ; WinActivate of AHK will first try SetForegroundWindow(), it will work if the keyboard hook is not used
+        ; so it will work for
+        ; Numpad2::
+        ; it will not work for
+        ; ^#Right::
+        ; Right always uses the keyboard hook
 
+        ; AHK will then try AttachThreadInput(), it works reliably, but fails for Teams.exe for reasons I have yet to uncover
+        ; let's just say that either Teams.exe is resistant to AttachThreadInput, or the code inside Teams.exe has a weird defined behavior once AttachThreadInput is called
 
-            h:=DllCall("OpenProcess", "uInt", 0x1F0FFF, "Int", 0, "Int", pid)
-            DllCall("ntdll.dll\NtSuspendProcess", "Int", h)
-
-            ForegroundThreadId := DllCall("GetWindowThreadProcessId","Ptr",hwnd,"Ptr",0)
-            CurrentThreadId:=DllCall("GetCurrentThreadId")
-            DllCall("AttachThreadInput","Uint",ForegroundThreadId,"Uint",CurrentThreadId,"Int",1)
-
-            DllCall("keybd_event","UChar",0x12,"UChar",0,"Uint",1,"Ptr",0) ;0x12=ALT
-
-            DllCall("SetForegroundWindow","Ptr",hwnd)
-            DllCall("keybd_event","UChar",0x12,"UChar",0,"Uint",3,"Ptr",0)
-
-            loop % 10 {
-                if (DllCall("GetFocus","Ptr")==hwnd) {
-                    break
-                }
-                Sleep 25
-            }
-
-            ; sending ?keyboard focus? to vscode, or else Teams.exe will reactivate itself in 3000ms, or 10 000ms, doesn't matter
-            DllCall("keybd_event","UChar",0x12,"UChar",0,"Uint",1,"Ptr",0)
-            DllCall("keybd_event","UChar",0x12,"UChar",0,"Uint",3,"Ptr",0)
+        ; this ? there's only one way to find out how well it works, by testing in production
+        foregroundWindow:=DllCall("GetForegroundWindow","Ptr")
+        threadID:=DllCall("GetWindowThreadProcessId","Ptr",foregroundWindow,"Uint*",PID)
+        currentThreadID:=DllCall("GetCurrentThreadId")
+        if (threadID!=currentThreadID) {
+            hThread:=DllCall("OpenThread","Uint",0x0002,"Int",0,"Uint",threadID)
+            DllCall("SuspendThread","Ptr",hThread)
+            hProcess:=DllCall("OpenProcess","Uint",0x0002,"Int",0,"Uint",PID,"Ptr")
+            user32:=DllCall("GetModuleHandleA","AStr","user32","Ptr")
+            SetForegroundWindow:=DllCall("GetProcAddress","Ptr",user32,"AStr","SetForegroundWindow","Ptr")
+            DllCall("CreateRemoteThread","Ptr",hProcess,"Ptr",0,"Ptr",0,"Ptr",SetForegroundWindow,"Ptr",hWnd,"Uint",0,"Ptr",0)
             Sleep 10
-            DllCall("keybd_event","UChar",0x12,"UChar",0,"Uint",1,"Ptr",0)
-            DllCall("keybd_event","UChar",0x12,"UChar",0,"Uint",3,"Ptr",0)
-            DllCall("AttachThreadInput","Uint",ForegroundThreadId,"Uint",CurrentThreadId,"Int",0)
-            ; Sleep 1000
-
-            DllCall("ntdll.dll\NtResumeProcess", "Int", h)
-            DllCall("CloseHandle", "Int", h)
-
-            if (LShiftDown) {
-                DllCall("keybd_event","UChar",160,"UChar",42,"Uint",0,"Ptr",0)
-            }
-            if (RShiftDown) {
-                DllCall("keybd_event","UChar",161,"UChar",310,"Uint",0,"Ptr",0)
-            }
+            Send % "q" ;any key works
+            DllCall("ResumeThread","Ptr",hThread)
+            DllCall("CloseHandle","Ptr",hThread)
+            DllCall("CloseHandle","Ptr",hProcess)
         }
     }
 
@@ -1007,11 +972,15 @@ class VD {
             GetId:=this._vtable(IVirtualDesktop, 4)
             DllCall(GetId, "Ptr", IVirtualDesktop, "Ptr", &GUID_Desktop)
             DllCall("Ole32\StringFromGUID2", "Ptr", &GUID_Desktop, "Ptr",&someStr, "Ptr",40)
-            guid_to_desktopNum[someStr]:=A_Index
+            strGUID:=StrGet(&someStr,"UTF-16")
+            guid_to_desktopNum[strGUID]:=A_Index
         }
+        guid_to_desktopNum["{00000000-0000-0000-0000-000000000000}"]:=0
         loop % outHwndList {
             theHwnd:=outHwndList%A_Index%
-            if (pView:=this._isValidWindow(theHwnd)) {
+            arr_success_pView_hWnd:=this._isValidWindow(theHwnd)
+            if (arr_success_pView_hWnd[1]==0) {
+                pView:=arr_success_pView_hWnd[2]
                 WinGet, OutputVar_MinMax, MinMax, % "ahk_id " theHwnd
                 if (!(OutputVar_MinMax==-1)) { ;not Minimized
 
@@ -1020,8 +989,9 @@ class VD {
                         continue
                     }
                     DllCall("Ole32\StringFromGUID2", "Ptr", &GUID_Desktop, "Ptr",&someStr, "Ptr",40)
+                    strGUID:=StrGet(&someStr,"UTF-16")
 
-                    if (guid_to_desktopNum[someStr] == desktopNum) {
+                    if (guid_to_desktopNum[strGUID] == desktopNum) {
                         ; WinActivate % "ahk_id " theHwnd
                         returnValue:=theHwnd
                         break
@@ -1043,7 +1013,9 @@ class VD {
             if (theHwnd == excludeHwnd) {
                 continue
             }
-            if (pView:=this._isValidWindow(theHwnd)) {
+            arr_success_pView_hWnd:=this._isValidWindow(theHwnd)
+            if (arr_success_pView_hWnd[1]==0) {
+                pView:=arr_success_pView_hWnd[2]
                 WinGet, OutputVar_MinMax, MinMax, % "ahk_id " theHwnd
                 if (!(OutputVar_MinMax==-1)) { ;not Minimized
                     ; WinActivate % "ahk_id " theHwnd
@@ -1058,20 +1030,18 @@ class VD {
     }
 
     _tryGetValidWindow(wintitle) {
-
         bak_DetectHiddenWindows:=A_DetectHiddenWindows
         bak_TitleMatchMode:=A_TitleMatchMode
         DetectHiddenWindows, on
         SetTitleMatchMode, 2
         WinGet, someID, ID, % wintitle
 
-        while ((tempID:=DllCall("GetWindow","Ptr",someID,"Uint",4))) { ;4=GW_OWNER
-            someID:=tempID
-        }
-
         returnValue:=false
-        if (pView:=this._isValidWindow(someID)) {
-            returnValue:=[someID, pView]
+
+        arr_success_pView_hWnd:=this._isValidWindow(someID)
+        pView:=arr_success_pView_hWnd[2]
+        if (pView) {
+            returnValue:=[arr_success_pView_hWnd[3], pView]
         }
 
         SetTitleMatchMode % bak_TitleMatchMode
@@ -1147,25 +1117,39 @@ class VD {
         Return ((style & 0x20800000) or winH < A_ScreenHeight or winW < A_ScreenWidth) ? false : true
     }
 
-    _isValidWindow(hWnd) ;returns pView if succeeded
+    _isValidWindow(hWnd,checkUpper:=true) ;returns [0,pView,hWnd] if succeeded
     {
-        ; DetectHiddenWindows, on ;this is needed, but for optimization the caller will do it
-
-        returnValue:=false
+        returnValue:=[1,0,0]
         breakToReturnFalse:
         loop 1 {
-            WinGetTitle, title, % "ahk_id " hwnd
-            if (!title) {
+            dwStyle:=DllCall("GetWindowLongPtrW","Ptr",hWnd,"Int",-16,"Ptr")
+            if (!(dwStyle & 0x10000000)) { ;0x10000000=WS_VISIBLE
                 break breakToReturnFalse
             }
-            WinGet, dwExStyle, ExStyle, ahk_id %hWnd%
+            dwExStyle:=DllCall("GetWindowLongPtrW","Ptr",hWnd,"Int",-20,"Ptr")
             if (!(dwExStyle&0x00040000)) { ;0x00040000=WS_EX_APPWINDOW
                 if (dwExStyle&0x00000080 || dwExStyle&0x08000000) { ;0x00000080=WS_EX_TOOLWINDOW, 0x08000000=WS_EX_NOACTIVATE
                     break breakToReturnFalse
                 }
-                owner_hWnd:=DllCall("GetWindow","Ptr",hWnd,"Uint",4) ;4=GW_OWNER
-                if (owner_hWnd) {
-                    break breakToReturnFalse
+                ; if any of ancestor is valid window, can't be valid window
+                if (checkUpper) {
+                    toCheck:=[]
+                    upHwnd:=hWnd
+                    while (upHwnd := DllCall("GetWindow","Ptr",upHwnd,"Uint",4)) { ;4=GW_OWNER
+                        if (upHwnd==65552) {
+                            break breakToReturnFalse
+                        }
+                        toCheck.Push(upHwnd)
+                    }
+                    i:=toCheck.Length() + 1
+                    while (i-->1) { ;i goes to 1 (lmao)
+                        arr_success_pView_hWnd:=this._isValidWindow(toCheck[i],false)
+                        if (arr_success_pView_hWnd[1]==0) {
+                            arr_success_pView_hWnd[1]:=2
+                            returnValue:=arr_success_pView_hWnd
+                            break breakToReturnFalse
+                        }
+                    }
                 }
             }
 
@@ -1179,9 +1163,8 @@ class VD {
                 break breakToReturnFalse
             }
 
-            returnValue:=pView
+            returnValue:=[0,pView,hWnd]
         }
-        ; DetectHiddenWindows, off ;this is needed, but for optimization the caller will do it
         return returnValue
     }
     ;-------------------
