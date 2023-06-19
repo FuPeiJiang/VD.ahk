@@ -870,19 +870,8 @@ class VD {
         returnValue:=0
         WinGet, outHwndList, List
         VarSetCapacity(GUID_Desktop, 16)
-        VarSetCapacity(someStr, 40*2)
-        guid_to_desktopNum:={}
         Desktops_Obj:=this._GetDesktops_Obj()
-        Loop % Desktops_Obj.GetCount()
-        {
-            IVirtualDesktop:=Desktops_Obj.GetAt(A_Index)
-            GetId:=this._vtable(IVirtualDesktop, 4)
-            DllCall(GetId, "Ptr", IVirtualDesktop, "Ptr", &GUID_Desktop)
-            DllCall("Ole32\StringFromGUID2", "Ptr", &GUID_Desktop, "Ptr",&someStr, "Ptr",40)
-            strGUID:=StrGet(&someStr,"UTF-16")
-            guid_to_desktopNum[strGUID]:=A_Index
-        }
-        guid_to_desktopNum["{00000000-0000-0000-0000-000000000000}"]:=0
+        IVirtualDesktop:=Desktops_Obj.GetAt(desktopNum)
         loop % outHwndList {
             theHwnd:=outHwndList%A_Index%
             arr_success_pView_hWnd:=this._isValidWindow(theHwnd)
@@ -895,10 +884,8 @@ class VD {
                     if (!(HRESULT==0)) {
                         continue
                     }
-                    DllCall("Ole32\StringFromGUID2", "Ptr", &GUID_Desktop, "Ptr",&someStr, "Ptr",40)
-                    strGUID:=StrGet(&someStr,"UTF-16")
-
-                    if (guid_to_desktopNum[strGUID] == desktopNum) {
+                    DllCall(this.FindDesktop, "UPtr", this.IVirtualDesktopManagerInternal, "Ptr", &GUID_Desktop, "Ptr*", IVirtualDesktop_ofWindow)
+                    if (IVirtualDesktop_ofWindow == IVirtualDesktop) {
                         ; WinActivate % "ahk_id " theHwnd
                         returnValue:=theHwnd
                         break
