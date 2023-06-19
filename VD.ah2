@@ -125,16 +125,14 @@ class VD {
   }
   static goToDesktopNum(desktopNum) {
     firstWindowId := this._getFirstWindowInVD(desktopNum)
-    VD_active_gui := Gui("-Border -SysMenu +Owner -Caption")
-    DllCall("ShowWindow", "Ptr", VD_active_gui.Hwnd, "Int", 1)
-    this._WinActivate_CreateRemoteThread(VD_active_gui.Hwnd)
     VD_animation_gui := Gui("-Border -SysMenu +Owner -Caption")
     IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
     GetId := this._vtable(IVirtualDesktop, 4)
     GUID_Desktop := Buffer(16)
     DllCall(GetId, "Ptr", IVirtualDesktop, "Ptr", GUID_Desktop)
     DllCall(this.MoveWindowToDesktop, "Ptr", this.IVirtualDesktopManager.Ptr, "Ptr", VD_animation_gui.Hwnd, "Ptr", GUID_Desktop)
-    DllCall("ShowWindow", "Ptr", VD_animation_gui.Hwnd, "Int", 1)
+    DllCall("ShowWindow", "Ptr", VD_animation_gui.Hwnd, "Int", 4)
+    this._WinActivate_NewProcess(VD_animation_gui.Hwnd)
     loop 20 {
       if (this.getCurrentDesktopNum() == desktopNum) {
         if (firstWindowId) {
@@ -142,12 +140,11 @@ class VD {
         } else {
           this._activateDesktopBackground()
         }
-        VD_animation_gui.Destroy()
-        VD_active_gui.Destroy()
         break
       }
       Sleep 25
     }
+    VD_animation_gui.Destroy()
   }
   static _getLocalizedWord_Desktop() {
     if (this.savedLocalizedWord_Desktop) {
@@ -544,22 +541,23 @@ class VD {
       }
     }
   }
-  static _WinActivate_CreateRemoteThread(hWnd) {
+  static _WinActivate_NewProcess(hWnd) {
     foregroundWindow := DllCall("GetForegroundWindow", "Ptr")
     threadID := DllCall("GetWindowThreadProcessId", "Ptr", foregroundWindow, "Uint*", &PID := 0)
     currentThreadID := DllCall("GetCurrentThreadId")
-    if (threadID != currentThreadID) {
-      hThread := DllCall("OpenThread", "Uint", 0x0002, "Int", 0, "Uint", threadID)
-      DllCall("SuspendThread", "Ptr", hThread)
-      hProcess := DllCall("OpenProcess", "Uint", 0x0002, "Int", 0, "Uint", PID, "Ptr")
-      user32 := DllCall("GetModuleHandleA", "AStr", "user32", "Ptr")
-      SetForegroundWindow := DllCall("GetProcAddress", "Ptr", user32, "AStr", "SetForegroundWindow", "Ptr")
-      DllCall("CreateRemoteThread", "Ptr", hProcess, "Ptr", 0, "Ptr", 0, "Ptr", SetForegroundWindow, "Ptr", hWnd, "Uint", 0, "Ptr", 0)
-      Sleep 10
-      Send "q"
-      DllCall("ResumeThread", "Ptr", hThread)
-      DllCall("CloseHandle", "Ptr", hThread)
-      DllCall("CloseHandle", "Ptr", hProcess)
+    if (threadID == currentThreadID) {
+      DllCall("SetForegroundWindow", "Ptr", hWnd)
+    } else {
+      loop 10 {
+        Run "`"" A_LineFile "\..\SetForeGroundWindow.exe`" " hWnd
+        if (DllCall("GetForegroundWindow", "Ptr") == hWnd) {
+          break
+        }
+        Sleep 10
+        if (DllCall("GetForegroundWindow", "Ptr") == hWnd) {
+          break
+        }
+      }
     }
   }
   static _activateDesktopBackground() {
