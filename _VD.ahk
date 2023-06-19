@@ -242,7 +242,7 @@ class VD {
         Gui VD_active_gui:New, % "-Border -SysMenu +Owner -Caption +HwndVD_active_gui_hwnd"
         DllCall("ShowWindow","Ptr",VD_active_gui_hwnd,"Int",1) ;you can only Show gui that's in another VD if a gui of same owned/process is already active
 
-        this._WinActivate_CreateRemoteThread(VD_active_gui_hwnd)
+        this._WinActivate_NewProcess(VD_active_gui_hwnd)
 
         Gui VD_animation_gui:New, % "-Border -SysMenu +Owner -Caption +HwndVD_animation_gui_hwnd"
         IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
@@ -808,7 +808,7 @@ class VD {
 
     ;internal methods start
 
-    _WinActivate_CreateRemoteThread(hWnd) {
+    _WinActivate_NewProcess(hWnd) {
         ; WinActivate of AHK will first try SetForegroundWindow(), it will work if the keyboard hook is not used
         ; so it will work for
         ; Numpad2::
@@ -820,22 +820,9 @@ class VD {
         ; let's just say that either Teams.exe is resistant to AttachThreadInput, or the code inside Teams.exe has a weird defined behavior once AttachThreadInput is called
 
         ; this ? there's only one way to find out how well it works, by testing in production
-        foregroundWindow:=DllCall("GetForegroundWindow","Ptr")
-        threadID:=DllCall("GetWindowThreadProcessId","Ptr",foregroundWindow,"Uint*",PID)
-        currentThreadID:=DllCall("GetCurrentThreadId")
-        if (threadID!=currentThreadID) {
-            hThread:=DllCall("OpenThread","Uint",0x0002,"Int",0,"Uint",threadID)
-            DllCall("SuspendThread","Ptr",hThread)
-            hProcess:=DllCall("OpenProcess","Uint",0x0002,"Int",0,"Uint",PID,"Ptr")
-            user32:=DllCall("GetModuleHandleA","AStr","user32","Ptr")
-            SetForegroundWindow:=DllCall("GetProcAddress","Ptr",user32,"AStr","SetForegroundWindow","Ptr")
-            DllCall("CreateRemoteThread","Ptr",hProcess,"Ptr",0,"Ptr",0,"Ptr",SetForegroundWindow,"Ptr",hWnd,"Uint",0,"Ptr",0)
-            Sleep 10
-            Send % "q" ;any key works
-            DllCall("ResumeThread","Ptr",hThread)
-            DllCall("CloseHandle","Ptr",hThread)
-            DllCall("CloseHandle","Ptr",hProcess)
-        }
+        ; attempt Number 2
+        ; new Thread doesn't work, somehow new Process works
+        RunWait % """" A_LineFile "\..\SetForeGroundWindow.exe"" " (hWnd+0)
     }
 
     _activateDesktopBackground() { ;this is really copying extremely long comments for short code like in AHK source code
