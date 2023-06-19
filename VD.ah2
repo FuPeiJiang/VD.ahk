@@ -585,7 +585,9 @@ class VD {
     guid_to_desktopNum["{00000000-0000-0000-0000-000000000000}"] := 0
     loop outHwndList.Length {
       theHwnd := outHwndList[A_Index]
-      if (pView := this._isValidWindow(theHwnd)) {
+      arr_success_pView_hWnd := this._isValidWindow(theHwnd)
+      if (arr_success_pView_hWnd[1] == 0) {
+        pView := arr_success_pView_hWnd[2]
         OutputVar_MinMax := WinGetMinMax("ahk_id " theHwnd)
         if (!(OutputVar_MinMax == -1)) {
           HRESULT := DllCall(this.GetWindowDesktopId, "UPtr", this.IVirtualDesktopManager.Ptr, "Ptr", theHwnd, "Ptr", GUID_Desktop)
@@ -614,7 +616,9 @@ class VD {
       if (theHwnd == excludeHwnd) {
         continue
       }
-      if (pView := this._isValidWindow(theHwnd)) {
+      arr_success_pView_hWnd := this._isValidWindow(theHwnd)
+      if (arr_success_pView_hWnd[1] == 0) {
+        pView := arr_success_pView_hWnd[2]
         OutputVar_MinMax := WinGetMinMax("ahk_id " theHwnd)
         if (!(OutputVar_MinMax == -1)) {
           DllCall("SetForegroundWindow", "Ptr", theHwnd)
@@ -632,12 +636,11 @@ class VD {
     DetectHiddenWindows true
     SetTitleMatchMode "2"
     someID := WinGetID(wintitle)
-    while ((tempID := DllCall("GetWindow", "Ptr", someID, "Uint", 4))) {
-      someID := tempID
-    }
     returnValue := false
-    if (pView := this._isValidWindow(someID)) {
-      returnValue := [someID, pView]
+    arr_success_pView_hWnd := this._isValidWindow(someID)
+    pView := arr_success_pView_hWnd[2]
+    if (pView) {
+      returnValue := [arr_success_pView_hWnd[3], pView]
     }
     SetTitleMatchMode bak_TitleMatchMode
     DetectHiddenWindows bak_DetectHiddenWindows
@@ -690,22 +693,37 @@ class VD {
     WinGetPos , , &winW, &winH, winTitle
     Return ((style & 0x20800000) or winH < A_ScreenHeight or winW < A_ScreenWidth) ? false : true
   }
-  static _isValidWindow(hWnd) {
-    returnValue := false
+  static _isValidWindow(hWnd, checkUpper := true) {
+    returnValue := [1, 0, 0]
     breakToReturnFalse:
     loop 1 {
-      title := WinGetTitle("ahk_id " hwnd)
-      if (!title) {
+      dwStyle := DllCall("GetWindowLongPtrW", "Ptr", hWnd, "Int", -16, "Ptr")
+      if (!(dwStyle & 0x10000000)) {
         break breakToReturnFalse
       }
-      dwExStyle := WinGetExStyle("ahk_id " hWnd)
+      dwExStyle := DllCall("GetWindowLongPtrW", "Ptr", hWnd, "Int", -20, "Ptr")
       if (!(dwExStyle & 0x00040000)) {
         if (dwExStyle & 0x00000080 || dwExStyle & 0x08000000) {
           break breakToReturnFalse
         }
-        owner_hWnd := DllCall("GetWindow", "Ptr", hWnd, "Uint", 4)
-        if (owner_hWnd) {
-          break breakToReturnFalse
+        if (checkUpper) {
+          toCheck := []
+          upHwnd := hWnd
+          while (upHwnd := DllCall("GetWindow", "Ptr", upHwnd, "Uint", 4)) {
+            if (upHwnd == 65552) {
+              break breakToReturnFalse
+            }
+            toCheck.Push(upHwnd)
+          }
+          i := toCheck.Length + 1
+          while (i-- > 1) {
+            arr_success_pView_hWnd := this._isValidWindow(toCheck[i], false)
+            if (arr_success_pView_hWnd[1] == 0) {
+              arr_success_pView_hWnd[1] := 2
+              returnValue := arr_success_pView_hWnd
+              break breakToReturnFalse
+            }
+          }
         }
       }
       pView := this._view_from_Hwnd(hWnd)
@@ -717,7 +735,7 @@ class VD {
       if (!pfCanViewMoveDesktops) {
         break breakToReturnFalse
       }
-      returnValue := pView
+      returnValue := [0, pView, hWnd]
     }
     return returnValue
   }
