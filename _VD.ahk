@@ -239,18 +239,15 @@ class VD {
     goToDesktopNum(desktopNum) { ; Lej77 https://github.com/Grabacr07/VirtualDesktop/pull/23#issuecomment-334918711
         firstWindowId:=this._getFirstWindowInVD(desktopNum)
 
-        Gui VD_active_gui:New, % "-Border -SysMenu +Owner -Caption +HwndVD_active_gui_hwnd"
-        DllCall("ShowWindow","Ptr",VD_active_gui_hwnd,"Int",1) ;you can only Show gui that's in another VD if a gui of same owned/process is already active
-
-        this._WinActivate_NewProcess(VD_active_gui_hwnd)
-
         Gui VD_animation_gui:New, % "-Border -SysMenu +Owner -Caption +HwndVD_animation_gui_hwnd"
+        VD_animation_gui_hwnd+=0
         IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
         GetId:=this._vtable(IVirtualDesktop, 4)
         VarSetCapacity(GUID_Desktop, 16)
         DllCall(GetId, "Ptr", IVirtualDesktop, "Ptr", &GUID_Desktop)
         DllCall(this.MoveWindowToDesktop, "Ptr", this.IVirtualDesktopManager, "Ptr", VD_animation_gui_hwnd, "Ptr", &GUID_Desktop)
-        DllCall("ShowWindow","Ptr",VD_animation_gui_hwnd,"Int",1) ;after gui on current desktop owned by current process became active window, Show gui on different desktop owned by current process
+        DllCall("ShowWindow","Ptr",VD_animation_gui_hwnd,"Int",4) ;after gui on current desktop owned by current process became active window, Show gui on different desktop owned by current process
+        this._WinActivate_NewProcess(VD_animation_gui_hwnd)
         loop 20 {
             if (this.getCurrentDesktopNum()==desktopNum) { ; wildest hack ever..
                 if (firstWindowId) {
@@ -258,12 +255,11 @@ class VD {
                 } else {
                     this._activateDesktopBackground()
                 }
-                Gui VD_animation_gui:Destroy
-                Gui VD_active_gui:Destroy
                 break
             }
             Sleep 25
         }
+        Gui VD_animation_gui:Destroy
 
     }
 
@@ -822,7 +818,24 @@ class VD {
         ; this ? there's only one way to find out how well it works, by testing in production
         ; attempt Number 2
         ; new Thread doesn't work, somehow new Process works
-        RunWait % """" A_LineFile "\..\SetForeGroundWindow.exe"" " (hWnd+0)
+
+        foregroundWindow:=DllCall("GetForegroundWindow","Ptr")
+        threadID:=DllCall("GetWindowThreadProcessId","Ptr",foregroundWindow,"Uint*",PID)
+        currentThreadID:=DllCall("GetCurrentThreadId")
+        if (threadID==currentThreadID) {
+            DllCall("SetForegroundWindow","Ptr",hWnd)
+        } else {
+            loop 10 {
+                Run % """" A_LineFile "\..\SetForeGroundWindow.exe"" " hWnd
+                if (DllCall("GetForegroundWindow","Ptr")==hWnd) {
+                    break
+                }
+                Sleep 10
+                if (DllCall("GetForegroundWindow","Ptr")==hWnd) {
+                    break
+                }
+            }
+        }
     }
 
     _activateDesktopBackground() { ;this is really copying extremely long comments for short code like in AHK source code
