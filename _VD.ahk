@@ -239,18 +239,15 @@ class VD {
     goToDesktopNum(desktopNum) { ; Lej77 https://github.com/Grabacr07/VirtualDesktop/pull/23#issuecomment-334918711
         firstWindowId:=this._getFirstWindowInVD(desktopNum)
 
-        Gui VD_active_gui:New, % "-Border -SysMenu +Owner -Caption +HwndVD_active_gui_hwnd"
-        DllCall("ShowWindow","Ptr",VD_active_gui_hwnd,"Int",1) ;you can only Show gui that's in another VD if a gui of same owned/process is already active
-
-        this._WinActivate_CreateRemoteThread(VD_active_gui_hwnd)
-
         Gui VD_animation_gui:New, % "-Border -SysMenu +Owner -Caption +HwndVD_animation_gui_hwnd"
+        VD_animation_gui_hwnd+=0
         IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
         GetId:=this._vtable(IVirtualDesktop, 4)
         VarSetCapacity(GUID_Desktop, 16)
         DllCall(GetId, "Ptr", IVirtualDesktop, "Ptr", &GUID_Desktop)
         DllCall(this.MoveWindowToDesktop, "Ptr", this.IVirtualDesktopManager, "Ptr", VD_animation_gui_hwnd, "Ptr", &GUID_Desktop)
-        DllCall("ShowWindow","Ptr",VD_animation_gui_hwnd,"Int",1) ;after gui on current desktop owned by current process became active window, Show gui on different desktop owned by current process
+        DllCall("ShowWindow","Ptr",VD_animation_gui_hwnd,"Int",4) ;after gui on current desktop owned by current process became active window, Show gui on different desktop owned by current process
+        this._WinActivate_NewProcess(VD_animation_gui_hwnd)
         loop 20 {
             if (this.getCurrentDesktopNum()==desktopNum) { ; wildest hack ever..
                 if (firstWindowId) {
@@ -258,12 +255,11 @@ class VD {
                 } else {
                     this._activateDesktopBackground()
                 }
-                Gui VD_animation_gui:Destroy
-                Gui VD_active_gui:Destroy
                 break
             }
             Sleep 25
         }
+        Gui VD_animation_gui:Destroy
 
     }
 
@@ -901,7 +897,7 @@ class VD {
 
     ;internal methods start
 
-    _WinActivate_CreateRemoteThread(hWnd) {
+    _WinActivate_NewProcess(hWnd) {
         ; WinActivate of AHK will first try SetForegroundWindow(), it will work if the keyboard hook is not used
         ; so it will work for
         ; Numpad2::
@@ -913,21 +909,25 @@ class VD {
         ; let's just say that either Teams.exe is resistant to AttachThreadInput, or the code inside Teams.exe has a weird defined behavior once AttachThreadInput is called
 
         ; this ? there's only one way to find out how well it works, by testing in production
+        ; attempt Number 2
+        ; new Thread doesn't work, somehow new Process works
+
         foregroundWindow:=DllCall("GetForegroundWindow","Ptr")
         threadID:=DllCall("GetWindowThreadProcessId","Ptr",foregroundWindow,"Uint*",PID)
         currentThreadID:=DllCall("GetCurrentThreadId")
-        if (threadID!=currentThreadID) {
-            hThread:=DllCall("OpenThread","Uint",0x0002,"Int",0,"Uint",threadID)
-            DllCall("SuspendThread","Ptr",hThread)
-            hProcess:=DllCall("OpenProcess","Uint",0x0002,"Int",0,"Uint",PID,"Ptr")
-            user32:=DllCall("GetModuleHandleA","AStr","user32","Ptr")
-            SetForegroundWindow:=DllCall("GetProcAddress","Ptr",user32,"AStr","SetForegroundWindow","Ptr")
-            DllCall("CreateRemoteThread","Ptr",hProcess,"Ptr",0,"Ptr",0,"Ptr",SetForegroundWindow,"Ptr",hWnd,"Uint",0,"Ptr",0)
-            Sleep 10
-            Send % "q" ;any key works
-            DllCall("ResumeThread","Ptr",hThread)
-            DllCall("CloseHandle","Ptr",hThread)
-            DllCall("CloseHandle","Ptr",hProcess)
+        if (threadID==currentThreadID) {
+            DllCall("SetForegroundWindow","Ptr",hWnd)
+        } else {
+            loop 10 {
+                Run % """" A_LineFile "\..\SetForeGroundWindow.exe"" " hWnd
+                if (DllCall("GetForegroundWindow","Ptr")==hWnd) {
+                    break
+                }
+                Sleep 10
+                if (DllCall("GetForegroundWindow","Ptr")==hWnd) {
+                    break
+                }
+            }
         }
     }
 
@@ -963,19 +963,8 @@ class VD {
         returnValue:=0
         WinGet, outHwndList, List
         VarSetCapacity(GUID_Desktop, 16)
-        VarSetCapacity(someStr, 40*2)
-        guid_to_desktopNum:={}
         Desktops_Obj:=this._GetDesktops_Obj()
-        Loop % Desktops_Obj.GetCount()
-        {
-            IVirtualDesktop:=Desktops_Obj.GetAt(A_Index)
-            GetId:=this._vtable(IVirtualDesktop, 4)
-            DllCall(GetId, "Ptr", IVirtualDesktop, "Ptr", &GUID_Desktop)
-            DllCall("Ole32\StringFromGUID2", "Ptr", &GUID_Desktop, "Ptr",&someStr, "Ptr",40)
-            strGUID:=StrGet(&someStr,"UTF-16")
-            guid_to_desktopNum[strGUID]:=A_Index
-        }
-        guid_to_desktopNum["{00000000-0000-0000-0000-000000000000}"]:=0
+        IVirtualDesktop:=Desktops_Obj.GetAt(desktopNum)
         loop % outHwndList {
             theHwnd:=outHwndList%A_Index%
             arr_success_pView_hWnd:=this._isValidWindow(theHwnd)
@@ -988,10 +977,8 @@ class VD {
                     if (!(HRESULT==0)) {
                         continue
                     }
-                    DllCall("Ole32\StringFromGUID2", "Ptr", &GUID_Desktop, "Ptr",&someStr, "Ptr",40)
-                    strGUID:=StrGet(&someStr,"UTF-16")
-
-                    if (guid_to_desktopNum[strGUID] == desktopNum) {
+                    DllCall(this.FindDesktop, "UPtr", this.IVirtualDesktopManagerInternal, "Ptr", &GUID_Desktop, "Ptr*", IVirtualDesktop_ofWindow)
+                    if (IVirtualDesktop_ofWindow == IVirtualDesktop) {
                         ; WinActivate % "ahk_id " theHwnd
                         returnValue:=theHwnd
                         break
