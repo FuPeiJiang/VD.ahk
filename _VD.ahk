@@ -912,14 +912,16 @@ class VD {
         bak_TitleMatchMode:=A_TitleMatchMode
         DetectHiddenWindows, on
         SetTitleMatchMode, 2
-        WinGet, someID, ID, % wintitle
-
+        WinGet, outHwndList, List, % wintitle
         returnValue:=false
-
-        arr_success_pView_hWnd:=this._isValidWindow(someID)
-        pView:=arr_success_pView_hWnd[2]
-        if (pView) {
-            returnValue:=[arr_success_pView_hWnd[3], pView]
+        loop % outHwndList {
+            theHwnd:=outHwndList%A_Index%+0
+            arr_success_pView_hWnd:=this._isValidWindow(theHwnd)
+            pView:=arr_success_pView_hWnd[2]
+            if (pView) {
+                returnValue:=[arr_success_pView_hWnd[3], pView]
+                break
+            }
         }
 
         SetTitleMatchMode % bak_TitleMatchMode
