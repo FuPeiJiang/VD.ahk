@@ -239,8 +239,8 @@ class VD {
     goToDesktopNum(desktopNum) { ; Lej77 https://github.com/Grabacr07/VirtualDesktop/pull/23#issuecomment-334918711
         firstWindowId:=this._getFirstWindowInVD(desktopNum)
 
-        Gui VD_animation_gui:New, % "-Border -SysMenu +Owner -Caption +HwndVD_animation_gui_hwnd"
-        VD_animation_gui_hwnd+=0
+        Gui VD_animation_gui:New, % "-Border -SysMenu +Owner -Caption +HwndVD_animation_gui_hwnd_tmp"
+        VD_animation_gui_hwnd:=VD_animation_gui_hwnd_tmp+0
         IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
         GetId:=this._vtable(IVirtualDesktop, 4)
         VarSetCapacity(GUID_Desktop, 16)
@@ -331,7 +331,6 @@ class VD {
 
         if (needActivateWindowUnder) {
             firstWindowId:=this._getFirstWindowInVD(currentDesktopNum, theHwnd)
-            firstWindowId+=0
             if (firstWindowId) {
                 VD._WinActivate_NewProcess(firstWindowId)
             } else {
@@ -881,7 +880,7 @@ class VD {
         Desktops_Obj:=this._GetDesktops_Obj()
         IVirtualDesktop:=Desktops_Obj.GetAt(desktopNum)
         loop % outHwndList {
-            theHwnd:=outHwndList%A_Index%
+            theHwnd:=outHwndList%A_Index%+0
             if (theHwnd==excludeHwnd) {
                 continue
             }
