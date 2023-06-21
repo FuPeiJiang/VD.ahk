@@ -316,10 +316,13 @@ class VD {
         theHwnd:=found[1]
         thePView:=found[2]
 
-        needActivateWindowUnder:=False
+        needActivateWindowUnder:=false
         if (activeHwnd:=WinExist("A")) {
             if (activeHwnd==theHwnd) {
-                needActivateWindowUnder:=true
+                currentDesktopNum:=this.getCurrentDesktopNum()
+                if (!(currentDesktopNum==desktopNum)) {
+                    needActivateWindowUnder:=true
+                }
             }
         }
 
@@ -327,10 +330,15 @@ class VD {
         DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal, "Ptr", thePView, "Ptr", IVirtualDesktop)
 
         if (needActivateWindowUnder) {
-            if (this._activateWindowUnder()==-1) {
+            firstWindowId:=this._getFirstWindowInVD(currentDesktopNum, theHwnd)
+            firstWindowId+=0
+            if (firstWindowId) {
+                VD._WinActivate_NewProcess(firstWindowId)
+            } else {
                 this._activateDesktopBackground()
             }
         }
+
     }
 
     getRelativeDesktopNum(anchor_desktopNum, relative_count)
@@ -864,7 +872,7 @@ class VD {
         DllCall("SetForegroundWindow","Ptr",WinExist("ahk_class Progman ahk_exe explorer.exe"))
     }
 
-    _getFirstWindowInVD(desktopNum) {
+    _getFirstWindowInVD(desktopNum, excludeHwnd:=0) {
         bak_DetectHiddenWindows:=A_DetectHiddenWindows
         DetectHiddenWindows, on
         returnValue:=0
@@ -874,6 +882,9 @@ class VD {
         IVirtualDesktop:=Desktops_Obj.GetAt(desktopNum)
         loop % outHwndList {
             theHwnd:=outHwndList%A_Index%
+            if (theHwnd==excludeHwnd) {
+                continue
+            }
             arr_success_pView_hWnd:=this._isValidWindow(theHwnd)
             if (arr_success_pView_hWnd[1]==0) {
                 pView:=arr_success_pView_hWnd[2]
@@ -890,32 +901,6 @@ class VD {
                         returnValue:=theHwnd
                         break
                     }
-                }
-            }
-        }
-        DetectHiddenWindows % bak_DetectHiddenWindows
-        return returnValue
-    }
-
-    _activateWindowUnder(excludeHwnd:=-1) {
-        bak_DetectHiddenWindows:=A_DetectHiddenWindows
-        DetectHiddenWindows, off
-        returnValue:=-1
-        WinGet, outHwndList, List
-        loop % outHwndList {
-            theHwnd:=outHwndList%A_Index%
-            if (theHwnd == excludeHwnd) {
-                continue
-            }
-            arr_success_pView_hWnd:=this._isValidWindow(theHwnd)
-            if (arr_success_pView_hWnd[1]==0) {
-                pView:=arr_success_pView_hWnd[2]
-                WinGet, OutputVar_MinMax, MinMax, % "ahk_id " theHwnd
-                if (!(OutputVar_MinMax==-1)) { ;not Minimized
-                    ; WinActivate % "ahk_id " theHwnd
-                    DllCall("SetForegroundWindow","Ptr",theHwnd)
-                    returnValue:=theHwnd
-                    break
                 }
             }
         }
