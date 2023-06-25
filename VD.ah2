@@ -129,13 +129,14 @@ class VD {
   static goToDesktopNum(desktopNum) {
     firstWindowId := this._getFirstWindowInVD(desktopNum)
     VD_animation_gui := Gui("-Border -SysMenu +Owner -Caption")
+    VD_animation_gui_hwnd := VD_animation_gui.Hwnd + 0
     IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
     GetId := this._vtable(IVirtualDesktop, 4)
     GUID_Desktop := Buffer(16)
     DllCall(GetId, "Ptr", IVirtualDesktop, "Ptr", GUID_Desktop)
-    DllCall(this.MoveWindowToDesktop, "Ptr", this.IVirtualDesktopManager.Ptr, "Ptr", VD_animation_gui.Hwnd, "Ptr", GUID_Desktop)
-    DllCall("ShowWindow", "Ptr", VD_animation_gui.Hwnd, "Int", 4)
-    this._WinActivate_NewProcess(VD_animation_gui.Hwnd)
+    DllCall(this.MoveWindowToDesktop, "Ptr", this.IVirtualDesktopManager.Ptr, "Ptr", VD_animation_gui_hwnd, "Ptr", GUID_Desktop)
+    DllCall("ShowWindow", "Ptr", VD_animation_gui_hwnd, "Int", 4)
+    this._WinActivate_NewProcess(VD_animation_gui_hwnd)
     loop 20 {
       if (this.getCurrentDesktopNum() == desktopNum) {
         if (firstWindowId) {
@@ -194,16 +195,22 @@ class VD {
     }
     theHwnd := found[1]
     thePView := found[2]
-    needActivateWindowUnder := False
+    needActivateWindowUnder := false
     if (activeHwnd := WinExist("A")) {
       if (activeHwnd == theHwnd) {
-        needActivateWindowUnder := true
+        currentDesktopNum := this.getCurrentDesktopNum()
+        if (!(currentDesktopNum == desktopNum)) {
+          needActivateWindowUnder := true
+        }
       }
     }
     IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
     DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal.Ptr, "Ptr", thePView, "Ptr", IVirtualDesktop)
     if (needActivateWindowUnder) {
-      if (this._activateWindowUnder() == -1) {
+      firstWindowId := this._getFirstWindowInVD(currentDesktopNum, theHwnd)
+      if (firstWindowId) {
+        VD._WinActivate_NewProcess(firstWindowId)
+      } else {
         this._activateDesktopBackground()
       }
     }
@@ -626,9 +633,9 @@ class VD {
         callback.Call(theHwnd)
         if (arrOfCallback.Length > 1) {
           arrOfCallback.RemoveAt(1)
-        } else if (outside_map_processName_data.Count > 1) {
+        } else if ((Type(temp := outside_map_processName_data) == "Array" ? temp.Length : temp.Count) > 1) {
           outside_map_processName_data.Delete(subString_processName)
-        } else if (outside_map_class_processName.Count > 1) {
+        } else if ((Type(temp2 := outside_map_class_processName) == "Array" ? temp2.Length : temp2.Count) > 1) {
           outside_map_class_processName.Delete(subString_class)
         } else {
           this.map_title_class.Delete(outside_subString_title)
@@ -658,7 +665,7 @@ class VD {
   static _activateDesktopBackground() {
     DllCall("SetForegroundWindow", "Ptr", WinExist("ahk_class Progman ahk_exe explorer.exe"))
   }
-  static _getFirstWindowInVD(desktopNum) {
+  static _getFirstWindowInVD(desktopNum, excludeHwnd := 0) {
     bak_DetectHiddenWindows := A_DetectHiddenWindows
     DetectHiddenWindows true
     returnValue := 0
@@ -667,7 +674,10 @@ class VD {
     Desktops_Obj := this._GetDesktops_Obj()
     IVirtualDesktop := Desktops_Obj.GetAt(desktopNum)
     loop outHwndList.Length {
-      theHwnd := outHwndList[A_Index]
+      theHwnd := outHwndList[A_Index] + 0
+      if (theHwnd == excludeHwnd) {
+        continue
+      }
       arr_success_pView_hWnd := this._isValidWindow(theHwnd)
       if (arr_success_pView_hWnd[1] == 0) {
         pView := arr_success_pView_hWnd[2]
@@ -688,41 +698,21 @@ class VD {
     DetectHiddenWindows bak_DetectHiddenWindows
     return returnValue
   }
-  static _activateWindowUnder(excludeHwnd := -1) {
-    bak_DetectHiddenWindows := A_DetectHiddenWindows
-    DetectHiddenWindows false
-    returnValue := -1
-    outHwndList := WinGetList()
-    loop outHwndList.Length {
-      theHwnd := outHwndList[A_Index]
-      if (theHwnd == excludeHwnd) {
-        continue
-      }
-      arr_success_pView_hWnd := this._isValidWindow(theHwnd)
-      if (arr_success_pView_hWnd[1] == 0) {
-        pView := arr_success_pView_hWnd[2]
-        OutputVar_MinMax := WinGetMinMax("ahk_id " theHwnd)
-        if (!(OutputVar_MinMax == -1)) {
-          DllCall("SetForegroundWindow", "Ptr", theHwnd)
-          returnValue := theHwnd
-          break
-        }
-      }
-    }
-    DetectHiddenWindows bak_DetectHiddenWindows
-    return returnValue
-  }
   static _tryGetValidWindow(wintitle) {
     bak_DetectHiddenWindows := A_DetectHiddenWindows
     bak_TitleMatchMode := A_TitleMatchMode
     DetectHiddenWindows true
     SetTitleMatchMode "2"
-    someID := WinGetID(wintitle)
+    outHwndList := WinGetList(wintitle)
     returnValue := false
-    arr_success_pView_hWnd := this._isValidWindow(someID)
-    pView := arr_success_pView_hWnd[2]
-    if (pView) {
-      returnValue := [arr_success_pView_hWnd[3], pView]
+    loop outHwndList.Length {
+      theHwnd := outHwndList[A_Index] + 0
+      arr_success_pView_hWnd := this._isValidWindow(theHwnd)
+      pView := arr_success_pView_hWnd[2]
+      if (pView) {
+        returnValue := [arr_success_pView_hWnd[3], pView]
+        break
+      }
     }
     SetTitleMatchMode bak_TitleMatchMode
     DetectHiddenWindows bak_DetectHiddenWindows
