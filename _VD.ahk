@@ -239,8 +239,8 @@ class VD {
     goToDesktopNum(desktopNum) { ; Lej77 https://github.com/Grabacr07/VirtualDesktop/pull/23#issuecomment-334918711
         firstWindowId:=this._getFirstWindowInVD(desktopNum)
 
-        Gui VD_animation_gui:New, % "-Border -SysMenu +Owner -Caption +HwndVD_animation_gui_hwnd"
-        VD_animation_gui_hwnd+=0
+        Gui VD_animation_gui:New, % "-Border -SysMenu +Owner -Caption +HwndVD_animation_gui_hwnd_tmp"
+        VD_animation_gui_hwnd:=VD_animation_gui_hwnd_tmp+0
         IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
         GetId:=this._vtable(IVirtualDesktop, 4)
         VarSetCapacity(GUID_Desktop, 16)
@@ -316,10 +316,13 @@ class VD {
         theHwnd:=found[1]
         thePView:=found[2]
 
-        needActivateWindowUnder:=False
+        needActivateWindowUnder:=false
         if (activeHwnd:=WinExist("A")) {
             if (activeHwnd==theHwnd) {
-                needActivateWindowUnder:=true
+                currentDesktopNum:=this.getCurrentDesktopNum()
+                if (!(currentDesktopNum==desktopNum)) {
+                    needActivateWindowUnder:=true
+                }
             }
         }
 
@@ -327,10 +330,14 @@ class VD {
         DllCall(this.MoveViewToDesktop, "ptr", this.IVirtualDesktopManagerInternal, "Ptr", thePView, "Ptr", IVirtualDesktop)
 
         if (needActivateWindowUnder) {
-            if (this._activateWindowUnder()==-1) {
+            firstWindowId:=this._getFirstWindowInVD(currentDesktopNum, theHwnd)
+            if (firstWindowId) {
+                VD._WinActivate_NewProcess(firstWindowId)
+            } else {
                 this._activateDesktopBackground()
             }
         }
+
     }
 
     getRelativeDesktopNum(anchor_desktopNum, relative_count)
@@ -957,7 +964,7 @@ class VD {
         DllCall("SetForegroundWindow","Ptr",WinExist("ahk_class Progman ahk_exe explorer.exe"))
     }
 
-    _getFirstWindowInVD(desktopNum) {
+    _getFirstWindowInVD(desktopNum, excludeHwnd:=0) {
         bak_DetectHiddenWindows:=A_DetectHiddenWindows
         DetectHiddenWindows, on
         returnValue:=0
@@ -966,7 +973,10 @@ class VD {
         Desktops_Obj:=this._GetDesktops_Obj()
         IVirtualDesktop:=Desktops_Obj.GetAt(desktopNum)
         loop % outHwndList {
-            theHwnd:=outHwndList%A_Index%
+            theHwnd:=outHwndList%A_Index%+0
+            if (theHwnd==excludeHwnd) {
+                continue
+            }
             arr_success_pView_hWnd:=this._isValidWindow(theHwnd)
             if (arr_success_pView_hWnd[1]==0) {
                 pView:=arr_success_pView_hWnd[2]
@@ -990,45 +1000,21 @@ class VD {
         return returnValue
     }
 
-    _activateWindowUnder(excludeHwnd:=-1) {
-        bak_DetectHiddenWindows:=A_DetectHiddenWindows
-        DetectHiddenWindows, off
-        returnValue:=-1
-        WinGet, outHwndList, List
-        loop % outHwndList {
-            theHwnd:=outHwndList%A_Index%
-            if (theHwnd == excludeHwnd) {
-                continue
-            }
-            arr_success_pView_hWnd:=this._isValidWindow(theHwnd)
-            if (arr_success_pView_hWnd[1]==0) {
-                pView:=arr_success_pView_hWnd[2]
-                WinGet, OutputVar_MinMax, MinMax, % "ahk_id " theHwnd
-                if (!(OutputVar_MinMax==-1)) { ;not Minimized
-                    ; WinActivate % "ahk_id " theHwnd
-                    DllCall("SetForegroundWindow","Ptr",theHwnd)
-                    returnValue:=theHwnd
-                    break
-                }
-            }
-        }
-        DetectHiddenWindows % bak_DetectHiddenWindows
-        return returnValue
-    }
-
     _tryGetValidWindow(wintitle) {
         bak_DetectHiddenWindows:=A_DetectHiddenWindows
         bak_TitleMatchMode:=A_TitleMatchMode
         DetectHiddenWindows, on
         SetTitleMatchMode, 2
-        WinGet, someID, ID, % wintitle
-
+        WinGet, outHwndList, List, % wintitle
         returnValue:=false
-
-        arr_success_pView_hWnd:=this._isValidWindow(someID)
-        pView:=arr_success_pView_hWnd[2]
-        if (pView) {
-            returnValue:=[arr_success_pView_hWnd[3], pView]
+        loop % outHwndList {
+            theHwnd:=outHwndList%A_Index%+0
+            arr_success_pView_hWnd:=this._isValidWindow(theHwnd)
+            pView:=arr_success_pView_hWnd[2]
+            if (pView) {
+                returnValue:=[arr_success_pView_hWnd[3], pView]
+                break
+            }
         }
 
         SetTitleMatchMode % bak_TitleMatchMode
