@@ -9,8 +9,16 @@ class VD {
     if (this.hasOwnProp("_dll_GetCurrentDesktop")) {
       return
     }
-    splitByDot := StrSplit(A_OSVersion, ".")
+    ; Have to now get rev as well as build because the interfaces changed
+    ; between 22621.2134 and 22621.2283 (I'm presuming 2215 was the first rev
+    ; release with the change because of reports of this being a thing in
+    ; preview builds). Thanks, Microsoft!
+    ; 
+    ; Tip for getting rev taken from lexikos at
+    ; https://www.autohotkey.com/boards/viewtopic.php?p=488604
+    splitByDot := StrSplit(FileGetVersion(A_WinDir . "\explorer.exe"), ".")
     buildNumber := splitByDot[3]
+    revNumber := splitByDot[4]
     if (buildNumber < 22000) {
       IID_IVirtualDesktopManagerInternal_ := "{F31574D6-B682-4CDC-BD56-1827860ABEC6}"
       IID_IVirtualDesktop_ := "{FF72FFDD-BE7E-43FC-9C03-AD81681E88E4}"
@@ -19,7 +27,7 @@ class VD {
       this._dll_CreateDesktop := this._dll_CreateDesktop_Win10
       this._dll_GetName := this._dll_GetName_Win10
       this.RegisterDesktopNotifications := this.RegisterDesktopNotifications_Win10
-    } else if (buildNumber < 22620) {
+    } else if (buildNumber <= 22621 and revNumber < 2215) {
       IID_IVirtualDesktopManagerInternal_ := "{B2F925B9-5A0F-4D2E-9F4D-2B1507593C10}"
       IID_IVirtualDesktop_ := "{536D3495-B208-4CC9-AE26-DE8111275BF8}"
       this._dll_GetCurrentDesktop := this._dll_GetCurrentDesktop_Win11
@@ -49,7 +57,7 @@ class VD {
       this.Ptr_CreateDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, 10)
       this.Ptr_RemoveDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, 11)
       this.FindDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, 12)
-    } else if (buildNumber < 22489 or buildNumber >= 22621) {
+    } else if (buildNumber < 22489 or (buildNumber >= 22621 and revNumber > 2134)) {
       this.GetDesktops := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, 7)
       this.Ptr_CreateDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, 10)
       this.Ptr_RemoveDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, 12)
