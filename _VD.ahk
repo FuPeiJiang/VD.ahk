@@ -90,12 +90,12 @@ class VD {
             this.idx_VirtualDesktopDestroyed:=6 ;params (IVirtualDesktop, IVirtualDesktop_fallback)
             this.idx_ViewVirtualDesktopChanged:=7 ;params (IApplicationView)
             this.idx_CurrentVirtualDesktopChanged:=8 ;params (IVirtualDesktop_old, IVirtualDesktop_new)
-            this.name_VirtualDesktopCreated:="VD._dll_VirtualDesktopCreated_normal"
-            this.name_VirtualDesktopDestroyBegin:="VD._dll_VirtualDesktopDestroyBegin_normal"
-            this.name_VirtualDesktopDestroyFailed:="VD._dll_VirtualDesktopDestroyFailed_normal"
-            this.name_VirtualDesktopDestroyed:="VD._dll_VirtualDesktopDestroyed_normal"
-            this.name_ViewVirtualDesktopChanged:="VD._dll_ViewVirtualDesktopChanged_normal"
-            this.name_CurrentVirtualDesktopChanged:="VD._dll_CurrentVirtualDesktopChanged_normal"
+            this._dll_VirtualDesktopCreated:=VD._dll_VirtualDesktopCreated_normal
+            this._dll_VirtualDesktopDestroyBegin:=VD._dll_VirtualDesktopDestroyBegin_normal
+            this._dll_VirtualDesktopDestroyFailed:=VD._dll_VirtualDesktopDestroyFailed_normal
+            this._dll_VirtualDesktopDestroyed:=VD._dll_VirtualDesktopDestroyed_normal
+            this._dll_ViewVirtualDesktopChanged:=VD._dll_ViewVirtualDesktopChanged_normal
+            this._dll_CurrentVirtualDesktopChanged:=VD._dll_CurrentVirtualDesktopChanged_normal
 
             this.IVirtualDesktopNotification_methods_count:=9
         } else if (buildNumber < 22000) { ;22000.51 to be more precise
@@ -120,7 +120,7 @@ class VD {
             this.idx_GetId:=4 ;DllCall(ptr_GetId,"Ptr",IVirtualDesktop,"Ptr",guid_buf)
 
             this.idx_VirtualDesktopNameChanged:=8 ;params (IVirtualDesktop, HSTRING)
-            this.name_VirtualDesktopNameChanged:="VD._dll_VirtualDesktopNameChanged_normal"
+            this._dll_VirtualDesktopNameChanged:=VD._dll_VirtualDesktopNameChanged_normal
             this.idx_SetDesktopName:=14 ;DllCall(ptr_SetDesktopName,"Ptr",IVirtualDesktopManagerInternal,"Ptr",IVirtualDesktop,"Ptr",HSTRING)
             this.idx_GetName:=6 ;DllCall(ptr_GetName,"Ptr",IVirtualDesktop,"Ptr*",HSTRING)
 
@@ -134,12 +134,12 @@ class VD {
             this.idx_VirtualDesktopDestroyed:=6 ;params (IVirtualDesktop, IVirtualDesktop_fallback)
             this.idx_ViewVirtualDesktopChanged:=9 ;params (IApplicationView)
             this.idx_CurrentVirtualDesktopChanged:=10 ;params (IVirtualDesktop_old, IVirtualDesktop_new)
-            this.name_VirtualDesktopCreated:="VD._dll_VirtualDesktopCreated_normal"
-            this.name_VirtualDesktopDestroyBegin:="VD._dll_VirtualDesktopDestroyBegin_normal"
-            this.name_VirtualDesktopDestroyFailed:="VD._dll_VirtualDesktopDestroyFailed_normal"
-            this.name_VirtualDesktopDestroyed:="VD._dll_VirtualDesktopDestroyed_normal"
-            this.name_ViewVirtualDesktopChanged:="VD._dll_ViewVirtualDesktopChanged_normal"
-            this.name_CurrentVirtualDesktopChanged:="VD._dll_CurrentVirtualDesktopChanged_normal"
+            this._dll_VirtualDesktopCreated:=VD._dll_VirtualDesktopCreated_normal
+            this._dll_VirtualDesktopDestroyBegin:=VD._dll_VirtualDesktopDestroyBegin_normal
+            this._dll_VirtualDesktopDestroyFailed:=VD._dll_VirtualDesktopDestroyFailed_normal
+            this._dll_VirtualDesktopDestroyed:=VD._dll_VirtualDesktopDestroyed_normal
+            this._dll_ViewVirtualDesktopChanged:=VD._dll_ViewVirtualDesktopChanged_normal
+            this._dll_CurrentVirtualDesktopChanged:=VD._dll_CurrentVirtualDesktopChanged_normal
 
             this.IVirtualDesktopNotification_methods_count:=11
         } else if (buildNumber < 22483) { ;22483.1000 to be more precise
@@ -164,12 +164,12 @@ class VD {
             this.idx_GetId:=4 ;DllCall(ptr_GetId,"Ptr",IVirtualDesktop,"Ptr",guid_buf)
 
             this.idx_VirtualDesktopNameChanged:=9 ;params (IVirtualDesktop, HSTRING)
-            this.name_VirtualDesktopNameChanged:="VD._dll_VirtualDesktopNameChanged_normal"
+            this._dll_VirtualDesktopNameChanged:=VD._dll_VirtualDesktopNameChanged_normal
             this.idx_SetDesktopName:=15 ;DllCall(ptr_SetDesktopName,"Ptr",IVirtualDesktopManagerInternal,"Ptr",IVirtualDesktop,"Ptr",HSTRING)
             this.idx_GetName:=6 ;DllCall(ptr_GetName,"Ptr",IVirtualDesktop,"Ptr*",HSTRING)
 
             this.idx_VirtualDesktopWallpaperChanged:=12 ;params (IVirtualDesktop, HSTRING)
-            this.name_VirtualDesktopWallpaperChanged:="VD._dll_VirtualDesktopWallpaperChanged_normal"
+            this._dll_VirtualDesktopWallpaperChanged:=VD._dll_VirtualDesktopWallpaperChanged_normal
             this.idx_SetDesktopWallpaper:=16 ;DllCall(ptr_SetDesktopWallpaper,"Ptr",IVirtualDesktopManagerInternal,"Ptr",IVirtualDesktop,"Ptr",HSTRING)
             this.idx_GetWallpaper:=7 ;DllCall(ptr_GetWallpaper,"Ptr",IVirtualDesktop,"Ptr*",HSTRING)
 
@@ -179,12 +179,12 @@ class VD {
             this.idx_VirtualDesktopDestroyed:=6 ;params (IObjectArray, IVirtualDesktop, IVirtualDesktop_fallback)
             this.idx_ViewVirtualDesktopChanged:=10 ;params (IApplicationView)
             this.idx_CurrentVirtualDesktopChanged:=11 ;params (IObjectArray, IVirtualDesktop_old, IVirtualDesktop_new)
-            this.name_VirtualDesktopCreated:="VD._dll_VirtualDesktopCreated_IObjectArray"
-            this.name_VirtualDesktopDestroyBegin:="VD._dll_VirtualDesktopDestroyBegin_IObjectArray"
-            this.name_VirtualDesktopDestroyFailed:="VD._dll_VirtualDesktopDestroyFailed_IObjectArray"
-            this.name_VirtualDesktopDestroyed:="VD._dll_VirtualDesktopDestroyed_IObjectArray"
-            this.name_ViewVirtualDesktopChanged:="VD._dll_ViewVirtualDesktopChanged_normal"
-            this.name_CurrentVirtualDesktopChanged:="VD._dll_CurrentVirtualDesktopChanged_IObjectArray"
+            this._dll_VirtualDesktopCreated:=VD._dll_VirtualDesktopCreated_IObjectArray
+            this._dll_VirtualDesktopDestroyBegin:=VD._dll_VirtualDesktopDestroyBegin_IObjectArray
+            this._dll_VirtualDesktopDestroyFailed:=VD._dll_VirtualDesktopDestroyFailed_IObjectArray
+            this._dll_VirtualDesktopDestroyed:=VD._dll_VirtualDesktopDestroyed_IObjectArray
+            this._dll_ViewVirtualDesktopChanged:=VD._dll_ViewVirtualDesktopChanged_normal
+            this._dll_CurrentVirtualDesktopChanged:=VD._dll_CurrentVirtualDesktopChanged_IObjectArray
 
             this.IVirtualDesktopNotification_methods_count:=13
         } else if (buildNumber <= 22621 && revisionNumber < 2215) {
@@ -211,12 +211,12 @@ class VD {
             this.idx_GetId:=4 ;DllCall(ptr_GetId,"Ptr",IVirtualDesktop,"Ptr",guid_buf)
 
             this.idx_VirtualDesktopNameChanged:=9 ;params (IVirtualDesktop, HSTRING)
-            this.name_VirtualDesktopNameChanged:="VD._dll_VirtualDesktopNameChanged_normal"
+            this._dll_VirtualDesktopNameChanged:=VD._dll_VirtualDesktopNameChanged_normal
             this.idx_SetDesktopName:=16 ;DllCall(ptr_SetDesktopName,"Ptr",IVirtualDesktopManagerInternal,"Ptr",IVirtualDesktop,"Ptr",HSTRING)
             this.idx_GetName:=6 ;DllCall(ptr_GetName,"Ptr",IVirtualDesktop,"Ptr*",HSTRING)
 
             this.idx_VirtualDesktopWallpaperChanged:=12 ;params (IVirtualDesktop, HSTRING)
-            this.name_VirtualDesktopWallpaperChanged:="VD._dll_VirtualDesktopWallpaperChanged_normal"
+            this._dll_VirtualDesktopWallpaperChanged:=VD._dll_VirtualDesktopWallpaperChanged_normal
             this.idx_SetDesktopWallpaper:=17 ;DllCall(ptr_SetDesktopWallpaper,"Ptr",IVirtualDesktopManagerInternal,"Ptr",IVirtualDesktop,"Ptr",HSTRING)
             this.idx_GetWallpaper:=7 ;DllCall(ptr_GetWallpaper,"Ptr",IVirtualDesktop,"Ptr*",HSTRING)
 
@@ -226,12 +226,12 @@ class VD {
             this.idx_VirtualDesktopDestroyed:=6 ;params (IObjectArray, IVirtualDesktop, IVirtualDesktop_fallback)
             this.idx_ViewVirtualDesktopChanged:=10 ;params (IApplicationView)
             this.idx_CurrentVirtualDesktopChanged:=11 ;params (IObjectArray, IVirtualDesktop_old, IVirtualDesktop_new)
-            this.name_VirtualDesktopCreated:="VD._dll_VirtualDesktopCreated_IObjectArray"
-            this.name_VirtualDesktopDestroyBegin:="VD._dll_VirtualDesktopDestroyBegin_IObjectArray"
-            this.name_VirtualDesktopDestroyFailed:="VD._dll_VirtualDesktopDestroyFailed_IObjectArray"
-            this.name_VirtualDesktopDestroyed:="VD._dll_VirtualDesktopDestroyed_IObjectArray"
-            this.name_ViewVirtualDesktopChanged:="VD._dll_ViewVirtualDesktopChanged_normal"
-            this.name_CurrentVirtualDesktopChanged:="VD._dll_CurrentVirtualDesktopChanged_IObjectArray"
+            this._dll_VirtualDesktopCreated:=VD._dll_VirtualDesktopCreated_IObjectArray
+            this._dll_VirtualDesktopDestroyBegin:=VD._dll_VirtualDesktopDestroyBegin_IObjectArray
+            this._dll_VirtualDesktopDestroyFailed:=VD._dll_VirtualDesktopDestroyFailed_IObjectArray
+            this._dll_VirtualDesktopDestroyed:=VD._dll_VirtualDesktopDestroyed_IObjectArray
+            this._dll_ViewVirtualDesktopChanged:=VD._dll_ViewVirtualDesktopChanged_normal
+            this._dll_CurrentVirtualDesktopChanged:=VD._dll_CurrentVirtualDesktopChanged_IObjectArray
 
             this.IVirtualDesktopNotification_methods_count:=13
         } else if (buildNumber <= 22631 && revisionNumber < 3085) {
@@ -256,12 +256,12 @@ class VD {
             this.idx_GetId:=4 ;DllCall(ptr_GetId,"Ptr",IVirtualDesktop,"Ptr",guid_buf)
 
             this.idx_VirtualDesktopNameChanged:=8 ;params (IVirtualDesktop, HSTRING)
-            this.name_VirtualDesktopNameChanged:="VD._dll_VirtualDesktopNameChanged_normal"
+            this._dll_VirtualDesktopNameChanged:=VD._dll_VirtualDesktopNameChanged_normal
             this.idx_SetDesktopName:=15 ;DllCall(ptr_SetDesktopName,"Ptr",IVirtualDesktopManagerInternal,"Ptr",IVirtualDesktop,"Ptr",HSTRING)
             this.idx_GetName:=5 ;DllCall(ptr_GetName,"Ptr",IVirtualDesktop,"Ptr*",HSTRING)
 
             this.idx_VirtualDesktopWallpaperChanged:=11 ;params (IVirtualDesktop, HSTRING)
-            this.name_VirtualDesktopWallpaperChanged:="VD._dll_VirtualDesktopWallpaperChanged_normal"
+            this._dll_VirtualDesktopWallpaperChanged:=VD._dll_VirtualDesktopWallpaperChanged_normal
             this.idx_SetDesktopWallpaper:=16 ;DllCall(ptr_SetDesktopWallpaper,"Ptr",IVirtualDesktopManagerInternal,"Ptr",IVirtualDesktop,"Ptr",HSTRING)
             this.idx_GetWallpaper:=6 ;DllCall(ptr_GetWallpaper,"Ptr",IVirtualDesktop,"Ptr*",HSTRING)
 
@@ -271,12 +271,12 @@ class VD {
             this.idx_VirtualDesktopDestroyed:=6 ;params (IVirtualDesktop, IVirtualDesktop_fallback)
             this.idx_ViewVirtualDesktopChanged:=9 ;params (IApplicationView)
             this.idx_CurrentVirtualDesktopChanged:=10 ;params (IVirtualDesktop_old, IVirtualDesktop_new)
-            this.name_VirtualDesktopCreated:="VD._dll_VirtualDesktopCreated_normal"
-            this.name_VirtualDesktopDestroyBegin:="VD._dll_VirtualDesktopDestroyBegin_normal"
-            this.name_VirtualDesktopDestroyFailed:="VD._dll_VirtualDesktopDestroyFailed_normal"
-            this.name_VirtualDesktopDestroyed:="VD._dll_VirtualDesktopDestroyed_normal"
-            this.name_ViewVirtualDesktopChanged:="VD._dll_ViewVirtualDesktopChanged_normal"
-            this.name_CurrentVirtualDesktopChanged:="VD._dll_CurrentVirtualDesktopChanged_normal"
+            this._dll_VirtualDesktopCreated:=VD._dll_VirtualDesktopCreated_normal
+            this._dll_VirtualDesktopDestroyBegin:=VD._dll_VirtualDesktopDestroyBegin_normal
+            this._dll_VirtualDesktopDestroyFailed:=VD._dll_VirtualDesktopDestroyFailed_normal
+            this._dll_VirtualDesktopDestroyed:=VD._dll_VirtualDesktopDestroyed_normal
+            this._dll_ViewVirtualDesktopChanged:=VD._dll_ViewVirtualDesktopChanged_normal
+            this._dll_CurrentVirtualDesktopChanged:=VD._dll_CurrentVirtualDesktopChanged_normal
 
             this.IVirtualDesktopNotification_methods_count:=14
         } else {
@@ -302,12 +302,12 @@ class VD {
             this.idx_GetId:=4 ;DllCall(ptr_GetId,"Ptr",IVirtualDesktop,"Ptr",guid_buf)
 
             this.idx_VirtualDesktopNameChanged:=8 ;params (IVirtualDesktop, HSTRING)
-            this.name_VirtualDesktopNameChanged:="VD._dll_VirtualDesktopNameChanged_normal"
+            this._dll_VirtualDesktopNameChanged:=VD._dll_VirtualDesktopNameChanged_normal
             this.idx_SetDesktopName:=15 ;DllCall(ptr_SetDesktopName,"Ptr",IVirtualDesktopManagerInternal,"Ptr",IVirtualDesktop,"Ptr",HSTRING)
             this.idx_GetName:=5 ;DllCall(ptr_GetName,"Ptr",IVirtualDesktop,"Ptr*",HSTRING)
 
             this.idx_VirtualDesktopWallpaperChanged:=11 ;params (IVirtualDesktop, HSTRING)
-            this.name_VirtualDesktopWallpaperChanged:="VD._dll_VirtualDesktopWallpaperChanged_normal"
+            this._dll_VirtualDesktopWallpaperChanged:=VD._dll_VirtualDesktopWallpaperChanged_normal
             this.idx_SetDesktopWallpaper:=16 ;DllCall(ptr_SetDesktopWallpaper,"Ptr",IVirtualDesktopManagerInternal,"Ptr",IVirtualDesktop,"Ptr",HSTRING)
             this.idx_GetWallpaper:=6 ;DllCall(ptr_GetWallpaper,"Ptr",IVirtualDesktop,"Ptr*",HSTRING)
 
@@ -317,12 +317,12 @@ class VD {
             this.idx_VirtualDesktopDestroyed:=6 ;params (IVirtualDesktop, IVirtualDesktop_fallback)
             this.idx_ViewVirtualDesktopChanged:=9 ;params (IApplicationView)
             this.idx_CurrentVirtualDesktopChanged:=10 ;params (IVirtualDesktop_old, IVirtualDesktop_new)
-            this.name_VirtualDesktopCreated:="VD._dll_VirtualDesktopCreated_normal"
-            this.name_VirtualDesktopDestroyBegin:="VD._dll_VirtualDesktopDestroyBegin_normal"
-            this.name_VirtualDesktopDestroyFailed:="VD._dll_VirtualDesktopDestroyFailed_normal"
-            this.name_VirtualDesktopDestroyed:="VD._dll_VirtualDesktopDestroyed_normal"
-            this.name_ViewVirtualDesktopChanged:="VD._dll_ViewVirtualDesktopChanged_normal"
-            this.name_CurrentVirtualDesktopChanged:="VD._dll_CurrentVirtualDesktopChanged_normal"
+            this._dll_VirtualDesktopCreated:=VD._dll_VirtualDesktopCreated_normal
+            this._dll_VirtualDesktopDestroyBegin:=VD._dll_VirtualDesktopDestroyBegin_normal
+            this._dll_VirtualDesktopDestroyFailed:=VD._dll_VirtualDesktopDestroyFailed_normal
+            this._dll_VirtualDesktopDestroyed:=VD._dll_VirtualDesktopDestroyed_normal
+            this._dll_ViewVirtualDesktopChanged:=VD._dll_ViewVirtualDesktopChanged_normal
+            this._dll_CurrentVirtualDesktopChanged:=VD._dll_CurrentVirtualDesktopChanged_normal
 
             this.IVirtualDesktopNotification_methods_count:=14
         }
@@ -837,21 +837,21 @@ class VD {
 
     RegisterDesktopNotifications() { ;https://github.com/Ciantic/VirtualDesktopAccessor/blob/5bc1bbaab247b5d72e70abc9432a15275fd2d229/VirtualDesktopAccessor/dllmain.h#L718-L794
         methods_ptr:=DllCall("GlobalAlloc","Uint",0x40,"Uint",this.IVirtualDesktopNotification_methods_count*A_PtrSize) ;PLEASE DON'T GARBAGE COLLECT IT, this took me hours to debug, I was lucky ahkv2 garbage collected slowly
-        NumPut(RegisterCallback("VD._dll_QueryInterface_Same", "F"), methods_ptr+0*A_PtrSize, "Ptr")
-        NumPut(RegisterCallback("VD._dll_AddRef_Same", "F"), methods_ptr+1*A_PtrSize, "Ptr")
-        NumPut(RegisterCallback("VD._dll_Release_Same", "F"), methods_ptr+2*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback(this._dll_QueryInterface_Same, "F"), methods_ptr+0*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback(this._dll_AddRef_Same, "F"), methods_ptr+1*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback(this._dll_Release_Same, "F"), methods_ptr+2*A_PtrSize, "Ptr")
 
-        NumPut(RegisterCallback(this.name_VirtualDesktopCreated, "F"), methods_ptr+this.idx_VirtualDesktopCreated*A_PtrSize, "Ptr")
-        NumPut(RegisterCallback(this.name_VirtualDesktopDestroyBegin, "F"), methods_ptr+this.idx_VirtualDesktopDestroyBegin*A_PtrSize, "Ptr")
-        NumPut(RegisterCallback(this.name_VirtualDesktopDestroyFailed, "F"), methods_ptr+this.idx_VirtualDesktopDestroyFailed*A_PtrSize, "Ptr")
-        NumPut(RegisterCallback(this.name_VirtualDesktopDestroyed, "F"), methods_ptr+this.idx_VirtualDesktopDestroyed*A_PtrSize, "Ptr")
-        NumPut(RegisterCallback(this.name_ViewVirtualDesktopChanged, "F"), methods_ptr+this.idx_ViewVirtualDesktopChanged*A_PtrSize, "Ptr")
-        NumPut(RegisterCallback(this.name_CurrentVirtualDesktopChanged, "F"), methods_ptr+this.idx_CurrentVirtualDesktopChanged*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback(this._dll_VirtualDesktopCreated, "F"), methods_ptr+this.idx_VirtualDesktopCreated*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback(this._dll_VirtualDesktopDestroyBegin, "F"), methods_ptr+this.idx_VirtualDesktopDestroyBegin*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback(this._dll_VirtualDesktopDestroyFailed, "F"), methods_ptr+this.idx_VirtualDesktopDestroyFailed*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback(this._dll_VirtualDesktopDestroyed, "F"), methods_ptr+this.idx_VirtualDesktopDestroyed*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback(this._dll_ViewVirtualDesktopChanged, "F"), methods_ptr+this.idx_ViewVirtualDesktopChanged*A_PtrSize, "Ptr")
+        NumPut(RegisterCallback(this._dll_CurrentVirtualDesktopChanged, "F"), methods_ptr+this.idx_CurrentVirtualDesktopChanged*A_PtrSize, "Ptr")
         if (this.idx_VirtualDesktopNameChanged > -1) {
-            NumPut(RegisterCallback(this.name_VirtualDesktopNameChanged, "F"), methods_ptr+this.idx_VirtualDesktopNameChanged*A_PtrSize, "Ptr")
+            NumPut(RegisterCallback(this._dll_VirtualDesktopNameChanged, "F"), methods_ptr+this.idx_VirtualDesktopNameChanged*A_PtrSize, "Ptr")
         }
         if (this.idx_VirtualDesktopWallpaperChanged > -1) {
-            NumPut(RegisterCallback(this.name_VirtualDesktopWallpaperChanged, "F"), methods_ptr+this.idx_VirtualDesktopWallpaperChanged*A_PtrSize, "Ptr")
+            NumPut(RegisterCallback(this._dll_VirtualDesktopWallpaperChanged, "F"), methods_ptr+this.idx_VirtualDesktopWallpaperChanged*A_PtrSize, "Ptr")
         }
 
         ptr:=methods_ptr
