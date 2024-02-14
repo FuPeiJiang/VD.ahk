@@ -34,7 +34,7 @@ facedetect(file, maxheight := 2000)
    {
       msgbox File "%file%" does not exist
       ExitApp
-   }   
+   }
    VarSetCapacity(GUID, 16)
    DllCall("ole32\CLSIDFromString", "wstr", IID_RandomAccessStream := "{905A0FE1-BC53-11DF-8C49-001E4FC686DA}", "ptr", &GUID)
    DllCall("ShCore\CreateRandomAccessStreamOnFile", "wstr", file, "uint", Read := 0, "ptr", &GUID, "ptr*", IRandomAccessStream)

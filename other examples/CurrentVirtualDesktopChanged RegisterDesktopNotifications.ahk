@@ -12,6 +12,10 @@ VD.CurrentVirtualDesktopChanged:=Func("CurrentVirtualDesktopChanged")
 CurrentVirtualDesktopChanged(desktopNum_Old, desktopNum_New) {
     ToolTip % desktopNum_Old ", " desktopNum_New
 }
+VD.VirtualDesktopNameChanged:=Func("VirtualDesktopNameChanged")
+VirtualDesktopNameChanged(desktopNum, desktopName) {
+    ToolTip % desktopNum ", " desktopName
+}
 return
 
 f3::Exitapp
