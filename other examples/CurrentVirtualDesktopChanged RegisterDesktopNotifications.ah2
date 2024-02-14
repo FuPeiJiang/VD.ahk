@@ -10,5 +10,9 @@ VD.DefineProp("CurrentVirtualDesktopChanged", {Call:CurrentVirtualDesktopChanged
 CurrentVirtualDesktopChanged(desktopNum_Old, desktopNum_New) {
   ToolTip desktopNum_Old ", " desktopNum_New
 }
+VD.DefineProp("VirtualDesktopNameChanged", {Call:VirtualDesktopNameChanged})
+VirtualDesktopNameChanged(desktopNum, desktopName) {
+  ToolTip desktopNum ", " desktopName
+}
 
 f3::Exitapp

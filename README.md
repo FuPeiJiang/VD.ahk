@@ -115,16 +115,14 @@ how ? `WinActivate` taskbar before switching and `WinMinimize` taskbar after arr
 ___
 ### if you don't use these headers, it will be slow:<br>
 ```autohotkey
-#NoEnv ; Recommended for performance and compatibility with future AutoHotkey releases.
 #SingleInstance force
-ListLines Off
-SetBatchLines -1
-SendMode Input ; Recommended for new scripts due to its superior speed and reliability.
-SetWorkingDir %A_ScriptDir% ; Ensures a consistent starting directory.
-#KeyHistory 0
+ListLines 0
+SendMode "Input"
+SetWorkingDir A_ScriptDir
+KeyHistory 0
 #WinActivateForce
 
-Process, Priority,, H
+ProcessSetPriority "H"
 
 SetWinDelay -1
 SetControlDelay -1
