@@ -736,7 +736,7 @@ class VD {
 
         if ((NumGet(riid+0,0x0,"Int64")==0 && NumGet(riid+0,0x8,"Int64")==5044031582654955712) || (NumGet(riid+0,0x0,"Int64")==VD.IID_IVirtualDesktopNotification_n1 && NumGet(riid+0,0x8,"Int64")==VD.IID_IVirtualDesktopNotification_n2)) {
             NumPut(this, ppvObject+0, 0, "Ptr")
-            VD._AddRef_Same.Call(this)
+            VD._dll_AddRef_Same.Call(this)
             return 0 ;S_OK
         }
         ; *ppvObject = NULL;
