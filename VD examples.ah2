@@ -123,9 +123,9 @@ f2::Msgbox VD.getCount()
 !NumpadSub::VD.removeDesktop(VD.getCurrentDesktopNum())
 #!NumpadSub::VD.removeDesktop(VD.getCount()) ;removes 3rd desktop if there are 3 desktops
 
-^+NumpadAdd::VD.createUntil(3) ;create until we have at least 3 VD
+^NumpadAdd::VD.createUntil(3) ;create until we have at least 3 VD
 
-^+NumpadSub::{
+^NumpadSub::{
     VD.createUntil(3) ;create until we have at least 3 VD
     sleep 1000
     ;FALLBACK IS ONLY USED IF YOU ARE CURRENTLY ON THAT VD
