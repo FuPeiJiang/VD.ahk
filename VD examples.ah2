@@ -94,8 +94,8 @@ numpad8::VD.MoveWindowToDesktopNum("A",2)
 numpad9::VD.MoveWindowToDesktopNum("A",3)
 
 ; wrapping / cycle back to first desktop when at the last
-^#left::VD.goToRelativeDesktopNum(-1)
-^#right::VD.goToRelativeDesktopNum(+1)
+^+#left::VD.goToRelativeDesktopNum(-1)
+^+#right::VD.goToRelativeDesktopNum(+1)
 
 ; move window to left and follow it
 #!left::VD.goToDesktopNum(VD.MoveWindowToRelativeDesktopNum("A", -1))
@@ -117,8 +117,8 @@ f1::Msgbox VD.getCurrentDesktopNum()
 f2::Msgbox VD.getCount()
 
 ;Create/Remove Desktop
-!NumpadAdd::VD.createDesktop()
-#NumpadAdd::VD.createDesktop(false) ;don't go to newly created
+!NumpadAdd::VD.createDesktop(true) ;go to newly created
+#NumpadAdd::VD.createDesktop(false) ;don't go to newly created, also the default
 
 !NumpadSub::VD.removeDesktop(VD.getCurrentDesktopNum())
 #!NumpadSub::VD.removeDesktop(VD.getCount()) ;removes 3rd desktop if there are 3 desktops
