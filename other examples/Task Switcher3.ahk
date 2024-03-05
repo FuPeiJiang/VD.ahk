@@ -67,7 +67,7 @@ WinGetPos,,, Width, Height,
 Xm := (0.4*A_ScreenWidth)
 Ym := (0.6*A_ScreenHeight)
 ; MouseGetPos, OutputVarX, OutputVarY
-Gui, Show, % "X" Xm " Y" Ym
+Gui Show, % "X" 0 " Y" 0
 
 return
 
