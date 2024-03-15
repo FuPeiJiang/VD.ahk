@@ -1,6 +1,6 @@
 # VD.ahk: Virtual Desktop
 
-Windows 11 support
+Windows 11 support, Windows Server 2022
 
 ### Just run the examples, everything explained inside
 
@@ -65,6 +65,8 @@ Numpad0::VD.goToDesktopNum(previous_desktopNum)
 ___
 also has:
 * `createDesktop()`
+
+* rename desktop: `VD.setNameToDesktopNum("custom Desktop Name",desktopNum)`
 
 * `PinWindow()`
 
