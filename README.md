@@ -1,6 +1,6 @@
 # VD.ahk: Virtual Desktop
 
-Windows 11 support, [ahkv2: v2_port](https://github.com/FuPeiJiang/VD.ahk/tree/v2_port#readme)<br>
+Windows 11 support, Windows Server 2022, [ahkv2: v2_port](https://github.com/FuPeiJiang/VD.ahk/tree/v2_port#readme)<br>
 
 ### Just run the examples, everything explained inside
 
@@ -49,8 +49,24 @@ numpad9::VD.MoveWindowToDesktopNum("A",3)
 
 you can remap everything
 ___
+detect when the virtual desktop changes:<br>
+create a hotkey to return you to the **previous desktop**
+```ahk
+#Include %A_LineFile%\..\VD.ahk
+VD.RegisterDesktopNotifications()
+VD.CurrentVirtualDesktopChanged:=Func("CurrentVirtualDesktopChanged")
+previous_desktopNum:=1
+CurrentVirtualDesktopChanged(desktopNum_Old, desktopNum_New) {
+  global previous_desktopNum
+  previous_desktopNum:=desktopNum_Old
+}
+Numpad0::VD.goToDesktopNum(previous_desktopNum)
+```
+___
 also has:
 * `createDesktop()`
+
+* rename desktop: `VD.setNameToDesktopNum("custom Desktop Name",desktopNum)`
 
 * `PinWindow()`
 
@@ -80,9 +96,6 @@ Loop %id%
 
 MsgBox % foundProcesses
 ```
-detect when the virtual desktop changes
-> on occasion Windows will pull me to another desktop when I click on a notification, or I'll sometimes use the built-in Ctrl+Win+Left/Right to change desktop instead.
-https://github.com/FuPeiJiang/VD.ahk/blob/73e52f9fd5e6c2b413061105ad91da3653fa56e1/other%20examples/CurrentVirtualDesktopChanged%20RegisterDesktopNotifications.ahk#L9-L14
 
 <!-- Desktop2`nPress Numpad6 to move the active window to Desktop3 and go to Desktop 3 (follow the window) -->
 
