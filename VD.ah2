@@ -243,6 +243,9 @@ class VD {
     if (this.idx_SetDesktopWallpaper > -1) {
       this.ptr_SetDesktopWallpaper := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, this.idx_SetDesktopWallpaper)
     }
+    this.ptr_IsAppIdPinned := this._vtable(this.IVirtualDesktopPinnedApps.Ptr, 3)
+    this.ptr_PinAppID := this._vtable(this.IVirtualDesktopPinnedApps.Ptr, 4)
+    this.ptr_UnpinAppID := this._vtable(this.IVirtualDesktopPinnedApps.Ptr, 5)
     this.ptr_IsViewPinned := this._vtable(this.IVirtualDesktopPinnedApps.Ptr, 6)
     this.ptr_PinView := this._vtable(this.IVirtualDesktopPinnedApps.Ptr, 7)
     this.ptr_UnpinView := this._vtable(this.IVirtualDesktopPinnedApps.Ptr, 8)
@@ -280,6 +283,16 @@ class VD {
   static _dll_CreateDesktop_HMONITOR() {
     DllCall(this.ptr_CreateDesktop, "Ptr", this.IVirtualDesktopManagerInternal.Ptr, "Ptr", 0, "Ptr*", &IVirtualDesktop_created := 0)
     return IVirtualDesktop_created
+  }
+  static _dll_IsAppIdPinned(appId) {
+    DllCall(this.ptr_IsAppIdPinned, "Ptr", this.IVirtualDesktopPinnedApps.Ptr, "Ptr", appId, "Int*", &appIsPinned := 0)
+    return appIsPinned
+  }
+  static _dll_PinAppID(appId) {
+    DllCall(this.ptr_PinAppID, "Ptr", this.IVirtualDesktopPinnedApps.Ptr, "Ptr", appId)
+  }
+  static _dll_UnpinAppID(appId) {
+    DllCall(this.ptr_UnpinAppID, "Ptr", this.IVirtualDesktopPinnedApps.Ptr, "Ptr", appId)
   }
   static _dll_IsViewPinned(IApplicationView) {
     DllCall(this.ptr_IsViewPinned, "Ptr", this.IVirtualDesktopPinnedApps.Ptr, "Ptr", IApplicationView, "Int*", &viewIsPinned := 0)
@@ -499,6 +512,92 @@ class VD {
     IVirtualDesktop_fallback := Desktops_Obj.GetAt(fallback_desktopNum)
     this._dll_RemoveDesktop(IVirtualDesktop, IVirtualDesktop_fallback)
   }
+  static _AppIdFromView(view) {
+    ; revelation, view IS the object, I was looking everywhere for CLSID of IApplicationView
+
+    GetAppUserModelId:=this._vtable(view, 17)
+
+    ; p(GetAppUserModelId)
+
+    appId:=0
+    ; VarSetCapacity(appId, 3000)
+    ; DllCall(GetAppUserModelId, "UPtr", view, "Ptr", &appId)
+    DllCall(GetAppUserModelId, "UPtr", view, "Ptr*", &appId)
+
+    ; Ptr* passes the address to Receive the string
+    ; &RECT passes the address to, well input the RECT, not for output
+    ; VarSetCapacity(Rect, 16)  ; A RECT is a struct consisting of four 32-bit integers (i.e. 4*4=16).
+    ; DllCall("GetWindowRect", "Ptr", WinExist(), "Ptr", &Rect)  ; WinExist() returns an HWND.
+    ; MsgBox % "Left " . NumGet(Rect, 0, "Int") . " Top " . NumGet(Rect, 4, "Int")
+    ; . " Right " . NumGet(Rect, 8, "Int") . " Bottom " . NumGet(Rect, 12, "Int")
+    ; wait what?, now I'm confused
+    ; it is because the function says [out]. not in. [in] write to YOUR struct
+    ; , [out] CREATES the struct and returns the pointer to you
+
+    ; DllCall(GetAppUserModelId, "UPtr", view, "Str", appId)
+    ; p(appId)
+    ; DllCall(GetAppUserModelId, "UPtr", view, "Ptr", &appId)
+    ; p(StrGet(appId, 3000, "UTF-16"))
+
+    ; https://stackoverflow.com/questions/27977474/how-to-get-appusermodelid-for-any-app-in-windows-7-8-using-vc#27977668
+    ; https://docs.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-getcurrentprocessexplicitappusermodelid?redirectedfrom=MSDN
+    ;   [out] PWSTR *AppID
+    ; A pointer that receives the address of the AppUserModelID assigned to the process. The caller is responsible for freeing this string with CoTaskMemFree when it is no longer needed. (lol)
+
+    ; p(appId)
+    ; p(StrGet(appId, "UTF-16"))
+
+    ; File := FileOpen(A_LineFile "\..\notes\dump", "w")
+    ; File.RawWrite(0+appId, 3000)
+    ; File.Close()
+
+    return appId
+  } 
+  static IsAppPinned(wintitle) {
+    found:=this._tryGetValidWindow(wintitle)
+    if (!found) {
+        return -1 ;for false
+    }
+    thePView:=found[2]
+    appId:=this._AppIdFromView(thePView)
+
+    appIsPinned:=this._dll_IsAppIdPinned(appId)
+    return appIsPinned
+  }
+  static TogglePinApp(wintitle) {
+    found:=this._tryGetValidWindow(wintitle)
+    if (!found) {
+        return -1 ;for false
+    }
+    thePView:=found[2]
+    appId:=this._AppIdFromView(thePView)
+
+    appIsPinned:=this._dll_IsAppIdPinned(appId)
+    if (appIsPinned) {
+      this._dll_UnpinAppID(appId)
+    } else {
+      this._dll_PinAppID(appId)
+    }
+  } 
+  static PinApp(wintitle) {
+    found := this._tryGetValidWindow(wintitle)
+    if (!found) {
+      return -1
+    }
+    thePView:=found[2]
+    appId:=this._AppIdFromView(thePView) 
+    this._dll_PinAppID(appId)
+  }
+  static UnPinApp(wintitle) {
+    found:=this._tryGetValidWindow(wintitle)
+    if (!found) {
+        return -1 ;for false
+    }
+    thePView:=found[2]
+    appId:=this._AppIdFromView(thePView)
+
+    this._dll_UnpinAppID(appId)
+  } 
   static IsWindowPinned(wintitle) {
     found := this._tryGetValidWindow(wintitle)
     if (!found) {
