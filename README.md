@@ -55,12 +55,11 @@ create a hotkey to return you to the **previous desktop**
 #Include %A_LineFile%\..\VD.ahk
 VD.RegisterDesktopNotifications()
 VD.CurrentVirtualDesktopChanged:=Func("CurrentVirtualDesktopChanged")
-previous_desktopNum:=1
+VD.previous_desktopNum:=1
 CurrentVirtualDesktopChanged(desktopNum_Old, desktopNum_New) {
-  global previous_desktopNum
-  previous_desktopNum:=desktopNum_Old
+  VD.previous_desktopNum:=desktopNum_Old
 }
-Numpad0::VD.goToDesktopNum(previous_desktopNum)
+Numpad0::VD.goToDesktopNum(VD.previous_desktopNum)
 ```
 ___
 also has:
