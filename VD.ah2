@@ -522,7 +522,7 @@ class VD {
   static MoveWindowToDesktopNum(wintitle, desktopNum) {
     found := this._tryGetValidWindow(wintitle)
     if (!found) {
-      return -1
+      return this.WindowInfo(0, desktopNum)
     }
     theHwnd := found[1]
     thePView := found[2]
@@ -553,7 +553,9 @@ class VD {
     }
     follow() {
       VD.goToDesktopNum(this.desktopNum, false)
-      WinActivate "ahk_id " this.hwnd
+      if (WinExist("ahk_id " this.hwnd)) {
+        WinActivate
+      }
     }
   }
   static getRelativeDesktopNum(anchor_desktopNum, relative_count) {
