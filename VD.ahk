@@ -43,7 +43,7 @@
 class VD {
     static dummyStatic1 := VD._init()
 
-    static animation_on:=true
+    static animation_on:=false
 
     ; #Include %A_LineFile%\..\VD.ahk
     _init() {
@@ -523,6 +523,7 @@ class VD {
 
         if (VD.animation_on && firstWindowId) {
             if (this.idx_SwitchDesktopWithAnimation > -1) {
+                DllCall("SetForegroundWindow", "Ptr", firstWindowId) ;before the switchWithAnimation(), intentional
                 DllCall(this.ptr_SwitchDesktopWithAnimation,"Ptr",this.IVirtualDesktopManagerInternal,"Ptr",IVirtualDesktop)
                 this._waitForCurrentDesktopArrived(desktopNum,firstWindowId)
             } else {
@@ -542,6 +543,7 @@ class VD {
             }
         } else {
             this._dll_SwitchDesktop(IVirtualDesktop)
+            DllCall("SetForegroundWindow", "Ptr", firstWindowId) ;after the switch(), intentional
             this._waitForCurrentDesktopArrived(desktopNum,firstWindowId)
         }
 
@@ -1086,8 +1088,12 @@ class VD {
                     Send % "{Blind}" toRelease
                 }
             }
+            BlockInput On ;InputHook would be better, but, too much work
+            ; ... send keystrokes and mouse clicks ...
+
+            ; Send % "{LAlt Down}"
             Send % "{LAlt Down}{LAlt Down}" ;more stable than single on test: testf1_hotkey_hooked_Ctrl_Win_Alt.ah2
-            ;Send "{LAlt Down}"
+
             DllCall("SetForegroundWindow","Ptr",hwnd)
 
             toAppend:=""
@@ -1118,6 +1124,8 @@ class VD {
             if (toAppend) {
                 Send % "{Blind}" toAppend
             }
+
+            BlockInput Off
         }
     }
 
