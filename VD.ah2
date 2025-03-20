@@ -1,6 +1,6 @@
 class VD {
   static dummyStatic1 := VD._init()
-  static animation_on := true
+  static animation_on := false
   static _init() {
     OS_Version := FileGetVersion(A_WinDir "\System32\twinui.pcshell.dll")
     splitByDot := StrSplit(OS_Version, ".")
@@ -394,6 +394,7 @@ class VD {
     IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
     if (VD.animation_on && firstWindowId) {
       if (this.idx_SwitchDesktopWithAnimation > -1) {
+        DllCall("SetForegroundWindow", "Ptr", firstWindowId)
         DllCall(this.ptr_SwitchDesktopWithAnimation, "Ptr", this.IVirtualDesktopManagerInternal.Ptr, "Ptr", IVirtualDesktop)
         this._waitForCurrentDesktopArrived(desktopNum, firstWindowId)
       } else {
@@ -410,6 +411,7 @@ class VD {
       }
     } else {
       this._dll_SwitchDesktop(IVirtualDesktop)
+      DllCall("SetForegroundWindow", "Ptr", firstWindowId)
       this._waitForCurrentDesktopArrived(desktopNum, firstWindowId)
     }
   }
@@ -844,6 +846,7 @@ class VD {
           Send "{Blind}" toRelease
         }
       }
+      BlockInput "On"
       Send "{LAlt Down}{LAlt Down}"
       DllCall("SetForegroundWindow", "Ptr", hwnd)
       toAppend := ""
@@ -874,6 +877,7 @@ class VD {
       if (toAppend) {
         Send "{Blind}" toAppend
       }
+      BlockInput "Off"
     }
   }
   static _getFirstWindowInVD(desktopNum, excludeHwnd := 0) {
