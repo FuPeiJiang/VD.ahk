@@ -1,7 +1,6 @@
 class VD {
   static dummyStatic1 := VD._init()
-
-  static animation_on := true
+  static animation_on := false
   static _init() {
     OS_Version := FileGetVersion(A_WinDir "\System32\twinui.pcshell.dll")
     splitByDot := StrSplit(OS_Version, ".")
@@ -356,15 +355,18 @@ class VD {
     DllCall(this.ptr_CreateDesktop, "Ptr", this.IVirtualDesktopManagerInternal.Ptr, "Ptr", 0, "Ptr*", &IVirtualDesktop_created := 0)
     return IVirtualDesktop_created
   }
-  static _dll_IsAppIdPinned(appId) {
-    DllCall(this.ptr_IsAppIdPinned, "Ptr", this.IVirtualDesktopPinnedApps.Ptr, "Ptr", appId, "Int*", &appIsPinned := 0)
+  static _dll_IsAppIdPinned(exe_path) {
+    ; DllCall(this.ptr_IsAppIdPinned, "Ptr", this.IVirtualDesktopPinnedApps.Ptr, "WStr", exe_path, "Int*", &appIsPinned := 0)
+    DllCall(this.ptr_IsAppIdPinned, "Ptr", this.IVirtualDesktopPinnedApps.Ptr, "Ptr", exe_path, "Int*", &appIsPinned := 0)
     return appIsPinned
   }
-  static _dll_PinAppID(appId) {
-    DllCall(this.ptr_PinAppID, "Ptr", this.IVirtualDesktopPinnedApps.Ptr, "Ptr", appId)
+  static _dll_PinAppID(exe_path) {
+    ;DllCall(this.ptr_PinAppID, "Ptr", this.IVirtualDesktopPinnedApps.Ptr, "WStr", exe_path)
+    DllCall(this.ptr_PinAppID, "Ptr", this.IVirtualDesktopPinnedApps.Ptr, "Ptr", exe_path)
   }
-  static _dll_UnpinAppID(appId) {
-    DllCall(this.ptr_UnpinAppID, "Ptr", this.IVirtualDesktopPinnedApps.Ptr, "Ptr", appId)
+  static _dll_UnpinAppID(exe_path) {
+    ; DllCall(this.ptr_UnpinAppID, "Ptr", this.IVirtualDesktopPinnedApps.Ptr, "WStr", exe_path)
+    DllCall(this.ptr_UnpinAppID, "Ptr", this.IVirtualDesktopPinnedApps.Ptr, "Ptr", exe_path)
   }
   static _dll_IsViewPinned(IApplicationView) {
     DllCall(this.ptr_IsViewPinned, "Ptr", this.IVirtualDesktopPinnedApps.Ptr, "Ptr", IApplicationView, "Int*", &viewIsPinned := 0)
@@ -395,6 +397,7 @@ class VD {
     IVirtualDesktop := this._GetDesktops_Obj().GetAt(desktopNum)
     if (VD.animation_on && firstWindowId) {
       if (this.idx_SwitchDesktopWithAnimation > -1) {
+        DllCall("SetForegroundWindow", "Ptr", firstWindowId)
         DllCall(this.ptr_SwitchDesktopWithAnimation, "Ptr", this.IVirtualDesktopManagerInternal.Ptr, "Ptr", IVirtualDesktop)
         this._waitForCurrentDesktopArrived(desktopNum, firstWindowId)
       } else {
@@ -411,6 +414,7 @@ class VD {
       }
     } else {
       this._dll_SwitchDesktop(IVirtualDesktop)
+      DllCall("SetForegroundWindow", "Ptr", firstWindowId)
       this._waitForCurrentDesktopArrived(desktopNum, firstWindowId)
     }
   }
@@ -628,6 +632,10 @@ class VD {
     IVirtualDesktop_fallback := Desktops_Obj.GetAt(fallback_desktopNum)
     this._dll_RemoveDesktop(IVirtualDesktop, IVirtualDesktop_fallback)
   }
+  static IsExePinned(exe_path) {
+    appIsPinned := this._dll_IsAppIdPinned(exe_path)
+    return appIsPinned
+  }
   static _AppIdFromView(view) {
     ; revelation, view IS the object, I was looking everywhere for CLSID of IApplicationView
 
@@ -668,7 +676,7 @@ class VD {
     ; File.Close()
 
     return appId
-  } 
+  }  
   static IsAppPinned(wintitle) {
     found:=this._tryGetValidWindow(wintitle)
     if (!found) {
@@ -677,24 +685,9 @@ class VD {
     thePView:=found[2]
     appId:=this._AppIdFromView(thePView)
 
-    appIsPinned:=this._dll_IsAppIdPinned(appId)
+    appIsPinned:=this._dll_IsAppIdPinned(appId) 
     return appIsPinned
   }
-  static TogglePinApp(wintitle) {
-    found:=this._tryGetValidWindow(wintitle)
-    if (!found) {
-        return -1 ;for false
-    }
-    thePView:=found[2]
-    appId:=this._AppIdFromView(thePView)
-
-    appIsPinned:=this._dll_IsAppIdPinned(appId)
-    if (appIsPinned) {
-      this._dll_UnpinAppID(appId)
-    } else {
-      this._dll_PinAppID(appId)
-    }
-  } 
   static PinApp(wintitle) {
     found := this._tryGetValidWindow(wintitle)
     if (!found) {
@@ -713,7 +706,21 @@ class VD {
     appId:=this._AppIdFromView(thePView)
 
     this._dll_UnpinAppID(appId)
-  } 
+  }  
+  static TogglePinExe(exe_path) {
+    appIsPinned := this._dll_IsAppIdPinned(exe_path)
+    if (appIsPinned) {
+      this._dll_UnpinAppID(exe_path)
+    } else {
+      this._dll_PinAppID(exe_path)
+    }
+  }
+  static PinExe(exe_path) {
+    this._dll_PinAppID(exe_path)
+  }
+  static UnPinExe(exe_path) {
+    this._dll_UnpinAppID(exe_path)
+  }
   static IsWindowPinned(wintitle) {
     found := this._tryGetValidWindow(wintitle)
     if (!found) {
@@ -913,6 +920,7 @@ class VD {
           Send "{Blind}" toRelease
         }
       }
+      BlockInput "On"
       Send "{LAlt Down}{LAlt Down}"
       DllCall("SetForegroundWindow", "Ptr", hwnd)
       toAppend := ""
@@ -943,6 +951,7 @@ class VD {
       if (toAppend) {
         Send "{Blind}" toAppend
       }
+      BlockInput "Off"
     }
   }
   static _getFirstWindowInVD(desktopNum, excludeHwnd := 0) {
