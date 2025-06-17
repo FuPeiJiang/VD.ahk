@@ -47,9 +47,9 @@ these functions are mostly for script only,
 for example: I used VD.createUntil(3)
 at the start of this tutorial, to make sure we have at least 3 VD
 
-^+NumpadAdd (Ctrl Alt + Numpad+) to create until you have 3 desktops
+^!NumpadAdd (Ctrl Alt + Numpad+) to create until you have 3 desktops
 !NumpadSub (Alt + Numpad-) to remove the current desktop
-^+NumpadSub (Ctrl ALt + Numpad-) to delete the 3rd desktop
+^!NumpadSub (Ctrl ALt + Numpad-) to delete the 3rd desktop
 
 more below, look at the hotkeys in code.
 )
