@@ -1,7 +1,11 @@
 class VD {
-  static dummyStatic1 := VD._init()
+  static _initRetryScheduled := false
+  static _initAttempts := 0
+  static _initMaxAttempts := 15
+  static ptr_GetViewForHwnd := 0
   static animation_on := false
-  static _init() {
+  static dummyStatic1 := VD._init()
+  static _init(retryAttempt := 1) {
     OS_Version := FileGetVersion(A_WinDir "\System32\twinui.pcshell.dll")
     splitByDot := StrSplit(OS_Version, ".")
     buildNumber := splitByDot[3] + 0
@@ -284,37 +288,69 @@ class VD {
       this._dll_CurrentVirtualDesktopChanged := VD._dll_CurrentVirtualDesktopChanged_normal
       this.IVirtualDesktopNotification_methods_count := 14
     }
-    this.IVirtualDesktopManager := ComObject("{aa509086-5ca9-4c25-8f95-589d3c07b48a}", "{a5cd92ff-29be-454c-8d04-d82879fb3f1b}")
-    this.ptr_MoveWindowToDesktop := this._vtable(this.IVirtualDesktopManager.Ptr, 5)
-    this.CImmersiveShell_IServiceProvider := ComObject("{c2f03a33-21f5-47fa-b4bb-156362a2f239}", "{6d5140c1-7436-11ce-8034-00aa006009fa}")
-    this.IVirtualDesktopManagerInternal := ComObjQuery(this.CImmersiveShell_IServiceProvider.Ptr, "{c5e0cdca-7b6e-41b2-9fc4-d93975cc467b}", IID_IVirtualDesktopManagerInternal_str)
-    this.IVirtualDesktopPinnedApps := ComObjQuery(this.CImmersiveShell_IServiceProvider.Ptr, "{b5a399e7-1c87-46b8-88e9-fc5747b171bd}", "{4ce81583-1e4c-4632-a621-07a53543148f}")
-    this.IApplicationViewCollection := ComObjQuery(this.CImmersiveShell_IServiceProvider.Ptr, "{1841c6d7-4f9d-42c0-af41-8747538f10e5}", "{1841c6d7-4f9d-42c0-af41-8747538f10e5}")
-    this.ptr_MoveViewToDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, idx_MoveViewToDesktop)
-    this.ptr_GetCurrentDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, idx_GetCurrentDesktop)
-    this.ptr_GetDesktops := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, idx_GetDesktops)
-    this.ptr_SwitchDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, idx_SwitchDesktop)
-    this.ptr_CreateDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, idx_CreateDesktop)
-    this.ptr_RemoveDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, idx_RemoveDesktop)
-    if (this.idx_SwitchDesktopWithAnimation > -1) {
-      this.ptr_SwitchDesktopWithAnimation := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, this.idx_SwitchDesktopWithAnimation)
+    try {
+      this.IVirtualDesktopManager := ComObject("{aa509086-5ca9-4c25-8f95-589d3c07b48a}", "{a5cd92ff-29be-454c-8d04-d82879fb3f1b}")
+      this.ptr_MoveWindowToDesktop := this._vtable(this.IVirtualDesktopManager.Ptr, 5)
+      this.CImmersiveShell_IServiceProvider := this._getShellServiceProvider()
+      if (!this.CImmersiveShell_IServiceProvider) {
+        throw Error("ImmersiveShell IServiceProvider not registered yet")
+      }
+      this.IVirtualDesktopManagerInternal := ComObjQuery(this.CImmersiveShell_IServiceProvider.Ptr, "{c5e0cdca-7b6e-41b2-9fc4-d93975cc467b}", IID_IVirtualDesktopManagerInternal_str)
+      this.IVirtualDesktopPinnedApps := ComObjQuery(this.CImmersiveShell_IServiceProvider.Ptr, "{b5a399e7-1c87-46b8-88e9-fc5747b171bd}", "{4ce81583-1e4c-4632-a621-07a53543148f}")
+      this.IApplicationViewCollection := ComObjQuery(this.CImmersiveShell_IServiceProvider.Ptr, "{1841c6d7-4f9d-42c0-af41-8747538f10e5}", "{1841c6d7-4f9d-42c0-af41-8747538f10e5}")
+      if (!this.IVirtualDesktopManagerInternal || !this.IVirtualDesktopPinnedApps || !this.IApplicationViewCollection) {
+        throw Error("Virtual desktop COM interfaces not available yet")
+      }
+      this.ptr_MoveViewToDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, idx_MoveViewToDesktop)
+      this.ptr_GetCurrentDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, idx_GetCurrentDesktop)
+      this.ptr_GetDesktops := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, idx_GetDesktops)
+      this.ptr_SwitchDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, idx_SwitchDesktop)
+      this.ptr_CreateDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, idx_CreateDesktop)
+      this.ptr_RemoveDesktop := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, idx_RemoveDesktop)
+      if (this.idx_SwitchDesktopWithAnimation > -1) {
+        this.ptr_SwitchDesktopWithAnimation := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, this.idx_SwitchDesktopWithAnimation)
+      }
+      if (this.idx_SetDesktopName > -1) {
+        this.ptr_SetDesktopName := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, this.idx_SetDesktopName)
+      }
+      if (this.idx_SetDesktopWallpaper > -1) {
+        this.ptr_SetDesktopWallpaper := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, this.idx_SetDesktopWallpaper)
+      }
+      this.ptr_IsAppIdPinned := this._vtable(this.IVirtualDesktopPinnedApps.Ptr, 3)
+      this.ptr_PinAppID := this._vtable(this.IVirtualDesktopPinnedApps.Ptr, 4)
+      this.ptr_UnpinAppID := this._vtable(this.IVirtualDesktopPinnedApps.Ptr, 5)
+      this.ptr_IsViewPinned := this._vtable(this.IVirtualDesktopPinnedApps.Ptr, 6)
+      this.ptr_PinView := this._vtable(this.IVirtualDesktopPinnedApps.Ptr, 7)
+      this.ptr_UnpinView := this._vtable(this.IVirtualDesktopPinnedApps.Ptr, 8)
+      this.ptr_GetViewForHwnd := this._vtable(this.IApplicationViewCollection.Ptr, 6)
+      this.IID_IVirtualDesktop_ptr := DllCall("GlobalAlloc", "UInt", 0x00, "Uint", 16, "Ptr")
+      DllCall("ole32\CLSIDFromString", "Str", IID_IVirtualDesktop_str, "Ptr", this.IID_IVirtualDesktop_ptr)
+      OnMessage(DllCall("RegisterWindowMessageW", "WStr", "TaskbarCreated", "Uint"), VD._ExplorerRestarted)
+      this._initAttempts := 0
+      return true
+    } catch Error as e {
+      this._initAttempts := retryAttempt
+      OutputDebug Format("VD._init attempt {} failed: {}`n", retryAttempt, e.Message)
+      this._scheduleInitRetry(retryAttempt)
+      return false
     }
-    if (this.idx_SetDesktopName > -1) {
-      this.ptr_SetDesktopName := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, this.idx_SetDesktopName)
+  }
+  static _getShellServiceProvider() {
+    try {
+      return ComObject("{c2f03a33-21f5-47fa-b4bb-156362a2f239}", "{6d5140c1-7436-11ce-8034-00aa006009fa}")
+    } catch Error {
+      return false
     }
-    if (this.idx_SetDesktopWallpaper > -1) {
-      this.ptr_SetDesktopWallpaper := this._vtable(this.IVirtualDesktopManagerInternal.Ptr, this.idx_SetDesktopWallpaper)
+  }
+  static _scheduleInitRetry(retryAttempt) {
+    if (retryAttempt >= this._initMaxAttempts) {
+      return
     }
-    this.ptr_IsAppIdPinned := this._vtable(this.IVirtualDesktopPinnedApps.Ptr, 3)
-    this.ptr_PinAppID := this._vtable(this.IVirtualDesktopPinnedApps.Ptr, 4)
-    this.ptr_UnpinAppID := this._vtable(this.IVirtualDesktopPinnedApps.Ptr, 5)
-    this.ptr_IsViewPinned := this._vtable(this.IVirtualDesktopPinnedApps.Ptr, 6)
-    this.ptr_PinView := this._vtable(this.IVirtualDesktopPinnedApps.Ptr, 7)
-    this.ptr_UnpinView := this._vtable(this.IVirtualDesktopPinnedApps.Ptr, 8)
-    this.ptr_GetViewForHwnd := this._vtable(this.IApplicationViewCollection.Ptr, 6)
-    this.IID_IVirtualDesktop_ptr := DllCall("GlobalAlloc", "UInt", 0x00, "Uint", 16, "Ptr")
-    DllCall("ole32\CLSIDFromString", "Str", IID_IVirtualDesktop_str, "Ptr", this.IID_IVirtualDesktop_ptr)
-    OnMessage(DllCall("RegisterWindowMessageW", "WStr", "TaskbarCreated", "Uint"), VD._ExplorerRestarted)
+    if (this._initRetryScheduled) {
+      return
+    }
+    this._initRetryScheduled := true
+    SetTimer(() => (VD._initRetryScheduled := false, VD._init(retryAttempt + 1)), -750)
   }
   static _ExplorerRestarted(lParam, msg, hwnd) {
     VD._init()
@@ -376,6 +412,12 @@ class VD {
     DllCall(this.ptr_UnpinView, "Ptr", this.IVirtualDesktopPinnedApps.Ptr, "Ptr", IApplicationView)
   }
   static _dll_GetViewForHwnd(HWND) {
+    if (!ObjHasOwnProp(this, "ptr_GetViewForHwnd") || !this.ptr_GetViewForHwnd) {
+      this._init(this._initAttempts + 1)
+      if (!ObjHasOwnProp(this, "ptr_GetViewForHwnd") || !this.ptr_GetViewForHwnd || !this.IApplicationViewCollection) {
+        return 0
+      }
+    }
     DllCall(this.ptr_GetViewForHwnd, "Ptr", this.IApplicationViewCollection.Ptr, "Ptr", HWND, "Ptr*", &IApplicationView := 0)
     return IApplicationView
   }
