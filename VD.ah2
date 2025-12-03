@@ -1,10 +1,10 @@
 class VD {
-  static dummyStatic1 := VD._init()
   static _initRetryScheduled := false
   static _initAttempts := 0
   static _initMaxAttempts := 15
   static ptr_GetViewForHwnd := 0
   static animation_on := false
+  static dummyStatic1 := VD._init()
   static _init(retryAttempt := 1) {
     OS_Version := FileGetVersion(A_WinDir "\System32\twinui.pcshell.dll")
     splitByDot := StrSplit(OS_Version, ".")
