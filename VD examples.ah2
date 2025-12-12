@@ -71,7 +71,7 @@ VD.createUntil(3) ;create until we have at least 3 VD
 
 return
 
-;#useful stuff  
+;#useful stuff
 numpad1::VD.goToDesktopNum(1)
 numpad2::VD.goToDesktopNum(2)
 numpad3::VD.goToDesktopNum(3)

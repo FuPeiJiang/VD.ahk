@@ -27,10 +27,11 @@ if you don't want VD switching animation, set `VD.animation_on:=false`
 * <kbd>Numpad6</kbd> to move the active window to `Desktop 3`<br>
 * here, I choose to follow the window
 ```autohotkey
-numpad4::VD.MoveWindowToDesktopNum("A",1).follow()
-numpad5::VD.MoveWindowToDesktopNum("A",2).follow()
-numpad6::VD.MoveWindowToDesktopNum("A",3).follow()
+numpad4::VD.MoveWindowToDesktopNum("A",1,true)
+numpad5::VD.MoveWindowToDesktopNum("A",2,true)
+numpad6::VD.MoveWindowToDesktopNum("A",3,true)
 ```
+* just move window
 ```autohotkey
 numpad7::VD.MoveWindowToDesktopNum("A",1)
 numpad8::VD.MoveWindowToDesktopNum("A",2)
@@ -43,9 +44,9 @@ numpad9::VD.MoveWindowToDesktopNum("A",3)
 ^#right::VD.goToRelativeDesktopNum(+1)
 
 ; move window to left and follow it
-#!left::VD.MoveWindowToRelativeDesktopNum("A", -1).follow()
+#!left::VD.MoveWindowToRelativeDesktopNum("A", -1, true)
 ; move window to right and follow it
-#!right::VD.MoveWindowToRelativeDesktopNum("A", 1).follow()
+#!right::VD.MoveWindowToRelativeDesktopNum("A", 1, true)
 ```
 
 you can remap everything
