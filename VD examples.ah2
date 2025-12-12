@@ -14,6 +14,8 @@ ProcessSetPriority "H"
 SetWinDelay -1
 SetControlDelay -1
 
+A_DetectHiddenWindows := 1
+
 
 ;START of gui stuff
 myGui:=Gui()

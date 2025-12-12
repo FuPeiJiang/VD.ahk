@@ -28,7 +28,8 @@ class VD {
         }
     }
 
-    static versions := [        {
+    static versions := [
+        {
             buildNumber: 20348,
             revisionNumber: 0,
             IID_IVirtualDesktopManagerInternal_str: "{f31574d6-b682-4cdc-bd56-1827860abec6}",
@@ -42,6 +43,7 @@ class VD {
             idx_SwitchDesktop:9,
             idx_CreateDesktop:10,
             idx_RemoveDesktop:11,
+            idx_FindDesktop:12,
             ;vtbl Notification
             IVirtualDesktopNotification: VD.IVirtualDesktopNotification_Normal,
             IVirtualDesktopNotification_methods_count: 9,
@@ -63,6 +65,7 @@ class VD {
             idx_SwitchDesktop:9,
             idx_CreateDesktop:10,
             idx_RemoveDesktop:11,
+            idx_FindDesktop:12,
             ;vtbl Notification
             IVirtualDesktopNotification: VD.IVirtualDesktopNotification_Normal,
             IVirtualDesktopNotification_methods_count: 11,
@@ -84,6 +87,7 @@ class VD {
             idx_SwitchDesktop:9,
             idx_CreateDesktop:10,
             idx_RemoveDesktop:12,
+            idx_FindDesktop:13,
             ;vtbl Notification
             IVirtualDesktopNotification: VD.IVirtualDesktopNotification_IObjectArray,
             IVirtualDesktopNotification_methods_count: 13,
@@ -105,6 +109,7 @@ class VD {
             idx_SwitchDesktop:10,
             idx_CreateDesktop:11,
             idx_RemoveDesktop:13,
+            idx_FindDesktop:14,
             ;vtbl Notification
             IVirtualDesktopNotification: VD.IVirtualDesktopNotification_IObjectArray,
             IVirtualDesktopNotification_methods_count: 13,
@@ -126,6 +131,7 @@ class VD {
             idx_SwitchDesktop:9,
             idx_CreateDesktop:10,
             idx_RemoveDesktop:12,
+            idx_FindDesktop:13,
             ;vtbl Notification
             IVirtualDesktopNotification: VD.IVirtualDesktopNotification_Normal,
             IVirtualDesktopNotification_methods_count: 14,
@@ -147,6 +153,7 @@ class VD {
             idx_SwitchDesktop:9,
             idx_CreateDesktop:10,
             idx_RemoveDesktop:12,
+            idx_FindDesktop:13,
             ;vtbl Notification
             IVirtualDesktopNotification: VD.IVirtualDesktopNotification_Normal,
             IVirtualDesktopNotification_methods_count: 14,
@@ -168,6 +175,7 @@ class VD {
             idx_SwitchDesktop:9,
             idx_CreateDesktop:11,
             idx_RemoveDesktop:13,
+            idx_FindDesktop:14,
             ;vtbl Notification
             IVirtualDesktopNotification: VD.IVirtualDesktopNotification_Normal,
             IVirtualDesktopNotification_methods_count: 14,
@@ -192,6 +200,8 @@ class VD {
 
         VD.ListenersCurrentVirtualDesktopChanged := Map()
         VD.WinActivate_callback := 0
+
+        VD.DesktopIdMap := Map()
 
         VD.IApplicationViewCollection := VD.IApplicationViewCollection_Class()
         VD.IDesktopNotificationService := VD.IDesktopNotificationService_Class()
@@ -278,6 +288,53 @@ class VD {
         }
     }
 
+    static getDesktopNumOfHWND(hwnd) {
+        IApplicationView := VD.IApplicationViewCollection.GetViewForHwnd(hwnd)
+        DesktopId := VD.IVirtualDesktopManager_Class(IApplicationView).GetVirtualDesktopId()
+        DesktopId_GUID_str := VD._StringFromGUID(DesktopId)
+        switch DesktopId_GUID_str {
+            ; https://github.com/MScholtes/VirtualDesktop/blob/a725cbd3cdb9e977678eeaf034a7cc96d2e74bc6/VirtualDesktop11.cs#L329
+            ; https://github.com/MScholtes/VirtualDesktop/commit/614c7176a384116afcacac4650d445d7a31f645d
+            ; CVirtualDesktopVisibilityPolicy::PinViewToAllDesktops(struct IApplicationView * __ptr64,bool) __ptr64
+            ; bool:true -> "{BB64D5B7-4DE3-4AB2-A87C-DB7601AEA7DC}" ; AppOnAllDesktops
+            ; bool:false -> "{C2DDEA68-66F2-4CF9-8264-1BFD00FBBBAC}" ; WindowOnAllDesktops
+            case "{BB64D5B7-4DE3-4AB2-A87C-DB7601AEA7DC}": return -1 ; PinAppID
+            case "{C2DDEA68-66F2-4CF9-8264-1BFD00FBBBAC}": return -2 ; PinView (unless IsAppIdPinned is set)
+            default:
+                if (VD.DesktopIdMap.Has(DesktopId_GUID_str)) { ;cache
+                    IVirtualDesktop_found := VD.DesktopIdMap[DesktopId_GUID_str]
+                } else {
+                    IVirtualDesktop_found := VD.IVirtualDesktopManagerInternal.FindDesktop(DesktopId)
+                    if (!IVirtualDesktop_found) {
+                        throw Error("Desktop not found: " DesktopId_GUID_str)
+                    }
+                    VD.DesktopIdMap[DesktopId_GUID_str] := IVirtualDesktop_found
+                }
+                return VD.IVirtualDesktopMap[IVirtualDesktop_found]
+        }
+    }
+
+    static getDesktopNumOfWindow(wintitle) {
+        return VD.getDesktopNumOfHWND(WinGetID(wintitle))
+    }
+
+    static goToDesktopOfWindow(wintitle, activateYourWindow := true) {
+        hwnd := WinGetID(wintitle)
+        desktopNum := VD.getDesktopNumOfHWND(hwnd)
+        if (activateYourWindow) {
+            VD.WinActivate_callback := callback := () {
+                WinActivate hwnd
+                VD.WinActivate_callback := 0
+            }
+            SetTimer () {
+                if (VD.WinActivate_callback == callback) {
+                    VD.WinActivate_callback := 0
+                }
+            }, -1000
+        }
+        VD.IVirtualDesktopManagerInternal.SwitchDesktop(VD.IVirtualDesktopList[desktopNum])
+    }
+
     static goToDesktopNum(desktopNum) {
         VD.IVirtualDesktopManagerInternal.SwitchDesktop(VD.IVirtualDesktopList[desktopNum])
     }
@@ -321,6 +378,16 @@ class VD {
         VD.IVirtualDesktopManagerInternal.RemoveDesktop(VD.IVirtualDesktopList[desktopNum], VD.IVirtualDesktopList[fallback_desktopNum])
     }
 
+    class IVirtualDesktopManager_Class {
+        __New(IVirtualDesktopManager) {
+            this.IVirtualDesktopManager := IVirtualDesktopManager
+        }
+        GetVirtualDesktopId() {
+            ComCall(25, this.IVirtualDesktopManager, "Ptr", DesktopId := Buffer(16)) ; GUID
+            return DesktopId
+        }
+    }
+
     class IVirtualDesktopManagerInternal_Normal {
         __New(version) {
             this.version := version
@@ -349,6 +416,10 @@ class VD {
         }
         RemoveDesktop(IVirtualDesktop, IVirtualDesktop_fallback) {
             ComCall(this.version.idx_RemoveDesktop, this.IVirtualDesktopManagerInternal, "Ptr", IVirtualDesktop, "Ptr", IVirtualDesktop_fallback)
+        }
+        FindDesktop(DesktopId) {
+            ComCall(this.version.idx_FindDesktop, this.IVirtualDesktopManagerInternal, "Ptr", DesktopId, "Ptr*", &IVirtualDesktop_found := 0)
+            return IVirtualDesktop_found
         }
     }
 
