@@ -204,9 +204,10 @@ class VD {
         VD.DesktopIdMap := Map()
 
         VD.IApplicationViewCollection := VD.IApplicationViewCollection_Class()
+        VD.IVirtualPinnedAppsHandler := VD.IVirtualPinnedAppsHandler_Class()
         VD.IDesktopNotificationService := VD.IDesktopNotificationService_Class()
-        VD.IVirtualDesktopManagerInternal := VD.version.IVirtualDesktopManagerInternal()
         VD.IVirtualDesktopNotification := VD.version.IVirtualDesktopNotification()
+        VD.IVirtualDesktopManagerInternal := VD.version.IVirtualDesktopManagerInternal()
 
         OnMessage(DllCall("RegisterWindowMessageW","WStr","TaskbarCreated","Uint"), (*) => (VD.reinit(), ""))
         VD.reinit()
@@ -223,10 +224,11 @@ class VD {
     static reinit() {
         try {
             CImmersiveShell_IServiceProvider := ComObject("{c2f03a33-21f5-47fa-b4bb-156362a2f239}", "{6d5140c1-7436-11ce-8034-00aa006009fa}")
-            VD.IVirtualDesktopManagerInternal.reinit(CImmersiveShell_IServiceProvider)
             VD.IApplicationViewCollection.reinit(CImmersiveShell_IServiceProvider)
+            VD.IVirtualPinnedAppsHandler.reinit(CImmersiveShell_IServiceProvider)
             VD.IDesktopNotificationService.reinit(CImmersiveShell_IServiceProvider)
             VD.IDesktopNotificationService.Register(VD.IVirtualDesktopNotification)
+            VD.IVirtualDesktopManagerInternal.reinit(CImmersiveShell_IServiceProvider)
 
             VD.IVirtualDesktopListChanged()
             VD.currentDesktopNum := VD.IVirtualDesktopMap[VD.IVirtualDesktopManagerInternal.GetCurrentDesktop()]
@@ -290,7 +292,7 @@ class VD {
 
     static getDesktopNumOfHWND(hwnd) {
         IApplicationView := VD.IApplicationViewCollection.GetViewForHwnd(hwnd)
-        DesktopId := VD.IVirtualDesktopManager_Class(IApplicationView).GetVirtualDesktopId()
+        DesktopId := VD.IApplicationView_Class(IApplicationView).GetVirtualDesktopId()
         DesktopId_GUID_str := VD._StringFromGUID(DesktopId)
         switch DesktopId_GUID_str {
             ; https://github.com/MScholtes/VirtualDesktop/blob/a725cbd3cdb9e977678eeaf034a7cc96d2e74bc6/VirtualDesktop11.cs#L329
@@ -315,7 +317,8 @@ class VD {
     }
 
     static getDesktopNumOfWindow(wintitle) {
-        return VD.getDesktopNumOfHWND(WinGetID(wintitle))
+        hwnd := WinGetID(wintitle)
+        return VD.getDesktopNumOfHWND(hwnd)
     }
 
     static goToDesktopOfWindow(wintitle, activateYourWindow := true) {
@@ -378,12 +381,97 @@ class VD {
         VD.IVirtualDesktopManagerInternal.RemoveDesktop(VD.IVirtualDesktopList[desktopNum], VD.IVirtualDesktopList[fallback_desktopNum])
     }
 
-    class IVirtualDesktopManager_Class {
-        __New(IVirtualDesktopManager) {
-            this.IVirtualDesktopManager := IVirtualDesktopManager
+    static IsWindowPinned(wintitle) {
+        hwnd := WinGetID(wintitle)
+        IApplicationView := VD.IApplicationViewCollection.GetViewForHwnd(hwnd)
+        viewIsPinned := VD.IVirtualPinnedAppsHandler.IsViewPinned(IApplicationView)
+        return viewIsPinned
+    }
+    static PinWindow(wintitle) {
+        hwnd := WinGetID(wintitle)
+        IApplicationView := VD.IApplicationViewCollection.GetViewForHwnd(hwnd)
+        VD.IVirtualPinnedAppsHandler.PinView(IApplicationView)
+    }
+    static UnPinWindow(wintitle) {
+        hwnd := WinGetID(wintitle)
+        IApplicationView := VD.IApplicationViewCollection.GetViewForHwnd(hwnd)
+        VD.IVirtualPinnedAppsHandler.UnpinView(IApplicationView)
+    }
+    static TogglePinWindow(wintitle) {
+        hwnd := WinGetID(wintitle)
+        IApplicationView := VD.IApplicationViewCollection.GetViewForHwnd(hwnd)
+        viewIsPinned := VD.IVirtualPinnedAppsHandler.IsViewPinned(IApplicationView)
+        if (viewIsPinned) {
+            VD.IVirtualPinnedAppsHandler.UnpinView(IApplicationView)
+        } else {
+            VD.IVirtualPinnedAppsHandler.PinView(IApplicationView)
+        }
+    }
+
+    static IsExePinned(exe_path) {
+        appIsPinned := VD.IVirtualPinnedAppsHandler.IsAppIdPinned(exe_path)
+        return appIsPinned
+    }
+    static PinExe(exe_path) {
+        VD.IVirtualPinnedAppsHandler.PinAppID(exe_path)
+    }
+    static UnPinExe(exe_path) {
+        VD.IVirtualPinnedAppsHandler.UnpinAppID(exe_path)
+    }
+    static TogglePinExe(exe_path) {
+        appIsPinned := VD.IVirtualPinnedAppsHandler.IsAppIdPinned(exe_path)
+        if (appIsPinned) {
+            VD.IVirtualPinnedAppsHandler.UnpinAppID(exe_path)
+        } else {
+            VD.IVirtualPinnedAppsHandler.PinAppID(exe_path)
+        }
+    }
+
+    static IsAppPinned(wintitle) {
+        return VD.IsExePinned(WinGetProcessPath(wintitle))
+    }
+    static PinApp(wintitle) {
+        VD.PinExe(WinGetProcessPath(wintitle))
+    }
+    static UnPinApp(wintitle) {
+        VD.UnPinExe(WinGetProcessPath(wintitle))
+    }
+    static TogglePinApp(wintitle) {
+        VD.TogglePinExe(WinGetProcessPath(wintitle))
+    }
+
+    class IVirtualPinnedAppsHandler_Class {
+        reinit(CImmersiveShell_IServiceProvider) {
+            this.IVirtualDesktopPinnedApps := ComObjQuery(CImmersiveShell_IServiceProvider, "{b5a399e7-1c87-46b8-88e9-fc5747b171bd}", "{4ce81583-1e4c-4632-a621-07a53543148f}")
+        }
+        IsAppIdPinned(exe_path) {
+            ComCall(3, this.IVirtualDesktopPinnedApps, "WStr", exe_path, "Int*", &appIsPinned := 0)
+            return appIsPinned
+        }
+        PinAppID(exe_path) {
+            ComCall(4, this.IVirtualDesktopPinnedApps, "WStr", exe_path)
+        }
+        UnpinAppID(exe_path) {
+            ComCall(5, this.IVirtualDesktopPinnedApps, "WStr", exe_path)
+        }
+        IsViewPinned(IApplicationView) {
+            ComCall(6, this.IVirtualDesktopPinnedApps, "Ptr", IApplicationView, "Int*", &viewIsPinned := 0)
+            return viewIsPinned
+        }
+        PinView(IApplicationView) {
+            ComCall(7, this.IVirtualDesktopPinnedApps, "Ptr", IApplicationView)
+        }
+        UnpinView(IApplicationView) {
+            ComCall(8, this.IVirtualDesktopPinnedApps, "Ptr", IApplicationView)
+        }
+    }
+
+    class IApplicationView_Class {
+        __New(IApplicationView) {
+            this.IApplicationView := IApplicationView
         }
         GetVirtualDesktopId() {
-            ComCall(25, this.IVirtualDesktopManager, "Ptr", DesktopId := Buffer(16)) ; GUID
+            ComCall(25, this.IApplicationView, "Ptr", DesktopId := Buffer(16)) ; GUID
             return DesktopId
         }
     }
@@ -757,8 +845,3 @@ class VD {
     }
 
 }
-
-; f1::VD.MoveWindowToRelativeDesktopNum("A", 1, true)
-
-; #!Right::VD.MoveWindowToRelativeDesktopNum("A", +1, true)
-; #!Left::VD.MoveWindowToRelativeDesktopNum("A", -1, true)
