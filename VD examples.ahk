@@ -63,7 +63,7 @@ myGui.show()
 ;END of gui stuff
 
 ;include the library
-#Include %A_LineFile%\..\VD.ah2
+#Include %A_LineFile%\..\VD.ahk
 
 ;#SETUP END
 
