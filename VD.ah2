@@ -282,6 +282,45 @@ class VD {
         VD.IVirtualDesktopManagerInternal.SwitchDesktop(VD.IVirtualDesktopList[desktopNum])
     }
 
+    static getCurrentDesktopNum() {
+        return VD.currentDesktopNum
+    }
+    static getCount() {
+        return VD.IVirtualDesktopList.Length
+    }
+
+    static createDesktop(goThere := false) {
+        IVirtualDesktop_ofNewDesktop := VD.IVirtualDesktopManagerInternal.CreateDesktop()
+        if (goThere) {
+            VD.IVirtualDesktopManagerInternal.SwitchDesktop(IVirtualDesktop_ofNewDesktop)
+        }
+    }
+    static createUntil(howMany, goToLastlyCreated := false) {
+        howManyThereAlreadyAre := VD.IVirtualDesktopList.Length
+        if (howManyThereAlreadyAre >= howMany) { ; ensure at least 1 was created for goToLastlyCreated:true
+            return
+        }
+        loop (howMany - howManyThereAlreadyAre) {
+            IVirtualDesktop_ofNewDesktop := VD.IVirtualDesktopManagerInternal.CreateDesktop()
+        }
+        if (goToLastlyCreated) {
+            VD.IVirtualDesktopManagerInternal.SwitchDesktop(IVirtualDesktop_ofNewDesktop)
+        }
+    }
+    static removeDesktop(desktopNum := VD.currentDesktopNum, fallback_desktopNum := -1) {
+        if (VD.IVirtualDesktopList.Length == 1) {
+            return ;can't delete last
+        }
+        if (desktopNum == VD.currentDesktopNum) {
+            if (fallback_desktopNum == -1) { ; provide default, do not verify fallback_desktopNum if provided
+                fallback_desktopNum := VD.modulusResolveDesktopNum(VD.currentDesktopNum - 1)
+            }
+        } else { ; there's really no need for a fallback if it's not the current
+            fallback_desktopNum := VD.currentDesktopNum
+        }
+        VD.IVirtualDesktopManagerInternal.RemoveDesktop(VD.IVirtualDesktopList[desktopNum], VD.IVirtualDesktopList[fallback_desktopNum])
+    }
+
     class IVirtualDesktopManagerInternal_Normal {
         __New(version) {
             this.version := version
@@ -648,7 +687,7 @@ class VD {
 
 }
 
-f1::VD.MoveWindowToRelativeDesktopNum("A", 1, true)
+; f1::VD.MoveWindowToRelativeDesktopNum("A", 1, true)
 
-#!Right::VD.MoveWindowToRelativeDesktopNum("A", +1, true)
-#!Left::VD.MoveWindowToRelativeDesktopNum("A", -1, true)
+; #!Right::VD.MoveWindowToRelativeDesktopNum("A", +1, true)
+; #!Left::VD.MoveWindowToRelativeDesktopNum("A", -1, true)

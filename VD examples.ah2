@@ -69,15 +69,15 @@ VD.createUntil(3) ;create until we have at least 3 VD
 
 return
 
-;#useful stuff
+;#useful stuff  
 numpad1::VD.goToDesktopNum(1)
 numpad2::VD.goToDesktopNum(2)
 numpad3::VD.goToDesktopNum(3)
 
 ;follow your window
-numpad4::VD.MoveWindowToDesktopNum("A",1).follow()
-numpad5::VD.MoveWindowToDesktopNum("A",2).follow()
-numpad6::VD.MoveWindowToDesktopNum("A",3).follow()
+numpad4::VD.MoveWindowToDesktopNum("A",1,true)
+numpad5::VD.MoveWindowToDesktopNum("A",2,true)
+numpad6::VD.MoveWindowToDesktopNum("A",3,true)
 
 ;just move window
 numpad7::VD.MoveWindowToDesktopNum("A",1)
@@ -89,9 +89,9 @@ numpad9::VD.MoveWindowToDesktopNum("A",3)
 ^+#right::VD.goToRelativeDesktopNum(+1)
 
 ; move window to left and follow it
-#!left::VD.MoveWindowToRelativeDesktopNum("A", -1).follow()
+#!left::VD.MoveWindowToRelativeDesktopNum("A", -1, true)
 ; move window to right and follow it
-#!right::VD.MoveWindowToRelativeDesktopNum("A", 1).follow()
+#!right::VD.MoveWindowToRelativeDesktopNum("A", 1, true)
 
 ;to come back to this window
 #NumpadMult::{ ;#*
@@ -111,7 +111,7 @@ f2::Msgbox VD.getCount()
 !NumpadAdd::VD.createDesktop(true) ;go to newly created
 #NumpadAdd::VD.createDesktop(false) ;don't go to newly created, also the default
 
-!NumpadSub::VD.removeDesktop(VD.getCurrentDesktopNum())
+!NumpadSub::VD.removeDesktop() ;defaults to current
 #!NumpadSub::VD.removeDesktop(VD.getCount()) ;removes 3rd desktop if there are 3 desktops
 
 ^+NumpadAdd::VD.createUntil(3) ;create until we have at least 3 VD
