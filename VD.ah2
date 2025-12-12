@@ -28,8 +28,7 @@ class VD {
         }
     }
 
-    static versions := [
-        {
+    static versions := [        {
             buildNumber: 20348,
             revisionNumber: 0,
             IID_IVirtualDesktopManagerInternal_str: "{f31574d6-b682-4cdc-bd56-1827860abec6}",
@@ -42,13 +41,76 @@ class VD {
             idx_GetDesktops:7,
             idx_SwitchDesktop:9,
             idx_CreateDesktop:10,
-            idx_RemoveDesktop:12,
+            idx_RemoveDesktop:11,
             ;vtbl Notification
             IVirtualDesktopNotification: VD.IVirtualDesktopNotification_Normal,
             IVirtualDesktopNotification_methods_count: 9,
             idx_VirtualDesktopCreated:3,
             idx_VirtualDesktopDestroyed:6,
             idx_CurrentVirtualDesktopChanged:8,
+        },
+        {
+            buildNumber: 22000,
+            revisionNumber: 0,
+            IID_IVirtualDesktopManagerInternal_str: "{094afe11-44f2-4ba0-976f-29a97e263ee0}",
+            IID_IVirtualDesktop_str: "{62fdf88b-11ca-4afb-8bd8-2296dfae49e2}",
+            IID_IVirtualDesktopNotification_str: "{f3163e11-6b04-433c-a64b-6f82c9094257}",
+            ; vtbl
+            IVirtualDesktopManagerInternal: VD.IVirtualDesktopManagerInternal_HMONITOR,
+            idx_MoveViewToDesktop:4,
+            idx_GetCurrentDesktop:6,
+            idx_GetDesktops:7,
+            idx_SwitchDesktop:9,
+            idx_CreateDesktop:10,
+            idx_RemoveDesktop:11,
+            ;vtbl Notification
+            IVirtualDesktopNotification: VD.IVirtualDesktopNotification_Normal,
+            IVirtualDesktopNotification_methods_count: 11,
+            idx_VirtualDesktopCreated:3,
+            idx_VirtualDesktopDestroyed:6,
+            idx_CurrentVirtualDesktopChanged:10,
+        },
+        {
+            buildNumber: 22483,
+            revisionNumber: 0,
+            IID_IVirtualDesktopManagerInternal_str: "{b2f925b9-5a0f-4d2e-9f4d-2b1507593c10}",
+            IID_IVirtualDesktop_str: "{536d3495-b208-4cc9-ae26-de8111275bf8}",
+            IID_IVirtualDesktopNotification_str: "{cd403e52-deed-4c13-b437-b98380f2b1e8}",
+            ; vtbl
+            IVirtualDesktopManagerInternal: VD.IVirtualDesktopManagerInternal_HMONITOR,
+            idx_MoveViewToDesktop:4,
+            idx_GetCurrentDesktop:6,
+            idx_GetDesktops:7,
+            idx_SwitchDesktop:9,
+            idx_CreateDesktop:10,
+            idx_RemoveDesktop:12,
+            ;vtbl Notification
+            IVirtualDesktopNotification: VD.IVirtualDesktopNotification_IObjectArray,
+            IVirtualDesktopNotification_methods_count: 13,
+            idx_VirtualDesktopCreated:3,
+            idx_VirtualDesktopDestroyed:6,
+            idx_CurrentVirtualDesktopChanged:11,
+        },
+        {
+            buildNumber: 22621,
+            revisionNumber: 2215,
+            IID_IVirtualDesktopManagerInternal_str: "{b2f925b9-5a0f-4d2e-9f4d-2b1507593c10}",
+            IID_IVirtualDesktop_str: "{536d3495-b208-4cc9-ae26-de8111275bf8}",
+            IID_IVirtualDesktopNotification_str: "{cd403e52-deed-4c13-b437-b98380f2b1e8}",
+            ; vtbl
+            IVirtualDesktopManagerInternal: VD.IVirtualDesktopManagerInternal_HMONITOR,
+            idx_MoveViewToDesktop:4,
+            idx_GetCurrentDesktop:6,
+            idx_GetDesktops:8,
+            idx_SwitchDesktop:10,
+            idx_CreateDesktop:11,
+            idx_RemoveDesktop:13,
+            ;vtbl Notification
+            IVirtualDesktopNotification: VD.IVirtualDesktopNotification_IObjectArray,
+            IVirtualDesktopNotification_methods_count: 13,
+            idx_VirtualDesktopCreated:3,
+            idx_VirtualDesktopDestroyed:6,
+            idx_CurrentVirtualDesktopChanged:11,
         },
         {
             buildNumber: 22631,
@@ -68,19 +130,52 @@ class VD {
             IVirtualDesktopNotification: VD.IVirtualDesktopNotification_Normal,
             IVirtualDesktopNotification_methods_count: 14,
             idx_VirtualDesktopCreated:3,
-            idx_VirtualDesktopDestroyBegin:4,
-            idx_VirtualDesktopDestroyFailed:5,
             idx_VirtualDesktopDestroyed:6,
-            idx_VirtualDesktopNameChanged:8,
-            idx_ViewVirtualDesktopChanged:9,
             idx_CurrentVirtualDesktopChanged:10,
-            idx_VirtualDesktopWallpaperChanged:11,
         },
         {
-            buildNumber: 99999, ; (just a big number like Infinity)
-            revisionNumber: 99999,
-        }
-    ]
+            buildNumber: 26100,
+            revisionNumber: 0,
+            IID_IVirtualDesktopManagerInternal_str: "{53f5ca0b-158f-4124-900c-057158060b27}",
+            IID_IVirtualDesktop_str: "{3f07f4be-b107-441a-af0f-39d82529072c}",
+            IID_IVirtualDesktopNotification_str: "{b9e5e94d-233e-49ab-af5c-2b4541c3aade}",
+            ; vtbl
+            IVirtualDesktopManagerInternal: VD.IVirtualDesktopManagerInternal_Normal,
+            idx_MoveViewToDesktop:4,
+            idx_GetCurrentDesktop:6,
+            idx_GetDesktops:7,
+            idx_SwitchDesktop:9,
+            idx_CreateDesktop:10,
+            idx_RemoveDesktop:12,
+            ;vtbl Notification
+            IVirtualDesktopNotification: VD.IVirtualDesktopNotification_Normal,
+            IVirtualDesktopNotification_methods_count: 14,
+            idx_VirtualDesktopCreated:3,
+            idx_VirtualDesktopDestroyed:6,
+            idx_CurrentVirtualDesktopChanged:10,
+        },
+        {
+            buildNumber: 99999,
+            revisionNumber: 0,
+            IID_IVirtualDesktopManagerInternal_str: "{53f5ca0b-158f-4124-900c-057158060b27}",
+            IID_IVirtualDesktop_str: "{3f07f4be-b107-441a-af0f-39d82529072c}",
+            IID_IVirtualDesktopNotification_str: "{b9e5e94d-233e-49ab-af5c-2b4541c3aade}",
+            ; vtbl
+            IVirtualDesktopManagerInternal: VD.IVirtualDesktopManagerInternal_Normal,
+            idx_MoveViewToDesktop:4,
+            idx_GetCurrentDesktop:6,
+            idx_GetDesktops:7,
+            idx_SwitchDesktop:9,
+            idx_CreateDesktop:11,
+            idx_RemoveDesktop:13,
+            ;vtbl Notification
+            IVirtualDesktopNotification: VD.IVirtualDesktopNotification_Normal,
+            IVirtualDesktopNotification_methods_count: 14,
+            idx_VirtualDesktopCreated:3,
+            idx_VirtualDesktopDestroyed:6,
+            idx_CurrentVirtualDesktopChanged:10,
+        },
+    ] ; default: version: 99999 ; (just a big number like Infinity)
 
     static __New() {
         OS_Version := FileGetVersion(A_WinDir "\System32\twinui.pcshell.dll")
@@ -88,7 +183,7 @@ class VD {
         buildNumber:=Integer(splitByDot[3])
         revisionNumber:=Integer(splitByDot[4])
         VD.version := VD.Array.find(VD.versions,
-            version => (buildNumber <= version.buildNumber && revisionNumber < version.revisionNumber)
+            version => (buildNumber < version.buildNumber || (buildNumber == version.buildNumber && revisionNumber < version.revisionNumber))
         )
         DllCall("ole32\CLSIDFromString", "WStr", VD.version.IID_IVirtualDesktop_str, "Ptr", VD.version.IID_IVirtualDesktop_ptr := Buffer(0x10))
 
@@ -126,6 +221,7 @@ class VD {
             VD.IVirtualDesktopListChanged()
             VD.currentDesktopNum := VD.IVirtualDesktopMap[VD.IVirtualDesktopManagerInternal.GetCurrentDesktop()]
             VD.waiting := false
+            return
         }
         VD.waiting := true
     }
@@ -214,6 +310,25 @@ class VD {
         }
         RemoveDesktop(IVirtualDesktop, IVirtualDesktop_fallback) {
             ComCall(this.version.idx_RemoveDesktop, this.IVirtualDesktopManagerInternal, "Ptr", IVirtualDesktop, "Ptr", IVirtualDesktop_fallback)
+        }
+    }
+
+    class IVirtualDesktopManagerInternal_HMONITOR extends VD.IVirtualDesktopManagerInternal_Normal {
+        ; just set HMONITOR to 0 ?
+        GetCurrentDesktop() {
+            ComCall(this.version.idx_GetCurrentDesktop, this.IVirtualDesktopManagerInternal, "Ptr", 0, "Ptr*", &IVirtualDesktop_current := 0)
+            return IVirtualDesktop_current
+        }
+        GetDesktops() {
+            ComCall(this.version.idx_GetDesktops, this.IVirtualDesktopManagerInternal, "Ptr", 0, "Ptr*", &IObjectArray := 0)
+            return IObjectArray
+        }
+        SwitchDesktop(IVirtualDesktop) {
+            ComCall(this.version.idx_SwitchDesktop, this.IVirtualDesktopManagerInternal, "Ptr", 0, "Ptr", IVirtualDesktop)
+        }
+        CreateDesktop() {
+            ComCall(this.version.idx_CreateDesktop, this.IVirtualDesktopManagerInternal, "Ptr", 0, "Ptr*", &IVirtualDesktop_created := 0)
+            return IVirtualDesktop_created
         }
     }
 
@@ -328,7 +443,7 @@ class VD {
         VirtualDesktopDestroyed() {
             VD.IVirtualDesktopListChanged() ; called after CurrentVirtualDesktopChanged
         }
-        CurrentVirtualDesktopChanged(that, IVirtualDesktop_old, IVirtualDesktop_new) {
+        _common_CurrentVirtualDesktopChanged(IVirtualDesktop_old, IVirtualDesktop_new) {
             desktopNum_old := VD.IVirtualDesktopMap[IVirtualDesktop_old]
             VD.currentDesktopNum := VD.IVirtualDesktopMap[IVirtualDesktop_new]
             if (VD.WinActivate_callback) {
@@ -337,6 +452,14 @@ class VD {
             for k, _ in VD.ListenersCurrentVirtualDesktopChanged {
                 k(desktopNum_old, VD.currentDesktopNum)
             }
+        }
+        CurrentVirtualDesktopChanged(that, IVirtualDesktop_old, IVirtualDesktop_new) {
+            this._common_CurrentVirtualDesktopChanged(IVirtualDesktop_old, IVirtualDesktop_new)
+        }
+    }
+    class IVirtualDesktopNotification_IObjectArray extends VD.IVirtualDesktopNotification_Normal {
+        CurrentVirtualDesktopChanged(that, IObjectArray, IVirtualDesktop_old, IVirtualDesktop_new) {
+            this._common_CurrentVirtualDesktopChanged(IVirtualDesktop_old, IVirtualDesktop_new)
         }
     }
     static BoundCallbackCreate(func_CallbackCreate, callback, that) {
