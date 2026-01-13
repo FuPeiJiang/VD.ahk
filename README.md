@@ -1,6 +1,8 @@
 # VD.ahk: Virtual Desktop
 
-Windows 11 support, Windows Server 2022
+### Requires Autohotkey alpha: [AHK download page](https://www.autohotkey.com/download/2.1/)<br>
+* v1 branch: [here](https://github.com/FuPeiJiang/VD.ahk/tree/class_VD)<br>
+* v2 branch: [here](https://github.com/FuPeiJiang/VD.ahk/tree/v2_port)<br>
 
 ### Just run the examples, everything explained inside
 
@@ -50,6 +52,9 @@ numpad9::VD.MoveWindowToDesktopNum("A",3)
 ```
 
 you can remap everything
+___
+note :
+`alpha` branch  is a rewrite, if there's functionality missing, I'll add it back
 ___
 detect when the virtual desktop changes:<br>
 create a hotkey to return you to the **previous desktop**
