@@ -8,6 +8,7 @@ class VD {
                     return v
                 }
             }
+            return VD.Null
         }
         static flatMap(iterator, callback) {
             arr := []
@@ -27,6 +28,8 @@ class VD {
             return arr
         }
     }
+
+    static Null := {}
 
     static versions := [
         {
@@ -209,6 +212,8 @@ class VD {
         VD.IVirtualDesktopNotification := VD.version.IVirtualDesktopNotification()
         VD.IVirtualDesktopManagerInternal := VD.version.IVirtualDesktopManagerInternal()
 
+        (VD.LocalizedWord_TaskView) ; "Task View"
+
         OnMessage(DllCall("RegisterWindowMessageW","WStr","TaskbarCreated","Uint"), (*) => (VD.reinit(), ""))
         VD.reinit()
         if (VD.waiting) { ; block / poll because it may be immediately used, ex: VD.createUntil(3)
@@ -220,6 +225,22 @@ class VD {
             }
         }
     }
+
+    static LocalizedWord_TaskView {
+        get {
+            if (VD._LocalizedWord_TaskView) {
+                return VD._LocalizedWord_TaskView
+            }
+            hModule := DllCall("LoadLibraryW", "WStr", "twinui.pcshell.dll", "Ptr")
+            chars := 128
+            lpBuffer := Buffer(chars << 1)
+            length := DllCall("LoadStringW", "Uint", hModule, "Uint", 1512, "Ptr", lpBuffer, "Int", chars)
+            VD._LocalizedWord_TaskView := StrGet(lpBuffer, length, "UTF-16")
+            DllCall("FreeLibrary", "Ptr", hModule)
+        }
+    }
+
+    static _LocalizedWord_TaskView := ""
 
     static reinit() {
         try {
@@ -248,7 +269,7 @@ class VD {
             this.IApplicationViewCollection := ComObjQuery(CImmersiveShell_IServiceProvider, "{1841c6d7-4f9d-42c0-af41-8747538f10e5}", "{1841c6d7-4f9d-42c0-af41-8747538f10e5}")
         }
         GetViewForHwnd(HWND) {
-            ComCall(6, this.IApplicationViewCollection, "Ptr", HWND, "Ptr*", &IApplicationView := 0)
+            hr := ComCall(6, this.IApplicationViewCollection, "Ptr", HWND, "Ptr*", &IApplicationView := 0, "Uint")
             return IApplicationView
         }
     }
@@ -277,26 +298,54 @@ class VD {
         VD.MoveWindowToDesktopNum(wintitle, absolute_desktopNum, follow, WinActivatePriority)
     }
 
-    static MoveWindowToDesktopNum(wintitle, desktopNum, follow := false, WinActivatePriority := VD.WinActivatePriority.NewWindow) {
-        hwnd := WinGetID(wintitle)
-        IApplicationView := VD.IApplicationViewCollection.GetViewForHwnd(hwnd)
-        VD.IVirtualDesktopManagerInternal.MoveViewToDesktop(IApplicationView, VD.IVirtualDesktopList[desktopNum])
-        if (follow) {
-            VD.WinActivate_callback := callback := () {
-                WinActivate hwnd
-                VD.WinActivate_callback := 0
+    static TryWinGetID(wintitle) {
+        loop 3 {
+            try {
+                hwnd := WinGetID(wintitle)
+                return hwnd
             }
-            SetTimer () {
-                if (VD.WinActivate_callback == callback) {
-                    VD.WinActivate_callback := 0
+            Sleep 10
+        }
+        return false
+    }
+
+    static MoveWindowToDesktopNum(wintitle, desktopNum, follow := false, WinActivatePriority := VD.WinActivatePriority.NewWindow) {
+        Critical
+        hwnd := VD.TryWinGetID(wintitle)
+        if (!hwnd) {
+            return
+        }
+        IApplicationView := VD.IApplicationViewCollection.GetViewForHwnd(hwnd)
+        if (!IApplicationView) {
+            return
+        }
+        window_desktopNum := VD.getDesktopNumOfHWND(hwnd)
+        activeWindow := WinGetID("A")
+        if (window_desktopNum !== desktopNum) {
+            VD.IVirtualDesktopManagerInternal.MoveViewToDesktop(IApplicationView, VD.IVirtualDesktopList[desktopNum])
+            if (!follow && activeWindow == hwnd) {
+                VD.WinActivateFirstWindowInCurrentDesktop(50)
+                Sleep 100 ; don't want to switch the changing foreground window
+            }
+        }
+        if (follow) {
+            if (desktopNum == VD.currentDesktopNum) {
+                VD.SetForegroundWindow(hwnd)
+            } else {
+                VD.RegisterWinActivateUponSwitch(hwnd)
+                if (activeWindow !== hwnd) {
+                    VD.AllowSetForegroundWindowAny()
                 }
-            }, -1000
-            VD.IVirtualDesktopManagerInternal.SwitchDesktop(VD.IVirtualDesktopList[desktopNum])
+                VD.IVirtualDesktopManagerInternal.SwitchDesktop(VD.IVirtualDesktopList[desktopNum])
+            }
         }
     }
 
     static getDesktopNumOfHWND(hwnd) {
         IApplicationView := VD.IApplicationViewCollection.GetViewForHwnd(hwnd)
+        if (!IApplicationView) {
+            return 0
+        }
         DesktopId := VD.IApplicationView_Class(IApplicationView).GetVirtualDesktopId()
         DesktopId_GUID_str := VD._StringFromGUID(DesktopId)
         switch DesktopId_GUID_str {
@@ -329,22 +378,172 @@ class VD {
     static goToDesktopOfWindow(wintitle, activateYourWindow := true) {
         hwnd := WinGetID(wintitle)
         desktopNum := VD.getDesktopNumOfHWND(hwnd)
-        if (activateYourWindow) {
-            VD.WinActivate_callback := callback := () {
-                WinActivate hwnd
+        if (desktopNum == 0) {
+            return
+        }
+        if (desktopNum == VD.currentDesktopNum) {
+            if (activateYourWindow) {
+                VD.SetForegroundWindow(hwnd)
+            }
+        } else {
+            if (activateYourWindow) {
+                VD.RegisterWinActivateUponSwitch(hwnd)
+            }
+            VD.AllowSetForegroundWindowAny()
+            VD.IVirtualDesktopManagerInternal.SwitchDesktop(VD.IVirtualDesktopList[desktopNum])
+        }
+    }
+
+    static SetForegroundWindow(hWnd, waitCompletionDelay := 0) {
+        if (DllCall("AllowSetForegroundWindow", "Uint", DllCall("GetCurrentProcessId"))) {
+            DllCall("SetForegroundWindow", "Ptr", hwnd)
+        } else {
+            LCtrlDown := GetKeyState("LCtrl")
+            RCtrlDown := GetKeyState("RCtrl")
+            LShiftDown := GetKeyState("LShift")
+            RShiftDown := GetKeyState("RShift")
+            LWinDown := GetKeyState("LWin")
+            RWinDown := GetKeyState("RWin")
+            LAltDown := GetKeyState("LAlt")
+            RAltDown := GetKeyState("RAlt")
+            if ((LCtrlDown || RCtrlDown) && (LWinDown || RWinDown)) {
+                toRelease := ""
+                if (LShiftDown) {
+                    toRelease .= "{LShift Up}"
+                }
+                if (RShiftDown) {
+                    toRelease .= "{RShift Up}"
+                }
+                if (toRelease) {
+                    Send "{Blind}" toRelease
+                }
+            }
+            BlockInput "On"
+            Send "{LAlt Down}{LAlt Down}"
+            DllCall("SetForegroundWindow", "Ptr", hwnd)
+            toAppend := ""
+            if (!LAltDown) {
+                toAppend .= "{LAlt Up}"
+            }
+            if (RAltDown) {
+                toAppend .= "{RAlt Down}"
+            }
+            if (LCtrlDown) {
+                toAppend .= "{LCtrl Down}"
+            }
+            if (RCtrlDown) {
+                toAppend .= "{RCtrl Down}"
+            }
+            if (LShiftDown) {
+                toAppend .= "{LShift Down}"
+            }
+            if (RShiftDown) {
+                toAppend .= "{RShift Down}"
+            }
+            if (LWinDown) {
+                toAppend .= "{LWin Down}"
+            }
+            if (RWinDown) {
+                toAppend .= "{RWin Down}"
+            }
+            if (toAppend) {
+                Send "{Blind}" toAppend
+            }
+            BlockInput "Off"
+        }
+        if (waitCompletionDelay) {
+            end := A_TickCount + waitCompletionDelay
+            while (A_TickCount < end) {
+                if (DllCall("GetForegroundWindow", "Ptr") == hWnd) {
+                    break
+                }
+            }
+        }
+    }
+
+    static AllowSetForegroundWindowAny() {
+        VD_animation_gui := Gui("-Border -SysMenu +Owner -Caption")
+        this.SetForegroundWindow(VD_animation_gui.Hwnd)
+        DllCall("AllowSetForegroundWindow", "Uint", 0xFFFFFFFF) ;ASFW_ANY
+    }
+
+    static FindFirstWindowInCurrentDesktop() {
+        bak_A_DetectHiddenWindows := A_DetectHiddenWindows
+        A_DetectHiddenWindows := false
+        hwnd_list := WinGetList()
+        A_DetectHiddenWindows := bak_A_DetectHiddenWindows
+        found := VD.Array.find(hwnd_list, hwnd => VD._isValidWindow(hwnd))
+        return found
+    }
+
+    static WinActivateFirstWindowInCurrentDesktop(waitCompletionDelay := 0) {
+        hwnd := VD.FindFirstWindowInCurrentDesktop()
+        if (hwnd == VD.Null) {
+            VD.SetForegroundWindow(WinGetID("ahk_class Progman ahk_exe explorer.exe")) ; Desktop
+        } else {
+            VD.SetForegroundWindow(hwnd, waitCompletionDelay)
+        }
+    }
+
+    static ShouldActivateUponArrival() {
+        if (WinActive(VD.LocalizedWord_TaskView " ahk_exe explorer.exe")) {
+            return false
+        }
+        return true
+    }
+
+    static RegisterWinActivateUponSwitch(hwnd) {
+        VD.WinActivate_callback := callback := () {
+            VD.WinActivate_callback := 0
+            if (hwnd == 0) {
+                VD.WinActivateFirstWindowInCurrentDesktop()
+            } else {
+                VD.SetForegroundWindow(hwnd)
+            }
+        }
+        SetTimer () {
+            if (VD.WinActivate_callback == callback) {
                 VD.WinActivate_callback := 0
             }
-            SetTimer () {
-                if (VD.WinActivate_callback == callback) {
-                    VD.WinActivate_callback := 0
-                }
-            }, -1000
+        }, -1000
+    }
+
+    static _isValidWindow(hWnd) {
+        dwStyle := DllCall("GetWindowLongPtrW", "Ptr", hWnd, "Int", -16, "Ptr")
+        if (!(dwStyle & 0x10000000)) { ;WS_VISIBLE
+            return false
         }
-        VD.IVirtualDesktopManagerInternal.SwitchDesktop(VD.IVirtualDesktopList[desktopNum])
+        if (dwStyle & 0x20000000) { ; WS_MINIMIZE 
+            return false
+        }
+        dwExStyle := DllCall("GetWindowLongPtrW", "Ptr", hWnd, "Int", -20, "Ptr")
+        if (dwExStyle & 0x00040000) { ;WS_EX_APPWINDOW
+            return true
+        }
+        if (dwExStyle & 0x08000080) { ; WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW
+            return false
+        }
+        upHwnd := hWnd
+        while (upHwnd := DllCall("GetWindow", "Ptr", upHwnd, "Uint", 4)) {
+            if (upHwnd == 65552) { ; Desktop
+                return false
+            }
+        }
+        return true
     }
 
     static goToDesktopNum(desktopNum) {
-        VD.IVirtualDesktopManagerInternal.SwitchDesktop(VD.IVirtualDesktopList[desktopNum])
+        if (desktopNum == VD.currentDesktopNum) {
+            if (VD.ShouldActivateUponArrival()) {
+                VD.WinActivateFirstWindowInCurrentDesktop()
+            }
+        } else {
+            if (VD.ShouldActivateUponArrival()) {
+                VD.RegisterWinActivateUponSwitch(0)
+                VD.AllowSetForegroundWindowAny()
+            }
+            VD.IVirtualDesktopManagerInternal.SwitchDesktop(VD.IVirtualDesktopList[desktopNum])
+        }
     }
 
     static getCurrentDesktopNum() {
