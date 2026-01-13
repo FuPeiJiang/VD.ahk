@@ -267,6 +267,11 @@ class VD {
         return desktopNum
     }
 
+    static goToRelativeDesktopNum(relative_count) {
+        absolute_desktopNum := VD.modulusResolveDesktopNum(VD.currentDesktopNum + relative_count)
+        VD.goToDesktopNum(absolute_desktopNum)
+    }
+
     static MoveWindowToRelativeDesktopNum(wintitle, relative_count, follow := false, WinActivatePriority := VD.WinActivatePriority.NewWindow) {
         absolute_desktopNum := VD.modulusResolveDesktopNum(VD.currentDesktopNum + relative_count)
         VD.MoveWindowToDesktopNum(wintitle, absolute_desktopNum, follow, WinActivatePriority)
