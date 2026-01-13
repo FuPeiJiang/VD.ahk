@@ -205,7 +205,7 @@ class VD {
 
         VD.IApplicationViewCollection := VD.IApplicationViewCollection_Class()
         VD.IVirtualPinnedAppsHandler := VD.IVirtualPinnedAppsHandler_Class()
-        VD.IDesktopNotificationService := VD.IDesktopNotificationService_Class()
+        VD.IVirtualDesktopNotificationService := VD.IVirtualDesktopNotificationService_Class()
         VD.IVirtualDesktopNotification := VD.version.IVirtualDesktopNotification()
         VD.IVirtualDesktopManagerInternal := VD.version.IVirtualDesktopManagerInternal()
 
@@ -226,8 +226,8 @@ class VD {
             CImmersiveShell_IServiceProvider := ComObject("{c2f03a33-21f5-47fa-b4bb-156362a2f239}", "{6d5140c1-7436-11ce-8034-00aa006009fa}")
             VD.IApplicationViewCollection.reinit(CImmersiveShell_IServiceProvider)
             VD.IVirtualPinnedAppsHandler.reinit(CImmersiveShell_IServiceProvider)
-            VD.IDesktopNotificationService.reinit(CImmersiveShell_IServiceProvider)
-            VD.IDesktopNotificationService.Register(VD.IVirtualDesktopNotification)
+            VD.IVirtualDesktopNotificationService.reinit(CImmersiveShell_IServiceProvider)
+            VD.IVirtualDesktopNotificationService.Register(VD.IVirtualDesktopNotification)
             VD.IVirtualDesktopManagerInternal.reinit(CImmersiveShell_IServiceProvider)
 
             VD.IVirtualDesktopListChanged()
@@ -586,12 +586,12 @@ class VD {
         }
     }
 
-    class IDesktopNotificationService_Class {
+    class IVirtualDesktopNotificationService_Class {
         reinit(CImmersiveShell_IServiceProvider) {
-            this.IDesktopNotificationService := ComObjQuery(CImmersiveShell_IServiceProvider, "{a501fdec-4a09-464c-ae4e-1b9c21b84918}", "{0cd45e71-d927-4f15-8b0a-8fef525337bf}")
+            this.IVirtualDesktopNotificationService := ComObjQuery(CImmersiveShell_IServiceProvider, "{a501fdec-4a09-464c-ae4e-1b9c21b84918}", "{0cd45e71-d927-4f15-8b0a-8fef525337bf}")
         }
         Register(IVirtualDesktopNotification) {
-            ComCall(3,this.IDesktopNotificationService,"Ptr",IVirtualDesktopNotification,"Uint*",pdwCookie:=0) ;3=Register
+            ComCall(3,this.IVirtualDesktopNotificationService,"Ptr",IVirtualDesktopNotification,"Uint*",pdwCookie:=0) ;3=Register
         }
     }
 
@@ -608,7 +608,7 @@ class VD {
                 offset += A_PtrSize
             }
 
-            ; QueryInterface only called during IDesktopNotificationService::Register, thread-safe (hopefully)
+            ; QueryInterface only called during IVirtualDesktopNotificationService::Register, thread-safe (hopefully)
             NumPut("Ptr", VD.BoundCallbackCreate(CallbackCreate, this.QueryInterface, this), this.vtbl)
 
             ; PostMessage
