@@ -553,9 +553,11 @@ class VD {
             if (hwnd == 0) {
                 VD.WinActivateFirstWindowInCurrentDesktop()
             } else {
-                if (!VD._isMinimizedWindow(hwnd)) {
-                    VD.SetForegroundWindow(hwnd)
+                if (VD._isMinimizedWindow(hwnd)) {
+                    DllCall("ShowWindow", "Ptr", hwnd, "Uint", 9) ;SW_RESTORE
                 }
+                VD.SetForegroundWindow(hwnd, 50)
+                Sleep 100
             }
         }
         SetTimer () {
