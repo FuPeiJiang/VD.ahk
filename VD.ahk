@@ -47,6 +47,11 @@ class VD {
             idx_CreateDesktop:10,
             idx_RemoveDesktop:11,
             idx_FindDesktop:12,
+            ; get/set
+            idx_GetName:-1,
+            idx_SetDesktopName:-1,
+            idx_GetWallpaper:-1,
+            idx_SetDesktopWallpaper:-1,
             ;vtbl Notification
             IVirtualDesktopNotification: VD.IVirtualDesktopNotification_Normal,
             IVirtualDesktopNotification_methods_count: 9,
@@ -69,6 +74,11 @@ class VD {
             idx_CreateDesktop:10,
             idx_RemoveDesktop:11,
             idx_FindDesktop:12,
+            ; get/set
+            idx_GetName:6,
+            idx_SetDesktopName:14,
+            idx_GetWallpaper:-1,
+            idx_SetDesktopWallpaper:-1,
             ;vtbl Notification
             IVirtualDesktopNotification: VD.IVirtualDesktopNotification_Normal,
             IVirtualDesktopNotification_methods_count: 11,
@@ -91,6 +101,11 @@ class VD {
             idx_CreateDesktop:10,
             idx_RemoveDesktop:12,
             idx_FindDesktop:13,
+            ; get/set
+            idx_GetName:6,
+            idx_SetDesktopName:15,
+            idx_GetWallpaper:7,
+            idx_SetDesktopWallpaper:16,
             ;vtbl Notification
             IVirtualDesktopNotification: VD.IVirtualDesktopNotification_IObjectArray,
             IVirtualDesktopNotification_methods_count: 13,
@@ -113,6 +128,11 @@ class VD {
             idx_CreateDesktop:11,
             idx_RemoveDesktop:13,
             idx_FindDesktop:14,
+            ; get/set
+            idx_GetName:6,
+            idx_SetDesktopName:16,
+            idx_GetWallpaper:7,
+            idx_SetDesktopWallpaper:17,
             ;vtbl Notification
             IVirtualDesktopNotification: VD.IVirtualDesktopNotification_IObjectArray,
             IVirtualDesktopNotification_methods_count: 13,
@@ -135,6 +155,11 @@ class VD {
             idx_CreateDesktop:10,
             idx_RemoveDesktop:12,
             idx_FindDesktop:13,
+            ; get/set
+            idx_GetName:5,
+            idx_SetDesktopName:15,
+            idx_GetWallpaper:6,
+            idx_SetDesktopWallpaper:16,
             ;vtbl Notification
             IVirtualDesktopNotification: VD.IVirtualDesktopNotification_Normal,
             IVirtualDesktopNotification_methods_count: 14,
@@ -157,6 +182,11 @@ class VD {
             idx_CreateDesktop:10,
             idx_RemoveDesktop:12,
             idx_FindDesktop:13,
+            ; get/set
+            idx_GetName:5,
+            idx_SetDesktopName:15,
+            idx_GetWallpaper:6,
+            idx_SetDesktopWallpaper:16,
             ;vtbl Notification
             IVirtualDesktopNotification: VD.IVirtualDesktopNotification_Normal,
             IVirtualDesktopNotification_methods_count: 14,
@@ -179,6 +209,11 @@ class VD {
             idx_CreateDesktop:11,
             idx_RemoveDesktop:13,
             idx_FindDesktop:14,
+            ; get/set
+            idx_GetName:5,
+            idx_SetDesktopName:16,
+            idx_GetWallpaper:6,
+            idx_SetDesktopWallpaper:17,
             ;vtbl Notification
             IVirtualDesktopNotification: VD.IVirtualDesktopNotification_Normal,
             IVirtualDesktopNotification_methods_count: 14,
@@ -225,22 +260,6 @@ class VD {
             }
         }
     }
-
-    static LocalizedWord_TaskView {
-        get {
-            if (VD._LocalizedWord_TaskView) {
-                return VD._LocalizedWord_TaskView
-            }
-            hModule := DllCall("LoadLibraryW", "WStr", "twinui.pcshell.dll", "Ptr")
-            chars := 128
-            lpBuffer := Buffer(chars << 1)
-            length := DllCall("LoadStringW", "Uint", hModule, "Uint", 1512, "Ptr", lpBuffer, "Int", chars)
-            VD._LocalizedWord_TaskView := StrGet(lpBuffer, length, "UTF-16")
-            DllCall("FreeLibrary", "Ptr", hModule)
-        }
-    }
-
-    static _LocalizedWord_TaskView := ""
 
     static reinit() {
         try {
@@ -670,6 +689,84 @@ class VD {
         }
     }
 
+    static LocalizedWord_TaskView => VD._LocalizedWord_TaskView ??= VD._get_LocalizedWord_TaskView()
+    static _LocalizedWord_TaskView := unset
+    static _get_LocalizedWord_TaskView() {
+        hModule := DllCall("LoadLibraryW", "WStr", "twinui.pcshell.dll", "Ptr")
+        chars := 128
+        lpBuffer := Buffer(chars << 1)
+        length := DllCall("LoadStringW", "Uint", hModule, "Uint", 1512, "Ptr", lpBuffer, "Int", chars)
+        _LocalizedWord_TaskView := StrGet(lpBuffer, length, "UTF-16")
+        DllCall("FreeLibrary", "Ptr", hModule)
+        return _LocalizedWord_TaskView
+    }
+
+    static LocalizedWord_Desktop => VD._LocalizedWord_Desktop ??= VD._get_LocalizedWord_Desktop()
+    static _LocalizedWord_Desktop := unset
+    static _get_LocalizedWord_Desktop() {
+        hModule := DllCall("LoadLibraryW", "WStr", "shell32.dll", "Ptr")
+        chars := 128
+        lpBuffer := Buffer(chars << 1)
+        length := DllCall("LoadStringW", "Uint", hModule, "Uint", 21769, "Ptr", lpBuffer, "Int", chars)
+        _LocalizedWord_Desktop := StrGet(lpBuffer, length, "UTF-16")
+        DllCall("FreeLibrary", "Ptr", hModule)
+        return _LocalizedWord_Desktop
+    }
+
+    static getNameFromDesktopNum(desktopNum) {
+        desktopName := ""
+        if (VD.version.idx_GetName > -1) {
+            IVirtualDesktop := VD.IVirtualDesktopList[desktopNum]
+            desktopName := VD.IVirtualDesktop_Class(IVirtualDesktop, VD.version).GetName()
+        }
+        if (!desktopName) {
+            desktopName := VD.LocalizedWord_Desktop " " desktopNum
+        }
+        return desktopName
+    }
+
+    static getWallpaperFromDesktopNum(desktopNum) {
+        wallpaperPath := ""
+        if (VD.version.idx_GetWallpaper > -1) {
+            IVirtualDesktop := VD.IVirtualDesktopList[desktopNum]
+            wallpaperPath := VD.IVirtualDesktop_Class(IVirtualDesktop, VD.version).GetWallpaper()
+        }
+        return wallpaperPath
+    }
+
+    static setNameToDesktopNum(desktopNum, desktopName) {
+        if (VD.version.idx_SetDesktopName > -1) {
+            IVirtualDesktop := VD.IVirtualDesktopList[desktopNum]
+            VD.IVirtualDesktopManagerInternal.SetDesktopName(IVirtualDesktop, desktopName)
+        }
+    }
+
+    static setWallpaperToDesktopNum(desktopNum, wallpaperPath) {
+        if (VD.version.idx_SetDesktopWallpaper > -1) {
+            IVirtualDesktop := VD.IVirtualDesktopList[desktopNum]
+            VD.IVirtualDesktopManagerInternal.SetDesktopWallpaper(IVirtualDesktop, wallpaperPath)
+        }
+    }
+
+    class IVirtualDesktop_Class {
+        __New(IVirtualDesktop, version) {
+            this.version := version
+            this.IVirtualDesktop := IVirtualDesktop
+        }
+        GetName() {
+            ComCall(this.version.idx_GetName, this.IVirtualDesktop, "Ptr*", &HSTRING := 0)
+            desktopName := StrGet(DllCall("combase\WindowsGetStringRawBuffer", "Ptr", HSTRING, "Uint*", &length := 0, "Ptr"), "UTF-16")
+            DllCall("combase\WindowsDeleteString", "Ptr", HSTRING)
+            return desktopName
+        }
+        GetWallpaper() {
+            ComCall(this.version.idx_GetWallpaper, this.IVirtualDesktop, "Ptr*", &HSTRING := 0)
+            wallpaperPath := StrGet(DllCall("combase\WindowsGetStringRawBuffer", "Ptr", HSTRING, "Uint*", &length := 0, "Ptr"), "UTF-16")
+            DllCall("combase\WindowsDeleteString", "Ptr", HSTRING)
+            return wallpaperPath
+        }
+    }
+
     class IApplicationView_Class {
         __New(IApplicationView) {
             this.IApplicationView := IApplicationView
@@ -712,6 +809,16 @@ class VD {
         FindDesktop(DesktopId) {
             ComCall(this.version.idx_FindDesktop, this.IVirtualDesktopManagerInternal, "Ptr", DesktopId, "Ptr*", &IVirtualDesktop_found := 0)
             return IVirtualDesktop_found
+        }
+        SetDesktopName(IVirtualDesktop, desktopName) {
+            DllCall("combase\WindowsCreateString", "WStr", desktopName, "Uint", StrLen(desktopName), "Ptr*", &HSTRING := 0)
+            ComCall(this.version.idx_SetDesktopName, this.IVirtualDesktopManagerInternal, "Ptr", IVirtualDesktop, "Ptr", HSTRING)
+            DllCall("combase\WindowsDeleteString", "Ptr", HSTRING)
+        }
+        SetDesktopWallpaper(IVirtualDesktop, wallpaperPath) {
+            DllCall("combase\WindowsCreateString", "WStr", wallpaperPath, "Uint", StrLen(wallpaperPath), "Ptr*", &HSTRING := 0)
+            ComCall(this.version.idx_SetDesktopWallpaper, this.IVirtualDesktopManagerInternal, "Ptr", IVirtualDesktop, "Ptr", HSTRING)
+            DllCall("combase\WindowsDeleteString", "Ptr", HSTRING)
         }
     }
 
