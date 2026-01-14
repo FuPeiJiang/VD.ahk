@@ -692,7 +692,7 @@ class VD {
     static LocalizedWord_TaskView => VD._LocalizedWord_TaskView ??= VD._get_LocalizedWord_TaskView()
     static _LocalizedWord_TaskView := unset
     static _get_LocalizedWord_TaskView() {
-        hModule := DllCall("LoadLibraryW", "WStr", "twinui.pcshell.dll", "Ptr")
+        hModule := DllCall("LoadLibraryExW", "WStr", "twinui.pcshell.dll", "Ptr", 0, "Uint", 0x00000022, "Ptr") ;LOAD_LIBRARY_AS_DATAFILE | LOAD_LIBRARY_AS_IMAGE_RESOURCE
         chars := 128
         lpBuffer := Buffer(chars << 1)
         length := DllCall("LoadStringW", "Uint", hModule, "Uint", 1512, "Ptr", lpBuffer, "Int", chars)
@@ -704,7 +704,7 @@ class VD {
     static LocalizedWord_Desktop => VD._LocalizedWord_Desktop ??= VD._get_LocalizedWord_Desktop()
     static _LocalizedWord_Desktop := unset
     static _get_LocalizedWord_Desktop() {
-        hModule := DllCall("LoadLibraryW", "WStr", "shell32.dll", "Ptr")
+        hModule := DllCall("LoadLibraryExW", "WStr", "shell32.dll", "Ptr", 0, "Uint", 0x00000022, "Ptr") ;LOAD_LIBRARY_AS_DATAFILE | LOAD_LIBRARY_AS_IMAGE_RESOURCE
         chars := 128
         lpBuffer := Buffer(chars << 1)
         length := DllCall("LoadStringW", "Uint", hModule, "Uint", 21769, "Ptr", lpBuffer, "Int", chars)
