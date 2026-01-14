@@ -59,13 +59,11 @@ ___
 detect when the virtual desktop changes:<br>
 create a hotkey to return you to the **previous desktop**
 ```ahk
-#Include %A_LineFile%\..\VD.ah2
-VD.RegisterDesktopNotifications()
-VD.DefineProp("CurrentVirtualDesktopChanged", {Call:CurrentVirtualDesktopChanged})
-VD.previous_desktopNum:=1
-CurrentVirtualDesktopChanged(desktopNum_Old, desktopNum_New) {
-  VD.previous_desktopNum:=desktopNum_Old
-}
+#Include %A_LineFile%\..\VD.ahk
+VD.ListenersCurrentVirtualDesktopChanged[(desktopNum_old, currentDesktopNum) {
+    VD.previous_desktopNum := desktopNum_old
+    ToolTip "changed from " desktopNum_old " to " currentDesktopNum
+}] := 1
 Numpad0::VD.goToDesktopNum(VD.previous_desktopNum)
 ```
 ___
