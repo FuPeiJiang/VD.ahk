@@ -551,7 +551,8 @@ class VD {
         VD.WinActivate_callback := callback := () {
             VD.WinActivate_callback := 0
             if (hwnd == 0) {
-                VD.WinActivateFirstWindowInCurrentDesktop()
+                VD.WinActivateFirstWindowInCurrentDesktop(50)
+                Sleep 100
             } else {
                 if (VD._isMinimizedWindow(hwnd)) {
                     DllCall("ShowWindow", "Ptr", hwnd, "Uint", 9) ;SW_RESTORE
@@ -615,6 +616,7 @@ class VD {
                 }
                 Critical "Off"
             }
+            Sleep 100 ; additional sleep, just in case
             return false
         }
     }
