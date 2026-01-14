@@ -319,45 +319,71 @@ class VD {
 
     static TryWinGetID(wintitle) {
         loop 3 {
-            try {
-                hwnd := WinGetID(wintitle)
-                return hwnd
+            hwnd := VD.FindFirstWindowInAllDesktops(wintitle)
+            if (hwnd !== VD.Null) {
+                break
             }
             Sleep 10
         }
-        return false
+        return hwnd
     }
 
-    static MoveWindowToDesktopNum(wintitle, desktopNum, follow := false, WinActivatePriority := VD.WinActivatePriority.NewWindow) {
+    static _BlockWhileVDFunctionRunning() {
+        loop {
+            Critical
+            if (!VD._VDFunctionRunning) {
+                VD._VDFunctionRunning := true
+                BlockInput "On"
+                Critical "Off"
+                break
+            }
+            Critical "Off"
+            Sleep 20
+        }
+    }
+
+    static _UnblockVDFunctionRunning() {
         Critical
-        hwnd := VD.TryWinGetID(wintitle)
-        if (!hwnd) {
-            return
-        }
-        IApplicationView := VD.IApplicationViewCollection.GetViewForHwnd(hwnd)
-        if (!IApplicationView) {
-            return
-        }
-        window_desktopNum := VD.getDesktopNumOfHWND(hwnd)
-        activeWindow := WinGetID("A")
-        if (window_desktopNum !== desktopNum) {
-            VD.IVirtualDesktopManagerInternal.MoveViewToDesktop(IApplicationView, VD.IVirtualDesktopList[desktopNum])
-            if (!follow && activeWindow == hwnd) {
-                VD.WinActivateFirstWindowInCurrentDesktop(50)
-                Sleep 100 ; don't want to switch the changing foreground window
+        VD._VDFunctionRunning := false
+        BlockInput "Off"
+        Critical "Off"
+    }
+
+    static _VDFunctionRunning := false
+
+    static MoveWindowToDesktopNum(wintitle, desktopNum, follow := false, WinActivatePriority := VD.WinActivatePriority.NewWindow) {
+        VD._BlockWhileVDFunctionRunning()
+        loop 1 {
+            hwnd := VD.TryWinGetID(wintitle)
+            if (hwnd == VD.Null) {
+                break
             }
-        }
-        if (follow) {
-            if (desktopNum == VD.currentDesktopNum) {
-                VD.SetForegroundWindow(hwnd)
-            } else {
-                VD.RegisterWinActivateUponSwitch(hwnd)
-                if (activeWindow !== hwnd) {
-                    VD.AllowSetForegroundWindowAny()
+            IApplicationView := VD.IApplicationViewCollection.GetViewForHwnd(hwnd)
+            if (!IApplicationView) {
+                break
+            }
+            window_desktopNum := VD.getDesktopNumOfHWND(hwnd)
+            activeWindow := WinGetID("A")
+            if (window_desktopNum !== desktopNum) {
+                VD.IVirtualDesktopManagerInternal.MoveViewToDesktop(IApplicationView, VD.IVirtualDesktopList[desktopNum])
+                if (!follow && activeWindow == hwnd) {
+                    VD.WinActivateFirstWindowInCurrentDesktop(50)
+                    Sleep 100 ; don't want to switch the changing foreground window
                 }
-                VD.IVirtualDesktopManagerInternal.SwitchDesktop(VD.IVirtualDesktopList[desktopNum])
+            }
+            if (follow) {
+                if (desktopNum == VD.currentDesktopNum) {
+                    VD.SetForegroundWindow(hwnd)
+                } else {
+                    VD.RegisterWinActivateUponSwitch(hwnd)
+                    if (activeWindow !== hwnd) {
+                        VD.AllowSetForegroundWindowAny()
+                    }
+                    VD._SwitchDesktopBlocking(desktopNum)
+                }
             }
         }
+        VD._UnblockVDFunctionRunning()
     }
 
     static getDesktopNumOfHWND(hwnd) {
@@ -394,12 +420,23 @@ class VD {
         return VD.getDesktopNumOfHWND(hwnd)
     }
 
+    static FindFirstWindowInAllDesktops(wintitle) {
+        bak_A_DetectHiddenWindows := A_DetectHiddenWindows
+        A_DetectHiddenWindows := true
+        hwnd_list := WinGetList(wintitle)
+        A_DetectHiddenWindows := bak_A_DetectHiddenWindows
+        found := VD.Array.find(hwnd_list, hwnd => VD._isValidWindow(hwnd))
+        return found
+    }
+
     static goToDesktopOfWindow(wintitle, activateYourWindow := true) {
-        hwnd := WinGetID(wintitle)
-        desktopNum := VD.getDesktopNumOfHWND(hwnd)
-        if (desktopNum == 0) {
-            return
+        VD._BlockWhileVDFunctionRunning()
+        hwnd := VD.FindFirstWindowInAllDesktops(wintitle)
+        if (hwnd == VD.Null) {
+            VD._UnblockVDFunctionRunning()
+            throw Error("Window not found: " wintitle)
         }
+        desktopNum := VD.getDesktopNumOfHWND(hwnd)
         if (desktopNum == VD.currentDesktopNum) {
             if (activateYourWindow) {
                 VD.SetForegroundWindow(hwnd)
@@ -409,8 +446,9 @@ class VD {
                 VD.RegisterWinActivateUponSwitch(hwnd)
             }
             VD.AllowSetForegroundWindowAny()
-            VD.IVirtualDesktopManagerInternal.SwitchDesktop(VD.IVirtualDesktopList[desktopNum])
+            VD._SwitchDesktopBlocking(desktopNum)
         }
+        VD._UnblockVDFunctionRunning()
     }
 
     static SetForegroundWindow(hWnd, waitCompletionDelay := 0) {
@@ -437,7 +475,6 @@ class VD {
                     Send "{Blind}" toRelease
                 }
             }
-            BlockInput "On"
             Send "{LAlt Down}{LAlt Down}"
             DllCall("SetForegroundWindow", "Ptr", hwnd)
             toAppend := ""
@@ -468,7 +505,6 @@ class VD {
             if (toAppend) {
                 Send "{Blind}" toAppend
             }
-            BlockInput "Off"
         }
         if (waitCompletionDelay) {
             end := A_TickCount + waitCompletionDelay
@@ -491,7 +527,7 @@ class VD {
         A_DetectHiddenWindows := false
         hwnd_list := WinGetList()
         A_DetectHiddenWindows := bak_A_DetectHiddenWindows
-        found := VD.Array.find(hwnd_list, hwnd => VD._isValidWindow(hwnd))
+        found := VD.Array.find(hwnd_list, hwnd => VD._isValidWindow(hwnd, true))
         return found
     }
 
@@ -517,7 +553,9 @@ class VD {
             if (hwnd == 0) {
                 VD.WinActivateFirstWindowInCurrentDesktop()
             } else {
-                VD.SetForegroundWindow(hwnd)
+                if (!VD._isMinimizedWindow(hwnd)) {
+                    VD.SetForegroundWindow(hwnd)
+                }
             }
         }
         SetTimer () {
@@ -527,12 +565,12 @@ class VD {
         }, -1000
     }
 
-    static _isValidWindow(hWnd) {
+    static _isValidWindow(hWnd, isNotMinized := false) {
         dwStyle := DllCall("GetWindowLongPtrW", "Ptr", hWnd, "Int", -16, "Ptr")
         if (!(dwStyle & 0x10000000)) { ;WS_VISIBLE
             return false
         }
-        if (dwStyle & 0x20000000) { ; WS_MINIMIZE 
+        if (isNotMinized && (dwStyle & 0x20000000)) { ; WS_MINIMIZE
             return false
         }
         dwExStyle := DllCall("GetWindowLongPtrW", "Ptr", hWnd, "Int", -20, "Ptr")
@@ -551,7 +589,36 @@ class VD {
         return true
     }
 
+    static _isMinimizedWindow(hWnd) {
+        dwStyle := DllCall("GetWindowLongPtrW", "Ptr", hWnd, "Int", -16, "Ptr")
+        if (dwStyle & 0x20000000) { ; WS_MINIMIZE
+            return true
+        }
+        return false
+    }
+
+    static _SwitchDesktopBlocking(desktopNum) {
+        Critical
+        VD.currentDesktopNum := ""
+        Critical "Off"
+        loop 1 {
+            VD.IVirtualDesktopManagerInternal.SwitchDesktop(VD.IVirtualDesktopList[desktopNum])
+            end := A_TickCount + 100
+            while (A_TickCount < end) {
+                Critical
+                if (VD.currentDesktopNum == desktopNum) {
+                    Critical "Off"
+                    Sleep 100 ; additional sleep
+                    return true
+                }
+                Critical "Off"
+            }
+            return false
+        }
+    }
+
     static goToDesktopNum(desktopNum) {
+        VD._BlockWhileVDFunctionRunning()
         if (desktopNum == VD.currentDesktopNum) {
             if (VD.ShouldActivateUponArrival()) {
                 VD.WinActivateFirstWindowInCurrentDesktop()
@@ -561,8 +628,9 @@ class VD {
                 VD.RegisterWinActivateUponSwitch(0)
                 VD.AllowSetForegroundWindowAny()
             }
-            VD.IVirtualDesktopManagerInternal.SwitchDesktop(VD.IVirtualDesktopList[desktopNum])
+            VD._SwitchDesktopBlocking(desktopNum)
         }
+        VD._UnblockVDFunctionRunning()
     }
 
     static getCurrentDesktopNum() {
@@ -954,13 +1022,13 @@ class VD {
         }
         _common_CurrentVirtualDesktopChanged(IVirtualDesktop_old, IVirtualDesktop_new) {
             desktopNum_old := VD.IVirtualDesktopMap[IVirtualDesktop_old]
-            VD.currentDesktopNum := VD.IVirtualDesktopMap[IVirtualDesktop_new]
             if (VD.WinActivate_callback) {
                 VD.WinActivate_callback.Call()
             }
             for k, _ in VD.ListenersCurrentVirtualDesktopChanged {
                 k(desktopNum_old, VD.currentDesktopNum)
             }
+            VD.currentDesktopNum := VD.IVirtualDesktopMap[IVirtualDesktop_new]
         }
         CurrentVirtualDesktopChanged(that, IVirtualDesktop_old, IVirtualDesktop_new) {
             this._common_CurrentVirtualDesktopChanged(IVirtualDesktop_old, IVirtualDesktop_new)
