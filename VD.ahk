@@ -317,6 +317,10 @@ class VD {
         VD.MoveWindowToDesktopNum(wintitle, absolute_desktopNum, follow, WinActivatePriority)
     }
 
+    static MoveWindowToCurrentDesktop(wintitle, activateYourWindow := true) {
+        VD.MoveWindowToDesktopNum(wintitle, VD.currentDesktopNum, activateYourWindow)
+    }
+
     static TryWinGetID(wintitle) {
         loop 3 {
             hwnd := VD.FindFirstWindowInAllDesktops(wintitle)
