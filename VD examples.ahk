@@ -72,53 +72,53 @@ VD.createUntil(3) ;create until we have at least 3 VD
 return
 
 ;#useful stuff
-numpad1::VD.goToDesktopNum(1)
-numpad2::VD.goToDesktopNum(2)
-numpad3::VD.goToDesktopNum(3)
+$numpad1::VD.goToDesktopNum(1)
+$numpad2::VD.goToDesktopNum(2)
+$numpad3::VD.goToDesktopNum(3)
 
 ;follow your window
-numpad4::VD.MoveWindowToDesktopNum("A",1,true)
-numpad5::VD.MoveWindowToDesktopNum("A",2,true)
-numpad6::VD.MoveWindowToDesktopNum("A",3,true)
+$numpad4::VD.MoveWindowToDesktopNum("A",1,true)
+$numpad5::VD.MoveWindowToDesktopNum("A",2,true)
+$numpad6::VD.MoveWindowToDesktopNum("A",3,true)
 
 ;just move window
-numpad7::VD.MoveWindowToDesktopNum("A",1)
-numpad8::VD.MoveWindowToDesktopNum("A",2)
-numpad9::VD.MoveWindowToDesktopNum("A",3)
+$numpad7::VD.MoveWindowToDesktopNum("A",1)
+$numpad8::VD.MoveWindowToDesktopNum("A",2)
+$numpad9::VD.MoveWindowToDesktopNum("A",3)
 
 ; wrapping / cycle back to first desktop when at the last
-^+#left::VD.goToRelativeDesktopNum(-1)
-^+#right::VD.goToRelativeDesktopNum(+1)
+$^+#left::VD.goToRelativeDesktopNum(-1)
+$^+#right::VD.goToRelativeDesktopNum(+1)
 
 ; move window to left and follow it
-#!left::VD.MoveWindowToRelativeDesktopNum("A", -1, true)
+$#!left::VD.MoveWindowToRelativeDesktopNum("A", -1, true)
 ; move window to right and follow it
-#!right::VD.MoveWindowToRelativeDesktopNum("A", 1, true)
+$#!right::VD.MoveWindowToRelativeDesktopNum("A", 1, true)
 
 ;to come back to this window
-#NumpadMult::{ ;#*
+$#NumpadMult::{ ;#*
     VD.goToDesktopOfWindow("VD.ahk examples WinTitle")
     ; VD.goToDesktopOfWindow("ahk_exe code.exe")
 }
 
 ;getters and stuff
-f6::{
+$f6::{
     Msgbox VD.getDesktopNumOfWindow("VD.ahk examples WinTitle")
     ; Msgbox VD.getDesktopNumOfWindow("ahk_exe GitHubDesktop.exe")
 }
-f1::Msgbox VD.getCurrentDesktopNum()
-f2::Msgbox VD.getCount()
+$f1::Msgbox VD.getCurrentDesktopNum()
+$f2::Msgbox VD.getCount()
 
 ;Create/Remove Desktop
-!NumpadAdd::VD.createDesktop(true) ;go to newly created
-#NumpadAdd::VD.createDesktop(false) ;don't go to newly created, also the default
+$!NumpadAdd::VD.createDesktop(true) ;go to newly created
+$#NumpadAdd::VD.createDesktop(false) ;don't go to newly created, also the default
 
-!NumpadSub::VD.removeDesktop() ;defaults to current
-#!NumpadSub::VD.removeDesktop(VD.getCount()) ;removes 3rd desktop if there are 3 desktops
+$!NumpadSub::VD.removeDesktop() ;defaults to current
+$#!NumpadSub::VD.removeDesktop(VD.getCount()) ;removes 3rd desktop if there are 3 desktops
 
-^+NumpadAdd::VD.createUntil(3) ;create until we have at least 3 VD
+$^+NumpadAdd::VD.createUntil(3) ;create until we have at least 3 VD
 
-^+NumpadSub::{
+$^+NumpadSub::{
     VD.createUntil(3) ;create until we have at least 3 VD
     sleep 1000
     ;FALLBACK IS ONLY USED IF YOU ARE CURRENTLY ON THAT VD
@@ -126,15 +126,15 @@ f2::Msgbox VD.getCount()
 }
 
 ;Pin Window
-numpad0::VD.TogglePinWindow("A")
-^numpad0::VD.PinWindow("A")
-!numpad0::VD.UnPinWindow("A")
-#numpad0::MsgBox VD.IsWindowPinned("A")
+$numpad0::VD.TogglePinWindow("A")
+$^numpad0::VD.PinWindow("A")
+$!numpad0::VD.UnPinWindow("A")
+$#numpad0::MsgBox VD.IsWindowPinned("A")
 
 ;Pin App
-numpadDot::VD.TogglePinApp("A")
-^numpadDot::VD.PinApp("A")
-!numpadDot::VD.UnPinApp("A")
-#numpadDot::MsgBox VD.IsAppPinned("A")
+$numpadDot::VD.TogglePinApp("A")
+$^numpadDot::VD.PinApp("A")
+$!numpadDot::VD.UnPinApp("A")
+$#numpadDot::MsgBox VD.IsAppPinned("A")
 
-f3::Exitapp
+$f3::Exitapp
