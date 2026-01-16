@@ -324,7 +324,7 @@ class VD {
     static TryWinGetID(wintitle) {
         loop 3 {
             hwnd := VD.FindFirstWindowInAllDesktops(wintitle)
-            if (hwnd !== VD.Null) {
+            if (hwnd) {
                 break
             }
             Sleep 10
@@ -359,7 +359,7 @@ class VD {
         VD._BlockWhileVDFunctionRunning()
         loop 1 {
             hwnd := VD.TryWinGetID(wintitle)
-            if (hwnd == VD.Null) {
+            if (!hwnd) {
                 break
             }
             IApplicationView := VD.IApplicationViewCollection.GetViewForHwnd(hwnd)
@@ -429,14 +429,14 @@ class VD {
         A_DetectHiddenWindows := true
         hwnd_list := WinGetList(wintitle)
         A_DetectHiddenWindows := bak_A_DetectHiddenWindows
-        found := VD.Array.find(hwnd_list, hwnd => VD._isValidWindow(hwnd))
+        found := VD._FindValidWindow(hwnd_list)
         return found
     }
 
     static goToDesktopOfWindow(wintitle, activateYourWindow := true) {
         VD._BlockWhileVDFunctionRunning()
         hwnd := VD.FindFirstWindowInAllDesktops(wintitle)
-        if (hwnd == VD.Null) {
+        if (!hwnd) {
             VD._UnblockVDFunctionRunning()
             throw Error("Window not found: " wintitle)
         }
@@ -531,13 +531,13 @@ class VD {
         A_DetectHiddenWindows := false
         hwnd_list := WinGetList()
         A_DetectHiddenWindows := bak_A_DetectHiddenWindows
-        found := VD.Array.find(hwnd_list, hwnd => VD._isValidWindow(hwnd, true))
+        found := VD._FindValidWindow(hwnd_list, true)
         return found
     }
 
     static WinActivateFirstWindowInCurrentDesktop(waitCompletionDelay := 0) {
         hwnd := VD.FindFirstWindowInCurrentDesktop()
-        if (hwnd == VD.Null) {
+        if (!hwnd) {
             VD.SetForegroundWindow(WinGetID("ahk_class Progman ahk_exe explorer.exe")) ; Desktop
         } else {
             VD.SetForegroundWindow(hwnd, waitCompletionDelay)
@@ -572,28 +572,49 @@ class VD {
         }, -1000
     }
 
-    static _isValidWindow(hWnd, isNotMinized := false) {
-        dwStyle := DllCall("GetWindowLongPtrW", "Ptr", hWnd, "Int", -16, "Ptr")
-        if (!(dwStyle & 0x10000000)) { ;WS_VISIBLE
-            return false
+    static _FindValidWindow(hwnd_list, isNotMinized := false) {
+        already_hwnd := Map()
+        _innerFindValidWindow(hwnd) {
+            loop 1 {
+                if (already_hwnd.Has(hwnd)) {
+                    found := already_hwnd[hwnd]
+                    break
+                }
+                owner := DllCall("GetWindow", "Ptr", hwnd, "Uint", 4)
+                if (owner) {
+                    found := _innerFindValidWindow(owner)
+                    break
+                }
+                dwStyle := DllCall("GetWindowLongPtrW", "Ptr", hWnd, "Int", -16, "Ptr")
+                if (!(dwStyle & 0x10000000)) { ;WS_VISIBLE
+                    found := false
+                    break
+                }
+                if (isNotMinized && (dwStyle & 0x20000000)) { ; WS_MINIMIZE
+                    found := false
+                    break
+                }
+                dwExStyle := DllCall("GetWindowLongPtrW", "Ptr", hWnd, "Int", -20, "Ptr")
+                if (dwExStyle & 0x00040000) { ;WS_EX_APPWINDOW
+                    found := hwnd
+                    break
+                }
+                if (dwExStyle & 0x08000080) { ; WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW
+                    found := false
+                    break
+                }
+                found := hwnd
+            }
+            already_hwnd[hwnd] := found
+            return found
         }
-        if (isNotMinized && (dwStyle & 0x20000000)) { ; WS_MINIMIZE
-            return false
-        }
-        dwExStyle := DllCall("GetWindowLongPtrW", "Ptr", hWnd, "Int", -20, "Ptr")
-        if (dwExStyle & 0x00040000) { ;WS_EX_APPWINDOW
-            return true
-        }
-        if (dwExStyle & 0x08000080) { ; WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW
-            return false
-        }
-        upHwnd := hWnd
-        while (upHwnd := DllCall("GetWindow", "Ptr", upHwnd, "Uint", 4)) {
-            if (upHwnd == 65552) { ; Desktop
-                return false
+        found := false
+        for (hwnd in hwnd_list) {
+            if ((found := _innerFindValidWindow(hwnd))) {
+                break
             }
         }
-        return true
+        return found
     }
 
     static _isMinimizedWindow(hWnd) {
