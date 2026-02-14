@@ -979,7 +979,7 @@ class VD {
         }
         Register(IVirtualDesktopNotification) {
             if (this.previousCookie) {
-                ComCall(4,this.IVirtualDesktopNotificationService,"Uint",this.previousCookie) ;4=UnRegister
+                ComCall(4,this.IVirtualDesktopNotificationService,"Uint",this.previousCookie,"Int") ;4=UnRegister, try to unregister, invalid cookie: (0x80070057) The parameter is incorrect.
             }
             ComCall(3,this.IVirtualDesktopNotificationService,"Ptr",IVirtualDesktopNotification,"Uint*",&pdwCookie:=0) ;3=Register
             this.previousCookie := pdwCookie
