@@ -971,11 +971,18 @@ class VD {
     }
 
     class IVirtualDesktopNotificationService_Class {
+        __New() {
+            this.previousCookie := 0
+        }
         reinit(CImmersiveShell_IServiceProvider) {
             this.IVirtualDesktopNotificationService := ComObjQuery(CImmersiveShell_IServiceProvider, "{a501fdec-4a09-464c-ae4e-1b9c21b84918}", "{0cd45e71-d927-4f15-8b0a-8fef525337bf}")
         }
         Register(IVirtualDesktopNotification) {
-            ComCall(3,this.IVirtualDesktopNotificationService,"Ptr",IVirtualDesktopNotification,"Uint*",pdwCookie:=0) ;3=Register
+            if (this.previousCookie) {
+                ComCall(4,this.IVirtualDesktopNotificationService,"Uint",this.previousCookie) ;4=UnRegister
+            }
+            ComCall(3,this.IVirtualDesktopNotificationService,"Ptr",IVirtualDesktopNotification,"Uint*",&pdwCookie:=0) ;3=Register
+            this.previousCookie := pdwCookie
         }
     }
 
