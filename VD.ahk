@@ -238,6 +238,12 @@ class VD {
 
         VD.ListenersCurrentVirtualDesktopChanged := Map()
         VD.WinActivate_callback := 0
+        ; Pinned views have one global HWND/Z-order. Preserve foreground history only for switches owned by goToDesktopNum().
+        VD.PinnedForegroundByDesktop := Map()
+        VD.PinnedForegroundOwnedSwitchSource := 0
+        VD.PinnedForegroundOwnedSwitchTarget := 0
+        VD.PinnedForegroundOwnedSwitchCallback := 0
+        VD.PinnedForegroundOwnedSwitchToken := 0
 
         VD.DesktopIdMap := Map()
 
@@ -281,6 +287,7 @@ class VD {
     static IVirtualDesktopListChanged() {
         VD.IVirtualDesktopList := [VD.IObjectArray(VD.IVirtualDesktopManagerInternal.GetDesktops(), VD.version.IID_IVirtualDesktop_ptr)*]
         VD.IVirtualDesktopMap := Map(VD.Array.flatMap(VD.IVirtualDesktopList, (IVirtualDesktop, i) => [IVirtualDesktop, i])*)
+        VD._ClearPinnedForegroundOwnedSwitch(true, true)
     }
 
     class IApplicationViewCollection_Class {
@@ -623,17 +630,98 @@ class VD {
         }
     }
 
+    static _RememberPinnedForegroundForDesktop(IVirtualDesktop) {
+        hwnd := DllCall("GetForegroundWindow", "Ptr")
+        desktopIdentity := 0
+        if (hwnd) {
+            try desktopIdentity := VD.getDesktopNumOfHWND(hwnd)
+        }
+        if (desktopIdentity < 0) { ; -1 = pinned app, -2 = pinned view
+            threadId := DllCall("GetWindowThreadProcessId", "Ptr", hwnd, "Uint*", &processId := 0, "Uint")
+            VD.PinnedForegroundByDesktop[IVirtualDesktop] := {hwnd: hwnd, processId: processId, threadId: threadId}
+        } else if (VD.PinnedForegroundByDesktop.Has(IVirtualDesktop)) {
+            VD.PinnedForegroundByDesktop.Delete(IVirtualDesktop)
+        }
+    }
+
+    static _PinnedForegroundForDesktop(IVirtualDesktop) {
+        if (!VD.PinnedForegroundByDesktop.Has(IVirtualDesktop)) {
+            return 0
+        }
+        savedWindow := VD.PinnedForegroundByDesktop[IVirtualDesktop]
+        hwnd := savedWindow.hwnd
+        desktopIdentity := 0
+        processId := 0
+        threadId := 0
+        if (DllCall("IsWindow", "Ptr", hwnd)) {
+            threadId := DllCall("GetWindowThreadProcessId", "Ptr", hwnd, "Uint*", &processId, "Uint")
+            if (processId == savedWindow.processId && threadId == savedWindow.threadId) {
+                try desktopIdentity := VD.getDesktopNumOfHWND(hwnd)
+            }
+        }
+        if (desktopIdentity >= 0) {
+            VD.PinnedForegroundByDesktop.Delete(IVirtualDesktop)
+            return 0
+        }
+        return hwnd
+    }
+
+    static _ClearPinnedForegroundOwnedSwitch(clearCache := false, clearActivation := false) {
+        ownedSwitchCallback := VD.PinnedForegroundOwnedSwitchCallback
+        if (clearActivation && IsObject(ownedSwitchCallback) && IsObject(VD.WinActivate_callback)
+            && ObjPtr(ownedSwitchCallback) == ObjPtr(VD.WinActivate_callback)) {
+            VD.WinActivate_callback := 0
+        }
+        VD.PinnedForegroundOwnedSwitchSource := 0
+        VD.PinnedForegroundOwnedSwitchTarget := 0
+        VD.PinnedForegroundOwnedSwitchCallback := 0
+        VD.PinnedForegroundOwnedSwitchToken += 1
+        if (clearCache) {
+            VD.PinnedForegroundByDesktop.Clear()
+        }
+    }
+
+    static _MarkPinnedForegroundOwnedSwitch(IVirtualDesktop_source, IVirtualDesktop_target) {
+        if (VD.PinnedForegroundOwnedSwitchTarget) {
+            VD._ClearPinnedForegroundOwnedSwitch(true, true)
+        }
+        VD.PinnedForegroundOwnedSwitchSource := IVirtualDesktop_source
+        VD.PinnedForegroundOwnedSwitchTarget := IVirtualDesktop_target
+        ownedSwitchToken := ++VD.PinnedForegroundOwnedSwitchToken
+        ; Do not let a failed/missing notification turn a later external switch into a false owned-switch match.
+        SetTimer () {
+            if (VD.PinnedForegroundOwnedSwitchToken == ownedSwitchToken) {
+                VD._ClearPinnedForegroundOwnedSwitch(true, true)
+            }
+        }, -1000
+    }
+
     static goToDesktopNum(desktopNum) {
         if (desktopNum == VD.currentDesktopNum) {
             if (VD.ShouldActivateUponArrival()) {
                 VD.WinActivateFirstWindowInCurrentDesktop()
             }
         } else {
-            if (VD.ShouldActivateUponArrival()) {
-                VD.RegisterWinActivateUponSwitch(0)
-                VD.AllowSetForegroundWindowAny()
+            IVirtualDesktop_source := VD.IVirtualDesktopList[VD.currentDesktopNum]
+            IVirtualDesktop_target := VD.IVirtualDesktopList[desktopNum]
+            shouldActivate := VD.ShouldActivateUponArrival()
+            if (shouldActivate) {
+                VD._MarkPinnedForegroundOwnedSwitch(IVirtualDesktop_source, IVirtualDesktop_target)
+                try {
+                    VD._RememberPinnedForegroundForDesktop(IVirtualDesktop_source)
+                    pinnedForeground := VD._PinnedForegroundForDesktop(IVirtualDesktop_target)
+                    VD.RegisterWinActivateUponSwitch(pinnedForeground)
+                    VD.PinnedForegroundOwnedSwitchCallback := VD.WinActivate_callback
+                    VD.AllowSetForegroundWindowAny()
+                    VD.IVirtualDesktopManagerInternal.SwitchDesktop(IVirtualDesktop_target)
+                } catch as e {
+                    VD._ClearPinnedForegroundOwnedSwitch(true, true)
+                    throw e
+                }
+            } else {
+                VD.PinnedForegroundByDesktop.Clear()
+                VD.IVirtualDesktopManagerInternal.SwitchDesktop(IVirtualDesktop_target)
             }
-            VD.IVirtualDesktopManagerInternal.SwitchDesktop(VD.IVirtualDesktopList[desktopNum])
         }
         return desktopNum
     }
@@ -680,6 +768,9 @@ class VD {
     static IsWindowPinned(wintitle) {
         hwnd := WinGetID(wintitle)
         IApplicationView := VD.IApplicationViewCollection.GetViewForHwnd(hwnd)
+        if (!IApplicationView) {
+            return false
+        }
         viewIsPinned := VD.IVirtualPinnedAppsHandler.IsViewPinned(IApplicationView)
         return viewIsPinned
     }
@@ -1034,7 +1125,18 @@ class VD {
         }
         _common_CurrentVirtualDesktopChanged(IVirtualDesktop_old, IVirtualDesktop_new) {
             desktopNum_old := VD.IVirtualDesktopMap[IVirtualDesktop_old]
-            VD.currentDesktopNum := VD.IVirtualDesktopMap[IVirtualDesktop_new]
+            desktopNum_new := VD.IVirtualDesktopMap[IVirtualDesktop_new]
+            pendingOwnedSwitch := VD.PinnedForegroundOwnedSwitchTarget
+            ownedSwitch := (pendingOwnedSwitch
+                && VD.PinnedForegroundOwnedSwitchSource == IVirtualDesktop_old
+                && pendingOwnedSwitch == IVirtualDesktop_new)
+            if (ownedSwitch) {
+                VD._ClearPinnedForegroundOwnedSwitch()
+            } else {
+                ; Native/external switches make cached per-desktop pinned foreground state ambiguous, so discard it.
+                VD._ClearPinnedForegroundOwnedSwitch(true, !!pendingOwnedSwitch)
+            }
+            VD.currentDesktopNum := desktopNum_new
             if (VD.WinActivate_callback) {
                 VD.WinActivate_callback.Call()
             }
