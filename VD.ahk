@@ -527,7 +527,7 @@ class VD {
         A_DetectHiddenWindows := false
         hwnd_list := WinGetList()
         A_DetectHiddenWindows := bak_A_DetectHiddenWindows
-        found := VD._FindValidWindow(hwnd_list, true)
+        found := VD._FindValidWindow(hwnd_list, true, true)
         return found
     }
 
@@ -566,7 +566,7 @@ class VD {
         }, -1000
     }
 
-    static _FindValidWindow(hwnd_list, isNotMinized := false) {
+    static _FindValidWindow(hwnd_list, isNotMinized := false, excludeCloaked := false) {
         already_hwnd := Map()
         _innerFindValidWindow(hwnd) {
             loop 1 {
@@ -587,6 +587,14 @@ class VD {
                 if (isNotMinized && (dwStyle & 0x20000000)) { ; WS_MINIMIZE
                     found := false
                     break
+                }
+                if (excludeCloaked) {
+                    cloaked := 0
+                    hr := DllCall("dwmapi\DwmGetWindowAttribute", "Ptr", hwnd, "Uint", 14, "Uint*", &cloaked, "Uint", 4, "Int") ; DWMWA_CLOAKED
+                    if (hr == 0 && cloaked) {
+                        found := false
+                        break
+                    }
                 }
                 dwExStyle := DllCall("GetWindowLongPtrW", "Ptr", hWnd, "Int", -20, "Ptr")
                 if (dwExStyle & 0x00040000) { ;WS_EX_APPWINDOW
