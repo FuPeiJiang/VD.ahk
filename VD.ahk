@@ -315,6 +315,7 @@ class VD {
     }
 
     static goToRelativeDesktopNum(relative_count) {
+        VD._WaitForPinnedForegroundOwnedSwitch()
         absolute_desktopNum := VD.modulusResolveDesktopNum(VD.currentDesktopNum + relative_count)
         return VD.goToDesktopNum(absolute_desktopNum)
     }
@@ -696,7 +697,27 @@ class VD {
         }, -1000
     }
 
+    static _WaitForPinnedForegroundOwnedSwitch(waitMiliseconds := 1000) {
+        if (!VD.PinnedForegroundOwnedSwitchTarget) {
+            return true
+        }
+        end := A_TickCount + waitMiliseconds
+        while (VD.PinnedForegroundOwnedSwitchTarget && A_TickCount < end) {
+            Sleep -1
+        }
+        ; A timeout timer may have cleared the marker before its desktop-change notification was dispatched.
+        ; Refresh from the shell before another request decides that it is already on the requested desktop.
+        try {
+            IVirtualDesktop_current := VD.IVirtualDesktopManagerInternal.GetCurrentDesktop()
+            if (VD.IVirtualDesktopMap.Has(IVirtualDesktop_current)) {
+                VD.currentDesktopNum := VD.IVirtualDesktopMap[IVirtualDesktop_current]
+            }
+        }
+        return !VD.PinnedForegroundOwnedSwitchTarget
+    }
+
     static goToDesktopNum(desktopNum) {
+        VD._WaitForPinnedForegroundOwnedSwitch()
         if (desktopNum == VD.currentDesktopNum) {
             if (VD.ShouldActivateUponArrival()) {
                 VD.WinActivateFirstWindowInCurrentDesktop()
@@ -705,22 +726,21 @@ class VD {
             IVirtualDesktop_source := VD.IVirtualDesktopList[VD.currentDesktopNum]
             IVirtualDesktop_target := VD.IVirtualDesktopList[desktopNum]
             shouldActivate := VD.ShouldActivateUponArrival()
-            if (shouldActivate) {
-                VD._MarkPinnedForegroundOwnedSwitch(IVirtualDesktop_source, IVirtualDesktop_target)
-                try {
+            VD._MarkPinnedForegroundOwnedSwitch(IVirtualDesktop_source, IVirtualDesktop_target)
+            try {
+                if (shouldActivate) {
                     VD._RememberPinnedForegroundForDesktop(IVirtualDesktop_source)
                     pinnedForeground := VD._PinnedForegroundForDesktop(IVirtualDesktop_target)
                     VD.RegisterWinActivateUponSwitch(pinnedForeground)
                     VD.PinnedForegroundOwnedSwitchCallback := VD.WinActivate_callback
                     VD.AllowSetForegroundWindowAny()
-                    VD.IVirtualDesktopManagerInternal.SwitchDesktop(IVirtualDesktop_target)
-                } catch as e {
-                    VD._ClearPinnedForegroundOwnedSwitch(true, true)
-                    throw e
+                } else {
+                    VD.PinnedForegroundByDesktop.Clear()
                 }
-            } else {
-                VD.PinnedForegroundByDesktop.Clear()
                 VD.IVirtualDesktopManagerInternal.SwitchDesktop(IVirtualDesktop_target)
+            } catch as e {
+                VD._ClearPinnedForegroundOwnedSwitch(true, true)
+                throw e
             }
         }
         return desktopNum
@@ -777,16 +797,25 @@ class VD {
     static PinWindow(wintitle) {
         hwnd := WinGetID(wintitle)
         IApplicationView := VD.IApplicationViewCollection.GetViewForHwnd(hwnd)
+        if (!IApplicationView) {
+            return false
+        }
         VD.IVirtualPinnedAppsHandler.PinView(IApplicationView)
     }
     static UnPinWindow(wintitle) {
         hwnd := WinGetID(wintitle)
         IApplicationView := VD.IApplicationViewCollection.GetViewForHwnd(hwnd)
+        if (!IApplicationView) {
+            return false
+        }
         VD.IVirtualPinnedAppsHandler.UnpinView(IApplicationView)
     }
     static TogglePinWindow(wintitle) {
         hwnd := WinGetID(wintitle)
         IApplicationView := VD.IApplicationViewCollection.GetViewForHwnd(hwnd)
+        if (!IApplicationView) {
+            return false
+        }
         viewIsPinned := VD.IVirtualPinnedAppsHandler.IsViewPinned(IApplicationView)
         if (viewIsPinned) {
             VD.IVirtualPinnedAppsHandler.UnpinView(IApplicationView)
