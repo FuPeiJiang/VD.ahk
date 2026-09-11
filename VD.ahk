@@ -243,7 +243,11 @@ class VD {
         VD.PinnedForegroundOwnedSwitchSource := 0
         VD.PinnedForegroundOwnedSwitchTarget := 0
         VD.PinnedForegroundOwnedSwitchCallback := 0
+        VD.PinnedForegroundOwnedSwitchDeferArrival := false
         VD.PinnedForegroundOwnedSwitchToken := 0
+        VD.PinnedForegroundOwnedArrivalCallback := 0
+        VD.PinnedForegroundOwnedArrivalTarget := 0
+        VD.PinnedForegroundOwnedArrivalToken := 0
 
         VD.DesktopIdMap := Map()
 
@@ -288,6 +292,7 @@ class VD {
         VD.IVirtualDesktopList := [VD.IObjectArray(VD.IVirtualDesktopManagerInternal.GetDesktops(), VD.version.IID_IVirtualDesktop_ptr)*]
         VD.IVirtualDesktopMap := Map(VD.Array.flatMap(VD.IVirtualDesktopList, (IVirtualDesktop, i) => [IVirtualDesktop, i])*)
         VD._ClearPinnedForegroundOwnedSwitch(true, true)
+        VD._CancelPinnedForegroundOwnedArrival()
     }
 
     class IApplicationViewCollection_Class {
@@ -315,8 +320,12 @@ class VD {
     }
 
     static goToRelativeDesktopNum(relative_count) {
-        VD._WaitForPinnedForegroundOwnedSwitch()
-        absolute_desktopNum := VD.modulusResolveDesktopNum(VD.currentDesktopNum + relative_count)
+        effectiveDesktopNum := VD.currentDesktopNum
+        pendingTarget := VD.PinnedForegroundOwnedSwitchTarget
+        if (pendingTarget && VD.IVirtualDesktopMap.Has(pendingTarget)) {
+            effectiveDesktopNum := VD.IVirtualDesktopMap[pendingTarget]
+        }
+        absolute_desktopNum := VD.modulusResolveDesktopNum(effectiveDesktopNum + relative_count)
         return VD.goToDesktopNum(absolute_desktopNum)
     }
 
@@ -676,6 +685,7 @@ class VD {
         VD.PinnedForegroundOwnedSwitchSource := 0
         VD.PinnedForegroundOwnedSwitchTarget := 0
         VD.PinnedForegroundOwnedSwitchCallback := 0
+        VD.PinnedForegroundOwnedSwitchDeferArrival := false
         VD.PinnedForegroundOwnedSwitchToken += 1
         if (clearCache) {
             VD.PinnedForegroundByDesktop.Clear()
@@ -697,27 +707,80 @@ class VD {
         }, -1000
     }
 
-    static _WaitForPinnedForegroundOwnedSwitch(waitMiliseconds := 1000) {
-        if (!VD.PinnedForegroundOwnedSwitchTarget) {
-            return true
+    static _CancelPinnedForegroundOwnedArrival() {
+        hadPendingArrival := IsObject(VD.PinnedForegroundOwnedArrivalCallback)
+        VD.PinnedForegroundOwnedArrivalCallback := 0
+        VD.PinnedForegroundOwnedArrivalTarget := 0
+        VD.PinnedForegroundOwnedArrivalToken += 1
+        return hadPendingArrival
+    }
+
+    static _SchedulePinnedForegroundOwnedArrival(callback, IVirtualDesktop_target) {
+        VD._CancelPinnedForegroundOwnedArrival()
+        VD.PinnedForegroundOwnedArrivalCallback := callback
+        VD.PinnedForegroundOwnedArrivalTarget := IVirtualDesktop_target
+        arrivalToken := ++VD.PinnedForegroundOwnedArrivalToken
+        ; Briefly debounce arrival activation so an immediate follow-up switch can cancel focus on a
+        ; transient intermediate desktop. Five milliseconds keeps normal arrival focus effectively immediate.
+        SetTimer () {
+            if (VD.PinnedForegroundOwnedArrivalToken != arrivalToken
+                || !IsObject(VD.PinnedForegroundOwnedArrivalCallback)
+                || VD.PinnedForegroundOwnedArrivalTarget != IVirtualDesktop_target) {
+                return
+            }
+            callbackToRun := VD.PinnedForegroundOwnedArrivalCallback
+            VD._CancelPinnedForegroundOwnedArrival()
+            ; A newer operation may have registered its own activation callback while this timer was pending.
+            if (VD.WinActivate_callback) {
+                return
+            }
+            IVirtualDesktop_current := 0
+            try IVirtualDesktop_current := VD.IVirtualDesktopManagerInternal.GetCurrentDesktop()
+            if (IVirtualDesktop_current == IVirtualDesktop_target) {
+                callbackToRun.Call()
+            }
+        }, -5
+    }
+
+    static _WaitForPendingOwnedSwitch(desktopNum, waitMilliseconds := 1000) {
+        pendingTarget := VD.PinnedForegroundOwnedSwitchTarget
+        if (!pendingTarget) {
+            return false
         }
-        end := A_TickCount + waitMiliseconds
-        while (VD.PinnedForegroundOwnedSwitchTarget && A_TickCount < end) {
-            Sleep -1
+        chainedSwitch := (VD.IVirtualDesktopList[desktopNum] != pendingTarget)
+        if (chainedSwitch) {
+            ; The caller is immediately leaving the pending destination. Do not activate an intermediate
+            ; desktop window, and do not later treat its inherited foreground as that desktop's history.
+            ownedSwitchCallback := VD.PinnedForegroundOwnedSwitchCallback
+            if (IsObject(ownedSwitchCallback) && IsObject(VD.WinActivate_callback)
+                && ObjPtr(ownedSwitchCallback) == ObjPtr(VD.WinActivate_callback)) {
+                VD.WinActivate_callback := 0
+            }
+            VD.PinnedForegroundOwnedSwitchCallback := 0
+            VD.PinnedForegroundOwnedSwitchDeferArrival := false
         }
-        ; A timeout timer may have cleared the marker before its desktop-change notification was dispatched.
-        ; Refresh from the shell before another request decides that it is already on the requested desktop.
+        pendingSwitchToken := VD.PinnedForegroundOwnedSwitchToken
+        end := A_TickCount + waitMilliseconds
+        while (VD.PinnedForegroundOwnedSwitchTarget
+            && VD.PinnedForegroundOwnedSwitchToken == pendingSwitchToken
+            && A_TickCount < end) {
+            Sleep 10
+        }
+        ; The notification normally updated currentDesktopNum. If the marker timed out or an external switch
+        ; interrupted it, resync from the manager before deciding whether the next request is a no-op.
         try {
             IVirtualDesktop_current := VD.IVirtualDesktopManagerInternal.GetCurrentDesktop()
             if (VD.IVirtualDesktopMap.Has(IVirtualDesktop_current)) {
                 VD.currentDesktopNum := VD.IVirtualDesktopMap[IVirtualDesktop_current]
             }
         }
-        return !VD.PinnedForegroundOwnedSwitchTarget
+        return chainedSwitch
     }
 
     static goToDesktopNum(desktopNum) {
-        VD._WaitForPinnedForegroundOwnedSwitch()
+        cancelledArrival := VD._CancelPinnedForegroundOwnedArrival()
+        pendingChainedSwitch := VD._WaitForPendingOwnedSwitch(desktopNum)
+        chainedSwitch := cancelledArrival || pendingChainedSwitch
         if (desktopNum == VD.currentDesktopNum) {
             if (VD.ShouldActivateUponArrival()) {
                 VD.WinActivateFirstWindowInCurrentDesktop()
@@ -729,10 +792,13 @@ class VD {
             VD._MarkPinnedForegroundOwnedSwitch(IVirtualDesktop_source, IVirtualDesktop_target)
             try {
                 if (shouldActivate) {
-                    VD._RememberPinnedForegroundForDesktop(IVirtualDesktop_source)
+                    if (!chainedSwitch) {
+                        VD._RememberPinnedForegroundForDesktop(IVirtualDesktop_source)
+                    }
                     pinnedForeground := VD._PinnedForegroundForDesktop(IVirtualDesktop_target)
                     VD.RegisterWinActivateUponSwitch(pinnedForeground)
                     VD.PinnedForegroundOwnedSwitchCallback := VD.WinActivate_callback
+                    VD.PinnedForegroundOwnedSwitchDeferArrival := (pinnedForeground == 0)
                     VD.AllowSetForegroundWindowAny()
                 } else {
                     VD.PinnedForegroundByDesktop.Clear()
@@ -1153,12 +1219,15 @@ class VD {
             VD.IVirtualDesktopListChanged() ; called after CurrentVirtualDesktopChanged
         }
         _common_CurrentVirtualDesktopChanged(IVirtualDesktop_old, IVirtualDesktop_new) {
+            VD._CancelPinnedForegroundOwnedArrival()
             desktopNum_old := VD.IVirtualDesktopMap[IVirtualDesktop_old]
             desktopNum_new := VD.IVirtualDesktopMap[IVirtualDesktop_new]
             pendingOwnedSwitch := VD.PinnedForegroundOwnedSwitchTarget
             ownedSwitch := (pendingOwnedSwitch
                 && VD.PinnedForegroundOwnedSwitchSource == IVirtualDesktop_old
                 && pendingOwnedSwitch == IVirtualDesktop_new)
+            ownedSwitchCallback := ownedSwitch ? VD.PinnedForegroundOwnedSwitchCallback : 0
+            deferOwnedArrival := ownedSwitch && VD.PinnedForegroundOwnedSwitchDeferArrival
             if (ownedSwitch) {
                 VD._ClearPinnedForegroundOwnedSwitch()
             } else {
@@ -1166,7 +1235,15 @@ class VD {
                 VD._ClearPinnedForegroundOwnedSwitch(true, !!pendingOwnedSwitch)
             }
             VD.currentDesktopNum := desktopNum_new
-            if (VD.WinActivate_callback) {
+            if (IsObject(ownedSwitchCallback) && IsObject(VD.WinActivate_callback)
+                && ObjPtr(ownedSwitchCallback) == ObjPtr(VD.WinActivate_callback)) {
+                if (deferOwnedArrival) {
+                    VD.WinActivate_callback := 0
+                    VD._SchedulePinnedForegroundOwnedArrival(ownedSwitchCallback, IVirtualDesktop_new)
+                } else {
+                    VD.WinActivate_callback.Call()
+                }
+            } else if (VD.WinActivate_callback) {
                 VD.WinActivate_callback.Call()
             }
             for k, _ in VD.ListenersCurrentVirtualDesktopChanged {
