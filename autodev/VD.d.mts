@@ -7,8 +7,7 @@ export interface DesktopInfo {
   desktops:Array<{number:number;name:string|null;isCurrent:boolean}>;
 }
 export declare class VirtualDesktops {
-  constructor(options?:{dllPath?:string});
-  readonly dllPath:string;
+  constructor();
   getCount():number;
   getCurrentDesktopNum():number;
   getVersion():{build:number;revision:number;abi:number};

@@ -76,9 +76,9 @@ if (( !ready )); then echo 'KVM guest bootstrap FAILED'; tail -25 "$root/qemu.lo
 echo 'KVM guest ready; uploading test artifacts'
 remote='C:\Users\Administrator\Desktop\VD-AutoDev-KVM'
 termirror sync --to "$target" --direct-only --mkpath "$repo/VD.mjs" "$remote\VD.mjs"
-termirror sync --to "$target" --direct-only --mkpath "$repo/VDNative.dll" "$remote\VDNative.dll"
+termirror sync --to "$target" --direct-only --mkpath "$repo/VDCom.mjs" "$remote\VDCom.mjs"
 termirror sync --to "$target" --direct-only --mkpath "$repo/smoke.mjs" "$remote\smoke.mjs"
 termirror sync --to "$target" --direct-only --mkpath /root/GitHub/win-automation-devtools/target/windows-gnu/x86_64-pc-windows-gnu/release/autodev.exe "$remote\autodev.exe"
-echo 'AutoDev VD native integration smoke:'
-timeout -k 2s 65s termirror quic-exec "$target" -- "$remote\autodev.exe" run --module "$remote\smoke.mjs"
-echo 'AUTODEV_VD_KVM_PASSED'
+echo 'Pure AutoDev full virtual-desktop regression (no custom DLL):'
+timeout -k 2s 75s termirror quic-exec "$target" -- "$remote\autodev.exe" run --module "$remote\smoke.mjs"
+echo 'AUTODEV_VD_PURE_KVM_PASSED'

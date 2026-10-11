@@ -1,7 +1,6 @@
 // autodev run --module example.mjs
 import { VD } from './VD.mjs';
-const dir=autodev.script.path.replace(/[^\\/]+$/, '');
-const desktops=new VD({dllPath:dir+'VDNative.dll'});
+const desktops=new VD();
 try {
   console.log(JSON.stringify(desktops.getInfo(),null,2));
   // desktops.goToRelativeDesktopNum(1);  // switch right (wraps)

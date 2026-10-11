@@ -3,7 +3,7 @@ import { VD } from './VD.mjs';
 const path=autodev.script.path;
 if(!path) throw new Error('Need AutoDev script file execution');
 const dir=path.slice(0,Math.max(path.lastIndexOf('\\'),path.lastIndexOf('/'))+1);
-const vd=new VD({dllPath:dir+'VDNative.dll'});
+const vd=new VD();
 const events=[];
 function assert(test,label){if(!test)throw new Error('TEST FAILED: '+label);events.push(label);}
 let testDesktop=0,original=0,initialCount=0;

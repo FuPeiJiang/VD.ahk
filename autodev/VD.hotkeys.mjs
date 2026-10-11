@@ -1,8 +1,7 @@
 // Example AutoDev hotkeys (edit chords to avoid conflicting with Windows).
 // Run with: autodev run --module --persistent VD.hotkeys.mjs
 import { VD } from './VD.mjs';
-const dir=autodev.script.path.replace(/[^\\/]+$/,'');
-const vd=new VD({dllPath:dir+'VDNative.dll'});
+const vd=new VD();
 const report=(operation)=>()=>{
   try { console.log(JSON.stringify({operation,desktop:vd.getCurrentDesktopNum()})); }
   catch(error){ console.log(`VD ${operation} failed: ${String(error)}`); }
